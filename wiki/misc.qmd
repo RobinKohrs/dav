@@ -1,0 +1,42 @@
+# Tips and Tricks for this and that
+
+## Mac
+
+### Open Finder with Shortcut
+
+It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that...
+
+```
+on run {input, parameters}
+
+    tell application "Finder"
+        -- Check if there are NO Finder windows open
+        if (count of Finder windows) is 0 then
+            -- If no windows are open, make exactly one new window.
+            -- This will open in the current Space.
+            make new Finder window
+        end if
+        
+        -- Whether a window was just opened or already existed,
+        -- bring Finder to the front (activating it in the current Space).
+        activate
+    end tell
+    
+    return input
+end run
+```
+
+-> Better look [here](https://apple.stackexchange.com/a/163790/596385) and just use opt+cmd-space to open finder!
+
+### VS Code Keep Scrolling VIM
+
+- check [here](https://github.com/VSCodeVim/Vim/issues/422) and use this command for enabling smooth scrolling in VS Code (or any other codium editor)
+
+```r
+defaults write -g ApplePressAndHoldEnabled -bool false
+```
+
+- or use this command to check if it is enabled
+```r
+defaults read -g ApplePressAndHoldEnabled
+```
