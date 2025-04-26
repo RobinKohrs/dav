@@ -17,7 +17,10 @@ Imports:
     jsonlite,
     magrittr,
     purrr,
-    tibble
+    tibble,
+    sf,
+    tools,
+    utils
 Suggests: 
     knitr,
     rmarkdown,

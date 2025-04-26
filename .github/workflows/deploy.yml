@@ -72,25 +72,29 @@ jobs:
       # Step 4: Install R Dependencies                 #
       #------------------------------------------------#
       # Uses pak to install R packages listed in DESCRIPTION and specified below
-      - name: Install R package dependencies (including pkgdown, devtools)
+      - name: Install R package dependencies (including pkgdown, devtools, httr) # Added httr to name for clarity
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           # Explicitly list essential packages for build/install process
+          # AND any direct dependencies that cause installation errors for the local package
           # Do NOT add YAML comments inside the 'packages' multiline block
           packages: |
             any::pkgdown
             any::devtools
+            any::httr
+            # Add any other direct dependency from davR/DESCRIPTION if you hit similar errors
           # Installs Imports, Depends, AND Suggests from davR/DESCRIPTION
           # Ensure packages needed for vignettes (DT, dplyr etc) are listed there!
-          needs: dev
+          needs: dev # <<< CORRECTED: Separate key under 'with:'
 
       #------------------------------------------------#
       # Step 5: Install the local davR package         #
       #------------------------------------------------#
       # Crucial for pkgdown to find functions and run vignettes using the package
-      # Should succeed now that system dependencies are installed
+      # Should succeed now that dependencies (like httr) are installed in Step 4
       - name: Install local davR package
-        run: Rscript -e 'devtools::install("davR", dependencies = FALSE, upgrade = "never")'
+        # Removed dependencies = FALSE - let devtools handle checks, Step 4 should have installed needed packages.
+        run: Rscript -e 'devtools::install("davR", upgrade = "never")'
 
       #------------------------------------------------#
       # Step 6: Build the pkgdown site                 #
@@ -120,7 +124,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }} # Automatic token for authentication
           publish_branch: gh-pages                # Target branch for deployment
           publish_dir: ./davR/docs                # Source directory (pkgdown output)
-          # First deploy clears the branch by default
+          # First deploy clears the branch by default (keep_files defaults to false)
 
       # Deploy Quarto wiki site second (to the /wiki/ subdirectory on gh-pages)
       - name: Deploy Wiki to /wiki/ Subdirectory

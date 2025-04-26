@@ -67,9 +67,14 @@ Depends on \code{return_format}:
 }
 }
 \description{
-Constructs a URL and fetches data from the Geosphere API based on the provided parameters.
-The function allows fetching data as a file path (default), directly into an R object (data frame),
-or as the raw HTTP response.
+Constructs a URL and fetches data from the Geosphere API's main resource endpoint
+based on the provided parameters. The function allows fetching data as a file
+path (default), directly into an R object (data frame), or as the raw HTTP response.
+
+\strong{Note:} This function retrieves data from the primary resource path (e.g.,
+\verb{/v1/timeseries/historical/\{resource_id\}}). To retrieve metadata (usually found
+at \verb{/metadata} appended to the resource path), you would need to construct the
+URL manually and use a tool like \code{httr::GET}.
 
 See the Geosphere API documentation for details on available endpoints and parameters:
 \itemize{
@@ -78,7 +83,7 @@ See the Geosphere API documentation for details on available endpoints and param
 \item \href{https://dataset.api.hub.geosphere.at/v1/datasets}{Datasets Overview}
 }
 Example endpoint: \href{https://dataset.api.hub.geosphere.at/v1/timeseries/historical/spartacus-v2-1m-1km}{SPARTACUS Monthly}
-Example metadata: \href{https://dataset.api.hub.geosphere.at/v1/timeseries/historical/spartacus-v2-1m-1km/metadata}{SPARTACUS Monthly Metadata}
+Example metadata URL: \href{https://dataset.api.hub.geosphere.at/v1/timeseries/historical/spartacus-v2-1m-1km/metadata}{SPARTACUS Monthly Metadata}
 }
 \examples{
 \dontrun{
@@ -117,18 +122,7 @@ hourly_data = geosphere_get_data(
 print(head(hourly_data))
 }, silent = TRUE)
 
-# Example 3: Get metadata as a list (JSON)
-try({
-metadata = geosphere_get_data(
-    resource_id = "klima-v2-1h",
-    type = "station",
-    output_format = "json", # Request JSON from API
-    return_format = "dataframe" # Parse JSON to list/df
-)
-print(names(metadata))
-}, silent = TRUE)
-
-# Example 4: Using ... for a less common parameter (e.g., spatial filter)
+# Example 3: Using ... for a less common parameter (e.g., spatial filter)
 # Hypothetical example - check API docs for actual parameters
 grid_data_path = geosphere_get_data(
     resource_id = "spartacus-v2-1d-1km",
@@ -141,10 +135,24 @@ grid_data_path = geosphere_get_data(
 )
 print(grid_data_path)
 
-# Example 5: Demonstrating the resource_id check (will cause an error)
+# Example 4: Demonstrating the resource_id check (will cause an error)
 # try(geosphere_get_data())
 # try(geosphere_get_data(resource_id = NULL))
 # try(geosphere_get_data(resource_id = "   "))
+
+# --- How to get METADATA manually ---
+# You need to construct the specific metadata URL and use httr directly
+metadata_url <- "https://dataset.api.hub.geosphere.at/v1/station/historical/klima-v2-1h/metadata"
+response <- httr::GET(metadata_url)
+httr::stop_for_status(response) # Check for errors
+if (requireNamespace("jsonlite", quietly = TRUE)) {
+  metadata_list <- jsonlite::fromJSON(httr::content(response, as = "text", encoding = "UTF-8"))
+  print(names(metadata_list))
+  print(head(metadata_list$parameters))
+} else {
+   print("Install jsonlite to parse the metadata JSON")
+}
+# ---
 }
 
 }
