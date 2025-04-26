@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main # Or your default branch
+  workflow_dispatch: # Allows manual triggering from Actions tab
 
 permissions:
   contents: write # Allow workflow to write to the gh-pages branch
@@ -13,58 +14,60 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Quarto
-        uses: quarto-dev/quarto-cli-action@v2
-        with:
-          # Select the Quarto version matching your project if needed
-          version: stable # Or specify e.g., "1.4.549"
+      # --- Setup Tools ---
+      - name: Set up Quarto # USE THE RECOMMENDED SETUP ACTION
+        uses: quarto-dev/quarto-actions/setup@v2
+        # You can add 'with: version: specific-version' if needed
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: 'release' # Or specify a version
+          r-version: 'release'
 
       - name: Install R package dependencies (including pkgdown)
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           packages: |
             any::pkgdown
-            any::devtools # If needed for installation or examples
-            # Add other R dependencies needed for vignettes/pkgdown build
-          needs: '"dev"' # Installs Imports, Depends, Suggests
+            # Add other R dependencies needed for pkgdown/vignettes
+            # e.g., any::dplyr, any::DT, any::readr, any::jsonlite
+          needs: '"dev"' # Installs Imports, Depends, Suggests from DESCRIPTION
 
-      # Optional: Install your local package if vignettes depend on it being installed
-      # - name: Install local package
-      #   run: Rscript -e 'devtools::install(".", dependencies = FALSE)'
+      # Optional: Install your local package if vignettes depend on it
+      # This might be needed if pkgdown doesn't automatically handle it
+      # - name: Install local davR package
+      #   run: Rscript -e 'devtools::install("davR", dependencies = FALSE)'
 
+
+      # --- Build Sites ---
       - name: Build pkgdown site
         run: Rscript -e 'pkgdown::build_site()'
         working-directory: davR # Run pkgdown from within the package directory
+        # Output will be in davR/docs/
 
-      - name: Render Quarto Project
+      - name: Render Quarto Wiki Project
         run: quarto render wiki --output-dir _site
-        # Render explicitly into wiki/_site
+        # Render wiki content into wiki/_site/
 
-      - name: Deploy to GitHub Pages
+
+      # --- Deploy Sites ---
+      - name: Deploy pkgdown site to Root
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages # Deploy to the gh-pages branch
-          # Deploy pkgdown output (from davR/docs/) to the root of gh-pages
-          publish_dir: ./davR/docs
-          # Deploy Quarto output (from wiki/_site/) to the /wiki/ subdirectory
-          # Note: Use keep_files: true if deploying multiple sources to the same branch
-          # This first deploy clears the branch by default.
+          publish_dir: ./davR/docs # Deploy pkgdown output
+          # Default behavior clears the branch on the first push, which is fine here.
 
-      # Second deploy step for the wiki content to its subdirectory
-      - name: Deploy Wiki to Subdirectory
+      - name: Deploy Wiki to /wiki/ Subdirectory
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: ./wiki/_site # Deploy the rendered Quarto site
-          keep_files: true         # IMPORTANT: Keep files from the previous deploy step
+          keep_files: true         # IMPORTANT: Keep pkgdown files from previous step
           destination_dir: ./wiki  # Put the wiki site into the 'wiki' subdirectory
+          # cname: your.custom.domain.com # Add if you use a custom domain
