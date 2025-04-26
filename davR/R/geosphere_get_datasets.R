@@ -46,7 +46,7 @@
 #'      print("No matching datasets found.")
 #'   }
 #' }
-geosphere_find_datasets = function(url = "https://dataset.api.hub.geosphere.at/v1/datasets",
+geosphere_get_datasets = function(url = "https://dataset.api.hub.geosphere.at/v1/datasets",
                                    user_agent = "davR",
                                    filter_keywords = NULL,
                                    filter_type = NULL,
