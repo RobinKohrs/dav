@@ -34,7 +34,7 @@ jobs:
             any::pkgdown
             # Add other R dependencies needed for pkgdown/vignettes
             # e.g., any::dplyr, any::DT, any::readr, any::jsonlite
-          needs: '"dev"' # Installs Imports, Depends, Suggests from DESCRIPTION
+          needs: 'dev' # Installs Imports, Depends, Suggests from DESCRIPTION
 
       # Optional: Install your local package if vignettes depend on it
       # This might be needed if pkgdown doesn't automatically handle it
