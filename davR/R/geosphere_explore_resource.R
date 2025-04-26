@@ -1,267 +1,320 @@
-#' Explore Geosphere Resource Metadata
+# Ensure this is saved in e.g., R/geosphere_explore_resource.R
+
+#' Explore Geosphere Resource Metadata and Requirements
 #'
 #' @description
-#' Fetches and presents metadata for a specific Geosphere resource ID in a
-#' user-friendly format, highlighting available parameters and likely requirements
-#' for querying the data endpoint.
+#' Fetches metadata and determines required query parameters for a specific
+#' Geosphere resource ID across all its available type, mode, and format
+#' combinations. It presents available parameters, coverage details, and the
+#' definitive required parameters needed to query the data endpoint via
+#' `geosphere_get_data`.
 #'
-#' @param resource_id Character string. The specific resource ID (e.g., "klima-v2-1h"). Required.
-#' @param type Character string. The data type (e.g., "grid", "station"). Required. Found via
-#'   `geosphere_find_datasets`.
-#' @param mode Character string. The data mode (e.g., "historical"). Required. Found via
-#'   `geosphere_find_datasets`.
+#' @details
+#' This function first retrieves descriptive metadata (available parameters, time range, etc.)
+#' from the resource's `/metadata` endpoint. Then, for each combination, it makes a
+#' deliberate (parameter-less) request to the main *data* endpoint to provoke an
+#' error message. By parsing this error message (typically JSON with a 'detail'
+#' field), it accurately identifies the query parameters that the API requires
+#' for that specific data endpoint.
+#'
+#' @param resource_id Character string. The specific dataset or resource ID. Required.
 #' @param api_url Base URL for the Geosphere API. Defaults to Geosphere Hub v1.
 #' @param version API version string. Defaults to "v1".
-#' @param user_agent Client user agent string. Defaults to "davR".
+#' @param user_agent A string to identify the client. Defaults to "davR".
 #' @param print_summary Logical. If `TRUE` (default), print a formatted summary
-#'   to the console.
+#'   to the console for each combination found.
 #'
-#' @return A list containing parsed metadata components:
-#'   \item{metadata}{The full metadata list fetched from the API.}
-#'   \item{available_parameters}{A data frame (tibble) of available parameters (if found).}
-#'   \item{time_coverage}{A list indicating start/end times (if found).}
-#'   \item{spatial_info}{A list with spatial details (if found).}
-#'   \item{likely_required_query_params}{A character vector suggesting required parameters.}
-#'   Returns `NULL` if metadata fetching fails.
+#' @return A named list where each element corresponds to a unique combination of
+#'   `type`, `mode`, and `response_formats` found for the `resource_id`. The name
+#'   of each element is a descriptive string like `"station_historical_csv"`.
+#'   Each element is itself a list containing:
+#'   \item{combination}{A list detailing the specific type, mode, and formats.}
+#'   \item{metadata}{The full raw metadata list fetched from the API's `/metadata` endpoint (or NULL if failed).}
+#'   \item{available_parameters}{A data frame (tibble) of available parameters (if found in metadata).}
+#'   \item{time_coverage}{A list indicating start/end times (if found in metadata).}
+#'   \item{spatial_info}{A list with spatial details (CRS, bbox, etc.) (if found in metadata).}
+#'   \item{required_query_params}{A character vector listing the query parameters identified as required by probing the data endpoint (or NULL if determination failed).}
+#'   Returns `NULL` if the initial dataset lookup fails or the `resource_id` is not found.
 #'
-#' @export
-#' @importFrom httr GET modify_url stop_for_status content http_type user_agent
+#' @export geosphere_explore_resource
+#'
+#' @importFrom httr GET modify_url content http_type status_code user_agent
 #' @importFrom jsonlite fromJSON
-#' @importFrom cli cli_h1 cli_h2 cli_li cli_ul cli_text cli_alert_danger cli_alert_warning cli_code style_hyperlink cli_end
+#' @importFrom cli cli_h1 cli_h2 cli_li cli_ul cli_text cli_alert_danger cli_alert_warning cli_alert_info cli_code style_hyperlink cli_end
 #' @importFrom utils head str
+#' @importFrom dplyr distinct select pick filter any_of all_of mutate bind_rows
+#' @importFrom glue glue
 #' @importFrom tibble as_tibble
-#' @importFrom dplyr bind_rows
 #'
 #' @examples
 #' \dontrun{
-#' # Ensure required packages are installed
-#' # install.packages(c("dplyr", "stringr", "tibble", "cli", "httr", "jsonlite"))
+#' # Assume geosphere_find_datasets is available
 #'
-#' # 1. Find a dataset first
-#'   station_datasets = tryCatch(
-#'       geosphere_find_datasets(filter_type="station", filter_mode="historical"),
-#'       error = function(e) { print(e$message); NULL }
-#'   )
+#' # Explore a resource known to have multiple combinations
+#' exploration_results = geosphere_explore_resource(
+#'    resource_id = "apolis_short-v1-1d-100m"
+#' )
 #'
-#'   # 2. Explore the chosen dataset (if found)
-#'   if(!is.null(station_datasets) && nrow(station_datasets) > 0) {
-#'     res_id = station_datasets$resource_id[1]
-#'     res_type = station_datasets$type[1]
-#'     res_mode = station_datasets$mode[1]
+#' # The function prints summaries by default.
+#' # The returned object is a list named by combinations:
+#' print(names(exploration_results))
+#' # > [1] "grid_historical_geojson"     "grid_historical_netcdf" ...
 #'
-#'     explore_result = tryCatch(
-#'         geosphere_explore_resource(
-#'              resource_id = res_id,
-#'              type = res_type,
-#'              mode = res_mode),
-#'         error = function(e) { print(e$message); NULL }
-#'     )
+#' # Inspect the details for one specific combination:
+#' if ("grid_historical_geojson" %in% names(exploration_results)) {
+#'    # Check the *required* parameters found by probing the data endpoint:
+#'    print(exploration_results$grid_historical_geojson$required_query_params)
+#'    # Should show: [1] "parameters" "start" "end" "bbox" (based on the example error)
 #'
-#'     if (!is.null(explore_result)) {
-#'        # A summary was printed (default). You can also inspect the list:
-#'        print(str(explore_result, max.level = 1))
-#'        print(explore_result$likely_required_query_params)
-#'     }
-#'   } else {
-#'       print("Could not find suitable station datasets to explore.")
-#'   }
+#'    # Compare with *available* parameters from metadata:
+#'    print(utils::head(exploration_results$grid_historical_geojson$available_parameters))
+#' }
 #'
-#' # Explore a grid dataset directly
-#'   explore_grid = tryCatch(
-#'        geosphere_explore_resource(
-#'           resource_id = "apolis_short-v1-1d-100m",
-#'           type = "grid",
-#'           mode = "historical"),
-#'        error = function(e) { print(e$message); NULL }
-#'    )
+#' # Explore a resource with likely only one combination
+#' exploration_klima = geosphere_explore_resource(resource_id = "klima-v2-1h")
+#' if (!is.null(exploration_klima)) {
+#'    print(names(exploration_klima))
+#'    # Likely "station_historical_csv" or similar
+#'    print(exploration_klima[[1]]$required_query_params)
+#'    # Should show something like "parameters", "start", "end", "station_ids"
+#' }
 #' }
 geosphere_explore_resource = function(resource_id,
-                                      type,
-                                      mode,
                                       api_url = "https://dataset.api.hub.geosphere.at",
                                       version = "v1",
                                       user_agent = "davR",
                                       print_summary = TRUE) {
 
-  # --- Basic Input Checks ---
-  if (missing(resource_id) || !nzchar(trimws(resource_id))) stop("`resource_id` must be provided.", call.=FALSE)
-  if (missing(type) || !nzchar(trimws(type))) stop("`type` must be provided.", call.=FALSE)
-  if (missing(mode) || !nzchar(trimws(mode))) stop("`mode` must be provided.", call.=FALSE)
+  # --- 1. Input Validation ---
+  if (missing(resource_id) || !is.character(resource_id) || length(resource_id) != 1 || nchar(trimws(resource_id)) == 0) {
+    stop("`resource_id` is required and must be a non-empty string.", call. = FALSE)
+  }
+  resource_id = trimws(resource_id)
 
-  # --- 1. Fetch Metadata ---
-  # Use the previously defined function which handles its own errors/NULL return
-  metadata = geosphere_get_params_metadata(
-    resource_id = resource_id,
-    type = type,
-    mode = mode,
-    api_url = api_url,
-    version = version,
-    user_agent = user_agent
+  # --- 2. Find all dataset entries for the resource_id ---
+  cli::cli_alert_info("Looking up all combinations for resource ID: {.val {resource_id}}")
+
+  # Ensure geosphere_find_datasets exists
+  if (!exists("geosphere_find_datasets", mode = "function")) {
+    stop("Dependency function 'geosphere_find_datasets' not found.", call. = FALSE)
+  }
+
+  all_datasets = tryCatch(
+    geosphere_find_datasets(add_resource_id = TRUE, user_agent = user_agent),
+    error = function(e){
+      cli::cli_alert_danger("Failed to retrieve dataset list.")
+      cli::cli_alert_danger("Error: {e$message}")
+      return(NULL)
+    }
   )
+  if (is.null(all_datasets)) return(NULL)
 
-  if (is.null(metadata)) {
-    # geosphere_get_params_metadata already prints alerts on failure
-    cli::cli_alert_warning("Cannot proceed with exploration for resource {.val {resource_id}}.")
+  # Filter for the specific resource ID
+  matching_datasets = dplyr::filter(all_datasets, .data$resource_id == !!resource_id)
+
+  if (nrow(matching_datasets) == 0) {
+    cli::cli_alert_danger(glue::glue("Resource ID '{resource_id}' not found in the available datasets list."))
     return(NULL)
   }
 
-  # --- 2. Parse and Structure Metadata Components ---
-  output = list(
-    metadata = metadata,
-    available_parameters = NULL,
-    time_coverage = NULL,
-    spatial_info = NULL,
-    likely_required_query_params = character(0)
-  )
+  # --- 3. Identify Unique Combinations (Type, Mode, Formats) ---
+  cols_to_check = intersect(c("type", "mode", "response_formats"), names(matching_datasets))
+  if (!all(c("type", "mode") %in% cols_to_check)) {
+    stop("Internal error: Could not find 'type' and 'mode' columns in the dataset list.", call.=FALSE)
+  }
 
-  # Extract Available Parameters
-  if (!is.null(metadata$parameters)) {
-    if (is.data.frame(metadata$parameters)) {
-      # Ensure it's a tibble for nice printing
-      output$available_parameters = tibble::as_tibble(metadata$parameters)
-    } else if (is.list(metadata$parameters) && length(metadata$parameters) > 0) {
-      # Attempt to bind if it's a list of lists/vectors
-      param_df = tryCatch(
-        dplyr::bind_rows(metadata$parameters),
-        error = function(e) {
-          warning("Could not automatically bind 'parameters' list into a data frame.", call. = FALSE)
-          NULL
+  # Prepare for distinct check, handling list-column 'response_formats'
+  if ("response_formats" %in% cols_to_check && is.list(matching_datasets$response_formats)) {
+    matching_datasets = dplyr::mutate(
+      matching_datasets,
+      response_formats_str = sapply(.data$response_formats, function(x) {
+        clean_formats = tolower(sort(unique(unlist(x))))
+        paste(clean_formats, collapse="_")
+      })
+    )
+    cols_for_distinct = c("type", "mode", "response_formats_str")
+  } else if ("response_formats" %in% cols_to_check) {
+    matching_datasets = dplyr::mutate(matching_datasets, response_formats_str = as.character(.data$response_formats))
+    cols_for_distinct = c("type", "mode", "response_formats_str")
+  } else {
+    matching_datasets = dplyr::mutate(matching_datasets, response_formats_str = "unknown")
+    cols_for_distinct = c("type", "mode", "response_formats_str")
+  }
+
+  unique_combinations = dplyr::distinct(matching_datasets, dplyr::pick(dplyr::all_of(cols_for_distinct)))
+
+  n_combinations = nrow(unique_combinations)
+  cli::cli_alert_info("Found {n_combinations} unique type/mode/format combination{?s} for resource ID {.val {resource_id}}.")
+  if (n_combinations > 1) {
+    cli::cli_alert_warning("Multiple combinations found. Details for each will be provided.")
+  }
+
+  # --- 4. Iterate, Fetch/Interpret Metadata, Probe for Required Params ---
+  results_list = list()
+
+  for (i in 1:n_combinations) {
+    current_combo = unique_combinations[i, ]
+    type = current_combo$type
+    mode = current_combo$mode
+    formats_str = current_combo$response_formats_str # Use the standardized string
+    list_name = paste(type, mode, formats_str, sep = "_")
+    list_name = gsub("[^a-zA-Z0-9_]", "_", list_name) # Clean name
+
+    cli::cli_h1("Processing Combination: {.val {list_name}} ({i}/{n_combinations})")
+
+    # --- 4a. Fetch and Interpret Metadata ---
+    cli::cli_alert_info("Fetching descriptive metadata...")
+    # Ensure geosphere_get_resource_metadata exists
+    if (!exists("geosphere_get_resource_metadata", mode = "function")) {
+      stop("Dependency function 'geosphere_get_resource_metadata' not found.", call. = FALSE)
+    }
+    current_metadata = geosphere_get_resource_metadata(
+      resource_id = resource_id, type = type, mode = mode, interactive = FALSE, # Use determined type/mode
+      api_url = api_url, version = version, user_agent = user_agent
+    )
+
+    output_element = list(
+      combination = list(type=type, mode=mode, formats=strsplit(formats_str, "_")[[1]]),
+      metadata = NULL, # Initialize
+      available_parameters = NULL, time_coverage = NULL, spatial_info = NULL,
+      required_query_params = NULL # Initialize required params list
+    )
+
+    if (is.null(current_metadata)) {
+      cli::cli_alert_warning("Could not fetch or parse metadata for combination {.val {list_name}}.")
+      # Continue to try probing for required params, but metadata sections will be empty
+    } else {
+      output_element$metadata = current_metadata # Store raw metadata
+      # Extract Available Parameters
+      if (!is.null(current_metadata$parameters)) {
+        if (is.data.frame(current_metadata$parameters)) output_element$available_parameters = tibble::as_tibble(current_metadata$parameters)
+        else if (is.list(current_metadata$parameters) && length(current_metadata$parameters) > 0) {
+          param_df = tryCatch(dplyr::bind_rows(current_metadata$parameters), error = function(e) NULL)
+          if (!is.null(param_df)) output_element$available_parameters = tibble::as_tibble(param_df)
         }
-      )
-      if (!is.null(param_df)) {
-        output$available_parameters = tibble::as_tibble(param_df)
       }
-    }
-  }
-
-  # Extract Time Coverage
-  time_info = list()
-  if (!is.null(metadata$start_time)) time_info$start_time = metadata$start_time
-  if (!is.null(metadata$end_time)) time_info$end_time = metadata$end_time
-  if (!is.null(metadata$timerange)) time_info$timerange = metadata$timerange
-  if (length(time_info) > 0) output$time_coverage = time_info
-
-  # Extract Spatial Info
-  spatial = list()
-  if (!is.null(metadata$crs)) spatial$crs = metadata$crs
-  if (!is.null(metadata$bbox)) spatial$bbox = metadata$bbox
-  if (!is.null(metadata$spatial_resolution_m)) spatial$resolution_m = metadata$spatial_resolution_m
-  if (!is.null(metadata$grid_bounds)) spatial$grid_bounds = metadata$grid_bounds
-  if (length(spatial) > 0) output$spatial_info = spatial
-
-  # --- 3. Infer Likely Required Query Parameters ---
-  # Start with base requirements (can be refined)
-  req = c("parameters", "start", "end")
-
-  # Adjust based on type
-  if (type == "grid") {
-    # Grids usually need bbox or sometimes lat/lon for point extraction
-    # If metadata has bbox, it's likely the main requirement
-    if (!is.null(output$spatial_info$bbox) || !is.null(output$spatial_info$grid_bounds)) {
-      req = c(req, "bbox") # Add bbox as likely needed
-    } else {
-      # If no obvious grid bounds, maybe point extraction? Less common for this API
-      req = c(req, "lat", "lon") # Less likely, but possible fallback
-    }
-  } else if (type == "station") {
-    # Only require station_ids if stations are actually listed in metadata
-    if (!is.null(metadata$stations) && length(metadata$stations) > 0) {
-      req = c(req, "station_ids")
-    }
-  }
-
-  # Refine based on metadata specifics
-  # If metadata indicates no time dimension, remove start/end
-  if (length(time_info) == 0 && is.null(metadata$timeCoverage)) {
-    req = setdiff(req, c("start", "end"))
-  }
-  # If only one parameter is available, 'parameters' is likely still required by API
-  if (is.null(output$available_parameters) || nrow(output$available_parameters) == 0) {
-    req = setdiff(req, "parameters") # No parameters to choose from
-  }
-
-  # Check for explicit requirements field (less common in this API)
-  required_explicit = NULL
-  if (!is.null(metadata$required_parameters) && is.character(metadata$required_parameters)) {
-    required_explicit = metadata$required_parameters
-  } else if (!is.null(metadata$queryParameters)) {
-    if (is.data.frame(metadata$queryParameters) && "name" %in% names(metadata$queryParameters) && "required" %in% names(metadata$queryParameters)) {
-      req_df = metadata$queryParameters
-      required_explicit = req_df$name[req_df$required == TRUE]
-    }
-  }
-  if (!is.null(required_explicit)) {
-    req = unique(c(req, required_explicit)) # Ensure explicit ones are included
-  }
-
-
-  output$likely_required_query_params = unique(req) # Store the unique list
-
-  # --- 4. Print Summary (Optional) ---
-  if (print_summary) {
-    cli::cli_h1("Metadata Summary for Resource: {.val {resource_id}}")
-    cli::cli_text("Type: {.val {type}}, Mode: {.val {mode}}")
-    if (!is.null(metadata$title)) cli::cli_text("Title: {.val {metadata$title}}")
-
-    # Construct URLs safely
-    url_path_part = tryCatch(paste(version, type, mode, resource_id, sep = "/"), error = function(e) NULL)
-    if(!is.null(url_path_part)) {
-      data_url = httr::modify_url(api_url, path = url_path_part)
-      meta_url = paste0(data_url,"/metadata")
-      cli::cli_text("Data URL: {.url {data_url}}")
-      cli::cli_text("Metadata URL: {.url {meta_url}}")
+      # Extract Time Coverage
+      time_info = list(); if (!is.null(current_metadata$start_time)) time_info$start_time = current_metadata$start_time; if (!is.null(current_metadata$end_time)) time_info$end_time = current_metadata$end_time; if (!is.null(current_metadata$timerange)) time_info$timerange = current_metadata$timerange; if (length(time_info) > 0) output_element$time_coverage = time_info
+      # Extract Spatial Info
+      spatial = list(); if (!is.null(current_metadata$crs)) spatial$crs = current_metadata$crs; if (!is.null(current_metadata$bbox)) spatial$bbox = current_metadata$bbox; if (!is.null(current_metadata$spatial_resolution_m)) spatial$resolution_m = current_metadata$spatial_resolution_m; if (!is.null(current_metadata$grid_bounds)) spatial$grid_bounds = current_metadata$grid_bounds; if (length(spatial) > 0) output_element$spatial_info = spatial
     }
 
-    cli::cli_h2("Available Parameters")
-    if (!is.null(output$available_parameters) && nrow(output$available_parameters) > 0) {
-      # Select common columns for printing, if they exist
-      cols_to_print = intersect(c("name", "long_name", "unit", "desc"), names(output$available_parameters))
-      if(length(cols_to_print) > 0) {
-        print(utils::head(output$available_parameters[, cols_to_print, drop = FALSE]))
+    # --- 4b. Probe Data Endpoint for Required Parameters ---
+    cli::cli_alert_info("Probing data endpoint to determine required parameters...")
+    data_path = paste(version, type, mode, resource_id, sep = "/")
+    data_url = httr::modify_url(api_url, path = data_path)
+    ua = httr::user_agent(user_agent)
+    required_params_found = NULL # Initialize
+
+    probe_response = tryCatch(
+      httr::GET(data_url, ua), # No query parameters intentionally
+      error = function(e) {
+        cli::cli_alert_danger("HTTP request failed when probing data URL {.url {data_url}}")
+        cli::cli_alert_danger("Error: {e$message}")
+        return(NULL) # Return NULL on connection failure
+      }
+    )
+
+    if (!is.null(probe_response)) {
+      status = httr::status_code(probe_response)
+      # We expect a 4xx error (like 422 or 400)
+      if (status >= 400 && status < 500) {
+        # Try to parse the error response
+        error_content = NULL
+        error_text = httr::content(probe_response, as = "text", encoding = "UTF-8")
+        if (nzchar(error_text)) {
+          error_content = tryCatch(
+            jsonlite::fromJSON(error_text, simplifyVector = TRUE),
+            error = function(e) {
+              cli::cli_alert_warning("Could not parse error response from data endpoint as JSON.")
+              return(NULL)
+            })
+        }
+
+        # Check if the parsed content has the expected structure
+        if (!is.null(error_content) && is.list(error_content) && !is.null(error_content$detail) && (is.list(error_content$detail) || is.data.frame(error_content$detail))) {
+          details_list = error_content$detail
+          # Handle if detail is a data frame or list of lists
+          if (is.data.frame(details_list)) {
+            if ("loc" %in% names(details_list) && is.list(details_list$loc)) {
+              # Extract second element from each 'loc' list (expected ["query", "param_name"])
+              req_params = unique(sapply(details_list$loc, function(loc_item) {
+                if (length(loc_item) >= 2 && loc_item[1] == "query") {
+                  return(loc_item[2])
+                } else { return(NA_character_) }
+              }))
+              required_params_found = req_params[!is.na(req_params)]
+            }
+          } else if (is.list(details_list)) { # Assuming list of lists
+            req_params = unique(sapply(details_list, function(item) {
+              if (is.list(item) && !is.null(item$loc) && length(item$loc) >= 2 && item$loc[1] == "query") {
+                return(item$loc[2])
+              } else { return(NA_character_) }
+            }))
+            required_params_found = req_params[!is.na(req_params)]
+          }
+        } # End if error content structure is valid
+
+        if (is.null(required_params_found)) {
+          cli::cli_alert_warning("Received HTTP {status} error, but could not extract required parameters from the response body.")
+          # Maybe print the body for debugging?
+          # if (nzchar(error_text)) cli::cli_text("Response body: {substr(error_text, 1, 300)}")
+        } else if (length(required_params_found) == 0) {
+          cli::cli_alert_info("Received HTTP {status} error, but the response indicated no specific missing query parameters.")
+          # This might mean the base URL itself is valid but needs other input (e.g., POST data?) - less likely for GET
+        }
+
       } else {
-        print(utils::head(output$available_parameters)) # Print whatever columns exist
+        # Request succeeded (unexpected!) or was a server error (5xx)
+        cli::cli_alert_warning("Probing data endpoint did not return expected 4xx error (Status: {status}). Cannot reliably determine required parameters this way.")
+        # Maybe the endpoint works without parameters? Or server issue.
       }
-      if(nrow(output$available_parameters) > 6) cli::cli_text("({nrow(output$available_parameters) - 6} more parameters available...)")
-    } else {
-      cli::cli_text("No specific parameter list found or parsed from metadata.")
-    }
+    } # End if !is.null(probe_response)
 
-    cli::cli_h2("Time Coverage")
-    if (!is.null(output$time_coverage)) {
-      cli::cli_ul()
-      if (!is.null(output$time_coverage$start_time)) cli::cli_li("Start: {.val {output$time_coverage$start_time}}")
-      if (!is.null(output$time_coverage$end_time)) cli::cli_li("End: {.val {output$time_coverage$end_time}}")
-      if (!is.null(output$time_coverage$timerange)) cli::cli_li("Timerange field: {.val {paste(output$time_coverage$timerange, collapse=', ')}}")
-      cli::cli_end()
-    } else {
-      cli::cli_text("No specific time coverage information found.")
-    }
+    output_element$required_query_params = required_params_found # Store found params or NULL
 
-    cli::cli_h2("Spatial Information")
-    if (!is.null(output$spatial_info)) {
-      cli::cli_ul()
-      if (!is.null(output$spatial_info$crs)) cli::cli_li("CRS: {.val {output$spatial_info$crs}}")
-      if (!is.null(output$spatial_info$bbox)) cli::cli_li("Bounding Box (Native CRS): {.val {paste(round(output$spatial_info$bbox, 4), collapse=', ')}}")
-      if (!is.null(output$spatial_info$resolution_m)) cli::cli_li("Resolution (meters): {.val {output$spatial_info$resolution_m}}")
-      if (!is.null(output$spatial_info$grid_bounds)) cli::cli_li("Grid Bounds (Native CRS): {.val {paste(output$spatial_info$grid_bounds, collapse=', ')}}")
-      cli::cli_end()
-    } else {
-      cli::cli_text("No specific spatial information found.")
-    }
 
-    cli::cli_h2("Likely Required Query Parameters for {.fn geosphere_get_data}")
-    if (length(output$likely_required_query_params) > 0) {
-      cli::cli_ul()
-      for(p in output$likely_required_query_params) cli::cli_li("{.code {p}}")
-      cli::cli_end()
-      cli::cli_text("Note: This is inferred from metadata. Use {.fn geosphere_get_data} with ",
-                    "{.code check_metadata=TRUE} for validation before requesting data.")
-    } else {
-      cli::cli_text("Could not determine likely required parameters (or none seem required based on metadata).")
-    }
-    cli::cli_h1("End Metadata Summary") # Visual separator
-  }
+    # --- 4c. Print Summary (Optional) ---
+    if (print_summary) {
+      cli::cli_h2("Summary for Combination: {.val {list_name}}")
+      if (!is.null(current_metadata$title)) cli::cli_text("Title: {.val {current_metadata$title}}")
+      cli::cli_text("Data Query URL (Base): {.url {data_url}}")
+      if (!is.null(current_metadata)) cli::cli_text("Metadata URL: {.url {paste0(data_url,'/metadata')}}")
 
-  # --- 5. Return Structured List ---
-  return(output)
+      cli::cli_h2("Available Parameters (from Metadata)")
+      if (!is.null(output_element$available_parameters) && nrow(output_element$available_parameters) > 0) {
+        cols_to_print = intersect(c("name", "long_name", "unit", "desc"), names(output_element$available_parameters))
+        print_df = if(length(cols_to_print) > 0) output_element$available_parameters[, cols_to_print, drop = FALSE] else output_element$available_parameters
+        print(utils::head(print_df))
+        if(nrow(print_df) > 6) cli::cli_text("({nrow(print_df) - 6} more parameters available...)")
+      } else { cli::cli_text("No specific parameter list found in metadata.") }
+
+      cli::cli_h2("Time Coverage (from Metadata)")
+      if (!is.null(output_element$time_coverage)) {
+        cli::cli_ul(); lapply(names(output_element$time_coverage), function(n) cli::cli_li("{tools::toTitleCase(gsub('_',' ',n))}: {.val {paste(output_element$time_coverage[[n]], collapse=', ')}}")); cli::cli_end()
+      } else { cli::cli_text("No specific time coverage info found.") }
+
+      cli::cli_h2("Spatial Information (from Metadata)")
+      if (!is.null(output_element$spatial_info)) {
+        cli::cli_ul(); lapply(names(output_element$spatial_info), function(n) { value = output_element$spatial_info[[n]]; formatted_value = if(is.numeric(value)) paste(round(value,4),collapse=', ') else paste(value,collapse=', '); cli::cli_li("{tools::toTitleCase(gsub('_',' ',n))}: {.val {formatted_value}}") }); cli::cli_end()
+      } else { cli::cli_text("No specific spatial info found.") }
+
+      cli::cli_h2("Required Query Parameters for {.fn geosphere_get_data} (determined by probing)")
+      if (!is.null(output_element$required_query_params) && length(output_element$required_query_params) > 0) {
+        cli::cli_ul(); for(p in output_element$required_query_params) cli::cli_li("{.code {p}}"); cli::cli_end()
+      } else if (is.null(output_element$required_query_params)) {
+        cli::cli_text("Could not determine required parameters (probe failed or response unparseable).")
+      } else { # length is 0
+        cli::cli_text("Probe suggests no specific query parameters are required (or endpoint works differently).")
+      }
+      if(n_combinations > 1 && i < n_combinations) cli::cli_h1("---") # Separator
+    } # end if print_summary
+
+    # Store the results for this combination
+    results_list[[list_name]] = output_element
+
+  } # end for loop over combinations
+
+  # --- 5. Return the List of Results ---
+  return(results_list)
 }

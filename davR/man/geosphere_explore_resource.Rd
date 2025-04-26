@@ -2,12 +2,10 @@
 % Please edit documentation in R/geosphere_explore_resource.R
 \name{geosphere_explore_resource}
 \alias{geosphere_explore_resource}
-\title{Explore Geosphere Resource Metadata}
+\title{Explore Geosphere Resource Metadata and Requirements}
 \usage{
 geosphere_explore_resource(
   resource_id,
-  type,
-  mode,
   api_url = "https://dataset.api.hub.geosphere.at",
   version = "v1",
   user_agent = "davR",
@@ -15,78 +13,76 @@ geosphere_explore_resource(
 )
 }
 \arguments{
-\item{resource_id}{Character string. The specific resource ID (e.g., "klima-v2-1h"). Required.}
-
-\item{type}{Character string. The data type (e.g., "grid", "station"). Required. Found via
-\code{geosphere_find_datasets}.}
-
-\item{mode}{Character string. The data mode (e.g., "historical"). Required. Found via
-\code{geosphere_find_datasets}.}
+\item{resource_id}{Character string. The specific dataset or resource ID. Required.}
 
 \item{api_url}{Base URL for the Geosphere API. Defaults to Geosphere Hub v1.}
 
 \item{version}{API version string. Defaults to "v1".}
 
-\item{user_agent}{Client user agent string. Defaults to "davR".}
+\item{user_agent}{A string to identify the client. Defaults to "davR".}
 
 \item{print_summary}{Logical. If \code{TRUE} (default), print a formatted summary
-to the console.}
+to the console for each combination found.}
 }
 \value{
-A list containing parsed metadata components:
-\item{metadata}{The full metadata list fetched from the API.}
-\item{available_parameters}{A data frame (tibble) of available parameters (if found).}
-\item{time_coverage}{A list indicating start/end times (if found).}
-\item{spatial_info}{A list with spatial details (if found).}
-\item{likely_required_query_params}{A character vector suggesting required parameters.}
-Returns \code{NULL} if metadata fetching fails.
+A named list where each element corresponds to a unique combination of
+\code{type}, \code{mode}, and \code{response_formats} found for the \code{resource_id}. The name
+of each element is a descriptive string like \code{"station_historical_csv"}.
+Each element is itself a list containing:
+\item{combination}{A list detailing the specific type, mode, and formats.}
+\item{metadata}{The full raw metadata list fetched from the API's \verb{/metadata} endpoint (or NULL if failed).}
+\item{available_parameters}{A data frame (tibble) of available parameters (if found in metadata).}
+\item{time_coverage}{A list indicating start/end times (if found in metadata).}
+\item{spatial_info}{A list with spatial details (CRS, bbox, etc.) (if found in metadata).}
+\item{required_query_params}{A character vector listing the query parameters identified as required by probing the data endpoint (or NULL if determination failed).}
+Returns \code{NULL} if the initial dataset lookup fails or the \code{resource_id} is not found.
 }
 \description{
-Fetches and presents metadata for a specific Geosphere resource ID in a
-user-friendly format, highlighting available parameters and likely requirements
-for querying the data endpoint.
+Fetches metadata and determines required query parameters for a specific
+Geosphere resource ID across all its available type, mode, and format
+combinations. It presents available parameters, coverage details, and the
+definitive required parameters needed to query the data endpoint via
+\code{geosphere_get_data}.
+}
+\details{
+This function first retrieves descriptive metadata (available parameters, time range, etc.)
+from the resource's \verb{/metadata} endpoint. Then, for each combination, it makes a
+deliberate (parameter-less) request to the main \emph{data} endpoint to provoke an
+error message. By parsing this error message (typically JSON with a 'detail'
+field), it accurately identifies the query parameters that the API requires
+for that specific data endpoint.
 }
 \examples{
 \dontrun{
-# Ensure required packages are installed
-# install.packages(c("dplyr", "stringr", "tibble", "cli", "httr", "jsonlite"))
+# Assume geosphere_find_datasets is available
 
-# 1. Find a dataset first
-  station_datasets = tryCatch(
-      geosphere_find_datasets(filter_type="station", filter_mode="historical"),
-      error = function(e) { print(e$message); NULL }
-  )
+# Explore a resource known to have multiple combinations
+exploration_results = geosphere_explore_resource(
+   resource_id = "apolis_short-v1-1d-100m"
+)
 
-  # 2. Explore the chosen dataset (if found)
-  if(!is.null(station_datasets) && nrow(station_datasets) > 0) {
-    res_id = station_datasets$resource_id[1]
-    res_type = station_datasets$type[1]
-    res_mode = station_datasets$mode[1]
+# The function prints summaries by default.
+# The returned object is a list named by combinations:
+print(names(exploration_results))
+# > [1] "grid_historical_geojson"     "grid_historical_netcdf" ...
 
-    explore_result = tryCatch(
-        geosphere_explore_resource(
-             resource_id = res_id,
-             type = res_type,
-             mode = res_mode),
-        error = function(e) { print(e$message); NULL }
-    )
+# Inspect the details for one specific combination:
+if ("grid_historical_geojson" \%in\% names(exploration_results)) {
+   # Check the *required* parameters found by probing the data endpoint:
+   print(exploration_results$grid_historical_geojson$required_query_params)
+   # Should show: [1] "parameters" "start" "end" "bbox" (based on the example error)
 
-    if (!is.null(explore_result)) {
-       # A summary was printed (default). You can also inspect the list:
-       print(str(explore_result, max.level = 1))
-       print(explore_result$likely_required_query_params)
-    }
-  } else {
-      print("Could not find suitable station datasets to explore.")
-  }
+   # Compare with *available* parameters from metadata:
+   print(utils::head(exploration_results$grid_historical_geojson$available_parameters))
+}
 
-# Explore a grid dataset directly
-  explore_grid = tryCatch(
-       geosphere_explore_resource(
-          resource_id = "apolis_short-v1-1d-100m",
-          type = "grid",
-          mode = "historical"),
-       error = function(e) { print(e$message); NULL }
-   )
+# Explore a resource with likely only one combination
+exploration_klima = geosphere_explore_resource(resource_id = "klima-v2-1h")
+if (!is.null(exploration_klima)) {
+   print(names(exploration_klima))
+   # Likely "station_historical_csv" or similar
+   print(exploration_klima[[1]]$required_query_params)
+   # Should show something like "parameters", "start", "end", "station_ids"
+}
 }
 }

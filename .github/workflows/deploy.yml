@@ -82,6 +82,7 @@ jobs:
             any::pkgdown
             any::devtools
             any::httr
+            any::dplyr # <<< ADDED dplyr HERE
           # Add any other direct dependency from davR/DESCRIPTION above if needed
           # Also install Imports, Depends, AND Suggests from local DESCRIPTION file
           needs: dev
