@@ -1,0 +1,31 @@
+---
+title: "Geosphere API"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Geosphere API}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(davR)
+library(DT)
+library(readr)
+library(dplyr)
+```
+
+## Get the available datasets
+
+```{r}
+ds = geosphere_get_datasets()
+DT::datatable(ds)
+```
+
+
