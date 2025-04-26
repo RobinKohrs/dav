@@ -1,0 +1,143 @@
+[
+    // --- Bindings to Keep (Except Conflicting Snippet) ---
+    {
+        "key": "ctrl+w", // Close active editor
+        "command": "workbench.action.closeActiveEditor"
+    },
+    {
+        "key": "ctrl+[Period]", // Quick Open (Go to File...)
+        "command": "workbench.action.quickOpen"
+    },
+    {
+        "key": "cmd+l", // Next editor tab (macOS specific)
+        "command": "workbench.action.nextEditor"
+    },
+    {
+        "key": "cmd+h", // Previous editor tab (macOS specific)
+        "command": "workbench.action.previousEditor"
+    },
+    // The console.log snippet for ctrl+shift+l has been removed as requested.
+    {
+        "key": "cmd+shift+m", // Insert %>% snippet (macOS specific)
+        "command": "editor.action.insertSnippet",
+        "when": "editorTextFocus",
+        "args": {
+            "snippet": "%>%"
+        }
+    },
+    // --- Explorer Navigation (j, k, x, r) ---
+    {
+        "key": "j",
+        "command": "list.focusDown",
+        "when": "filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "k",
+        "command": "list.focusUp",
+        "when": "filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "x",
+        "command": "deleteFile",
+        "when": "filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "r",
+        "command": "renameFile",
+        "when": "filesExplorerFocus && !inputFocus"
+    },
+    // --- Focus/Close Logic (New Keys) ---
+    // Editor Group
+    {
+        "key": "ctrl+i", // Focus Active Editor Group
+        "command": "workbench.action.focusActiveEditorGroup"
+    },
+    {
+        "key": "ctrl+shift+i", // Close Active Editor
+        "command": "workbench.action.closeActiveEditor"
+    },
+    // Explorer (Primary Sidebar)
+    {
+        "key": "ctrl+shift+e", // Focus Explorer
+        "command": "workbench.action.toggleSidebarVisibility"
+    },
+    // Terminal (Panel)
+    {
+        "key": "ctrl+p", // Focus Terminal
+        "command": "workbench.action.terminal.focus"
+        // Note: This overrides the default "Go to File..." binding
+    },
+    {
+        "key": "ctrl+o", // Focus Terminal
+        "command": "workbench.action.terminal.focus"
+        // Note: This overrides the default "Go to File..." binding
+    },
+    {
+        "key": "ctrl+shift+p", // Close Panel
+        "command": "workbench.action.closePanel"
+        // Note: This overrides the default "Command Palette" binding
+    },
+    {
+        "key": "ctrl+shift+o", // Close Panel
+        "command": "workbench.action.closePanel"
+        // Note: This overrides the default "Command Palette" binding
+    },
+    // AI Chat (Panel)
+    {
+        "key": "ctrl+shift+l", // Toggle specific AI Chat visibility
+        "command": "workbench.action.toggleAuxiliaryBar"
+    },
+    {
+        "key": "ctrl+e",
+        "command": "workbench.action.focusSideBar"
+    },
+    {
+        "key": "cmd+0",
+        "command": "-workbench.action.focusSideBar"
+    },
+    {
+        "key": "ctrl+l",
+        "command": "workbench.action.focusAuxiliaryBar"
+    },
+    {
+        "key": "ctrl+shift+p",
+        "command": "workbench.action.terminal.toggleTerminal",
+        "when": "terminal.active"
+    },
+    {
+        "key": "ctrl+p",
+        "command": "terminal.focus"
+    },
+    // Shift+N to create a new folder in Explorer
+    {
+        "key": "shift+n",
+        "command": "explorer.newFolder",
+        "when": "filesExplorerFocus && !inputFocus"
+    },
+    // n to create a new file in Explorer
+    {
+        "key": "n",
+        "command": "explorer.newFile",
+        "when": "filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "ctrl+enter",
+        "command": "r.runSelection",
+        "when": "editorTextFocus && editorLangId == 'r'"
+    },
+    {
+        "key": "cmd+enter",
+        "command": "-r.runSelection",
+        "when": "editorTextFocus && editorLangId == 'r'"
+    },
+    {
+        "key": "ctrl+enter",
+        "command": "r.runSelection",
+        "when": "editorTextFocus && editorLangId == 'rmd'"
+    },
+    {
+        "key": "cmd+enter",
+        "command": "-r.runSelection",
+        "when": "editorTextFocus && editorLangId == 'rmd'"
+    }
+]
