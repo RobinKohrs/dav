@@ -18,3 +18,12 @@ Imports:
     magrittr,
     purrr,
     tibble
+Suggests: 
+    knitr,
+    rmarkdown,
+    DT,
+    dplyr,     
+    ggplot2,  
+    readr   
+VignetteBuilder: knitr
+URL: https://robinkohrs.github.io/dav/

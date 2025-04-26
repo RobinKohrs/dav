@@ -2,42 +2,75 @@
 % Please edit documentation in R/geosphere_get_data.R
 \name{geosphere_get_data}
 \alias{geosphere_get_data}
-\title{Get data from geosphere data}
+\title{Get data from Geosphere Austria's Open Data Hub}
 \usage{
 geosphere_get_data(
+  resource_id,
+  parameters = NULL,
+  start = NULL,
+  end = NULL,
+  station_ids = NULL,
+  output_format = "csv",
   ...,
   api_url = "https://dataset.api.hub.geosphere.at",
   version = "v1",
-  type = "grid",
+  type = "timeseries",
   mode = "historical",
-  resource_id = "spartacus-v2-1d-1km",
-  output_file = tempfile(),
+  return_format = c("file", "dataframe", "raw"),
+  output_file = NULL,
+  verbose = FALSE,
   timeout_seconds = 120
 )
 }
 \arguments{
-\item{...}{Query parameters specific to the API endpoint (e.g., \code{parameters = "tl_mittel"}, \code{start = "2023-01-01"}, \code{station_ids = "5925"}). Values will be automatically URL-encoded.}
+\item{resource_id}{\strong{Required.} The specific dataset or resource ID (e.g., "klima-v2-1m"). Cannot be NULL or empty.}
+
+\item{parameters}{Character vector or comma-separated string of parameter IDs to retrieve (e.g., \code{c("tl", "tx")}, \code{"tl,tx"}). Check API metadata for available parameters.}
+
+\item{start}{Start date/time string (ISO 8601 format preferred, e.g., "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM:SS").}
+
+\item{end}{End date/time string (ISO 8601 format preferred).}
+
+\item{station_ids}{Character vector or comma-separated string of station IDs (e.g., \code{c("5925", "11035")}, \code{"5925,11035"}). Check API metadata for available stations.}
+
+\item{output_format}{The desired data format from the API (e.g., "csv", "json", "geojson"). Defaults to "csv". Passed as a query parameter.}
+
+\item{...}{Additional query parameters specific to the API endpoint. Values will be automatically URL-encoded. Use this for less common parameters not covered by explicit arguments.}
 
 \item{api_url}{Base URL for the Geosphere API.}
 
 \item{version}{API version string.}
 
-\item{type}{Data type (e.g., "grid", "timeseries", "station").}
+\item{type}{Data type (e.g., "timeseries", "station", "grid").}
 
 \item{mode}{Data mode (e.g., "historical", "current", "forecast").}
 
-\item{resource_id}{The specific dataset or resource ID.}
+\item{return_format}{Character string specifying the desired return type for the R function:
+\itemize{
+\item \code{"file"}: (Default) Downloads the data to a temporary file (or \code{output_file} if specified) and returns the file path.
+\item \code{"dataframe"}: Attempts to parse the response content (CSV or JSON) directly into a data frame or list. Requires \code{readr} and/or \code{jsonlite} packages.
+\item \code{"raw"}: Returns the raw \code{httr} response object.
+}}
 
-\item{output_file}{Path where the downloaded data should be saved. Defaults to a temporary file.}
+\item{output_file}{Path where the downloaded data should be saved \emph{only} when \code{return_format = "file"}. If \code{NULL} (default), a temporary file is used.}
+
+\item{verbose}{Logical. If \code{TRUE}, prints the constructed URL and shows download progress.}
 
 \item{timeout_seconds}{Request timeout in seconds. Passed to \code{httr::GET}.}
 }
 \value{
-The path to the \code{output_file}.
+Depends on \code{return_format}:
+\itemize{
+\item \code{"file"}: The path to the downloaded file.
+\item \code{"dataframe"}: A data frame (for CSV) or list/data frame (for JSON), parsed from the response. Requires \code{readr} or \code{jsonlite}.
+\item \code{"raw"}: The raw \code{httr} response object.
+}
 }
 \description{
 Constructs a URL and fetches data from the Geosphere API based on the provided parameters.
-The function uses the \code{httr} package to build the URL and perform the GET request.
+The function allows fetching data as a file path (default), directly into an R object (data frame),
+or as the raw HTTP response.
+
 See the Geosphere API documentation for details on available endpoints and parameters:
 \itemize{
 \item \href{https://dataset.api.hub.geosphere.at/v1/docs/getting-started.html}{Getting Started}
@@ -49,34 +82,69 @@ Example metadata: \href{https://dataset.api.hub.geosphere.at/v1/timeseries/histo
 }
 \examples{
 \dontrun{
-# Example 1: Get monthly climate data for a station and save to temp file
-temp_csv_path <- geosphere_get_data(
-    parameters = "tl_mittel", # Note parameters are now named arguments
+# Ensure necessary packages are installed for 'dataframe' return format
+# install.packages(c("readr", "jsonlite"))
+
+# Example 1: Get monthly climate data for a station, save to temp file (default)
+temp_csv_path = geosphere_get_data(
+    resource_id = "klima-v2-1m",
+    parameters = "tl_mittel",
     start = "2023-01-01",
     end = "2023-12-31",
-    station_ids = "5925", # Use character for IDs if needed
-    output_format = "csv",
-    type = "station",
-    mode = "historical",
-    resource_id = "klima-v2-1m"
+    station_ids = "5925",
+    output_format = "csv", # API format is CSV
+    type = "station"
+    # return_format defaults to "file"
 )
 print(temp_csv_path)
-# data = read.csv(temp_csv_path) # Optionally read the data
+# data = readr::read_csv(temp_csv_path) # Optionally read the data
 
-# Example 2: Get hourly data and read directly using readr::read_csv
-start_time <- "2024-04-06T05:00:00"
-end_time <- "2024-04-06T17:00:00"
-hourly_data <- geosphere_get_data(
+# Example 2: Get hourly data and return directly as a data frame
+start_time = "2024-04-06T05:00:00"
+end_time = "2024-04-06T17:00:00"
+try({ # Wrap in try in case readr is not installed or parsing fails
+hourly_data = geosphere_get_data(
+    resource_id = "klima-v2-1h",
     parameters = "tl",
     start = start_time,
     end = end_time,
-    station_ids = 5925, # Numeric ID works too
-    output_format = "csv",
+    station_ids = 5925, # Numeric ID works too, converted to character
+    output_format = "csv", # API format
     type = "station",
-    mode = "historical",
-    resource_id = "klima-v2-1h"
-) \%>\% readr::read_csv()
+    return_format = "dataframe", # Request data frame directly
+    verbose = TRUE
+)
 print(head(hourly_data))
+}, silent = TRUE)
+
+# Example 3: Get metadata as a list (JSON)
+try({
+metadata = geosphere_get_data(
+    resource_id = "klima-v2-1h",
+    type = "station",
+    output_format = "json", # Request JSON from API
+    return_format = "dataframe" # Parse JSON to list/df
+)
+print(names(metadata))
+}, silent = TRUE)
+
+# Example 4: Using ... for a less common parameter (e.g., spatial filter)
+# Hypothetical example - check API docs for actual parameters
+grid_data_path = geosphere_get_data(
+    resource_id = "spartacus-v2-1d-1km",
+    parameters = "t_2m",
+    start = "2023-05-01",
+    end = "2023-05-01",
+    bbox = "10,47,11,48", # Passed via ...
+    type = "grid",
+    output_format = "netcdf" # Assuming API supports this
+)
+print(grid_data_path)
+
+# Example 5: Demonstrating the resource_id check (will cause an error)
+# try(geosphere_get_data())
+# try(geosphere_get_data(resource_id = NULL))
+# try(geosphere_get_data(resource_id = "   "))
 }
 
 }

@@ -34,8 +34,7 @@ about any subdatasets (common in formats like NetCDF or HDF). It parses
 the subdataset name and description fields to create a summary table.
 }
 \details{
-Uses \code{gdalUtilities::gdalinfo} with JSON output to extract subdataset
-information into a tidy data frame. Optionally allows interactive selection.
+Uses \code{gdalUtilities::gdalinfo} with JSON output to extract subdataset #' information into a tidy data frame. Optionally allows interactive selection.  #'
 }
 \examples{
 \dontrun{
