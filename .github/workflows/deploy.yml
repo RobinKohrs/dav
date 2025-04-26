@@ -1,19 +1,15 @@
 # .github/workflows/deploy.yml
 # Workflow to build the pkgdown site for 'davR' package (in ./davR)
 # and the Quarto site (in ./wiki), then deploy both to the 'gh-pages' branch.
+# This workflow only runs when manually triggered.
 
-name: Build and Deploy Sites
+name: Build and Deploy Sites Manually
 
 #--------------------------------------------------------------------------
 # Trigger Conditions
 #--------------------------------------------------------------------------
 on:
-  # Run automatically on pushes to the 'main' branch
-  push:
-    branches:
-      - main # Adjust if your default branch is different (e.g., master)
-
-  # Allow manual triggering from the GitHub Actions tab
+  # Allow manual triggering from the GitHub Actions tab ONLY
   workflow_dispatch:
 
 #--------------------------------------------------------------------------
