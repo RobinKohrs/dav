@@ -85,6 +85,7 @@ jobs:
             any::devtools
             any::httr
             any::dplyr
+            any::DT
           # If other 'package not found' errors occur in Step 5, add them above.
           # ---
           # Also install dependencies listed in ./davR/DESCRIPTION
