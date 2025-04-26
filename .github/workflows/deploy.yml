@@ -1,6 +1,6 @@
 # .github/workflows/deploy.yml
-# Workflow to build the pkgdown site for 'davR' package and the Quarto site
-# in 'wiki', then deploy both to the 'gh-pages' branch for GitHub Pages.
+# Workflow to build the pkgdown site for 'davR' package (in ./davR)
+# and the Quarto site (in ./wiki), then deploy both to the 'gh-pages' branch.
 
 name: Build and Deploy Sites
 
@@ -41,8 +41,7 @@ jobs:
       #------------------------------------------------#
       # Step 2: Install System Dependencies            #
       #------------------------------------------------#
-      # Install OS libraries needed by common R spatial packages (sf, terra, etc.)
-      # and others often required (xml2, curl, ssl). Add more if needed.
+      # Install OS libraries often needed by R packages (spatial, xml, web)
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
@@ -54,14 +53,13 @@ jobs:
             libssl-dev \
             libcurl4-openssl-dev \
             libxml2-dev
-          # Add any other system libraries identified from installation errors here
+          # Add other system libraries here if needed based on R package errors
 
       #------------------------------------------------#
       # Step 3: Set up Quarto and R                    #
       #------------------------------------------------#
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
-        # Add 'with: version: specific-version' if required
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
@@ -71,43 +69,49 @@ jobs:
       #------------------------------------------------#
       # Step 4: Install R Dependencies                 #
       #------------------------------------------------#
-      # Uses pak to install R packages listed in DESCRIPTION (via needs: dev)
-      # and explicitly specified packages below.
+      # Uses pak to install R packages:
+      # 1. Explicitly listed essential packages (pkgdown, devtools).
+      # 2. Explicitly listed likely direct dependencies (httr, dplyr) - crucial if DESCRIPTION is incomplete.
+      # 3. Packages listed in davR/DESCRIPTION (Imports, Depends, Suggests) via 'needs: dev'.
       - name: Install R package dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # Explicitly install these packages. Add others here if needed.
-          # Do NOT add YAML comments inside the 'packages' multiline block below.
+          # --- IMPORTANT ---
+          # List essential build tools and ANY direct package dependencies
+          # that caused installation errors in Step 5 previously.
+          # DO NOT ADD COMMENTS OR ANYTHING ELSE INSIDE THIS 'packages' BLOCK.
           packages: |
             any::pkgdown
             any::devtools
             any::httr
-            any::dplyr # <<< ADDED dplyr HERE
-          # Add any other direct dependency from davR/DESCRIPTION above if needed
-          # Also install Imports, Depends, AND Suggests from local DESCRIPTION file
+            any::dplyr
+          # If other 'package not found' errors occur in Step 5, add them above.
+          # ---
+          # Also install dependencies listed in ./davR/DESCRIPTION
           needs: dev
 
       #------------------------------------------------#
       # Step 5: Install the local davR package         #
       #------------------------------------------------#
-      # Crucial for pkgdown to find functions and run vignettes using the package
-      # Should succeed now that dependencies are installed in Step 4
+      # Installs the package from the ./davR directory.
+      # This should now succeed as dependencies were installed in Step 4.
       - name: Install local davR package
         run: Rscript -e 'devtools::install("davR", upgrade = "never")'
 
       #------------------------------------------------#
       # Step 6: Build the pkgdown site                 #
       #------------------------------------------------#
-      # Runs pkgdown::build_site() within the 'davR' directory
+      # Runs pkgdown::build_site() inside the ./davR directory.
+      # Output goes to ./davR/docs/ by default.
       - name: Build pkgdown site
         run: Rscript -e 'pkgdown::build_site()'
-        working-directory: davR # Essential: Run from package root
-        # Output defaults to davR/docs/
+        working-directory: davR # Run this command from within the davR folder
 
       #------------------------------------------------#
       # Step 7: Build the Quarto wiki site             #
       #------------------------------------------------#
-      # Renders the Quarto project in 'wiki/' to 'wiki/_site/'
+      # Renders the Quarto project located in ./wiki/
+      # Output goes to ./wiki/_site/
       - name: Render Quarto Wiki Project
         run: quarto render wiki --output-dir _site
 
@@ -120,10 +124,10 @@ jobs:
       - name: Deploy pkgdown site to Root
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }} # Automatic token for authentication
-          publish_branch: gh-pages                # Target branch for deployment
-          publish_dir: ./davR/docs                # Source directory (pkgdown output)
-          # First deploy clears the branch by default (keep_files defaults to false)
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages        # Deploy to the gh-pages branch
+          publish_dir: ./davR/docs        # The folder containing the pkgdown site
+          # keep_files: false (default)   # Clear the branch on first deploy
 
       # Deploy Quarto wiki site second (to the /wiki/ subdirectory on gh-pages)
       - name: Deploy Wiki to /wiki/ Subdirectory
@@ -131,7 +135,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: ./wiki/_site                # Source directory (Quarto output)
-          keep_files: true                         # *** IMPORTANT: Do not delete pkgdown files ***
-          destination_dir: ./wiki                  # *** IMPORTANT: Deploy into 'wiki' subdir ***
-          # cname: your.custom.domain.com          # Add if using a custom domain
+          publish_dir: ./wiki/_site       # The folder containing the Quarto site
+          keep_files: true                # IMPORTANT: Do not delete the pkgdown files
+          destination_dir: ./wiki         # IMPORTANT: Put the wiki site into a 'wiki' folder
+          # cname: your.custom.domain.com # Uncomment and set if you use a custom domain
