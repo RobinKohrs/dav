@@ -24,7 +24,7 @@
 #' @importFrom dplyr filter mutate select relocate any_of if_else across contains starts_with ends_with everything bind_rows
 #' @importFrom stringr str_detect str_extract
 #' @importFrom magrittr %>%
-#' @importFrom cli cli_alert_info cli_alert_warning # Added cli
+#' @importFrom cli cli_alert_info cli_alert_warning
 #'
 #' @examples
 #' \dontrun{

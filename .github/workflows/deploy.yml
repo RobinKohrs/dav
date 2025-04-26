@@ -71,29 +71,27 @@ jobs:
       #------------------------------------------------#
       # Step 4: Install R Dependencies                 #
       #------------------------------------------------#
-      # Uses pak to install R packages listed in DESCRIPTION and specified below
-      - name: Install R package dependencies (including pkgdown, devtools, httr) # Added httr to name for clarity
+      # Uses pak to install R packages listed in DESCRIPTION (via needs: dev)
+      # and explicitly specified packages below.
+      - name: Install R package dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # Explicitly list essential packages for build/install process
-          # AND any direct dependencies that cause installation errors for the local package
-          # Do NOT add YAML comments inside the 'packages' multiline block
+          # Explicitly install these packages. Add others here if needed.
+          # Do NOT add YAML comments inside the 'packages' multiline block below.
           packages: |
             any::pkgdown
             any::devtools
             any::httr
-            # Add any other direct dependency from davR/DESCRIPTION if you hit similar errors
-          # Installs Imports, Depends, AND Suggests from davR/DESCRIPTION
-          # Ensure packages needed for vignettes (DT, dplyr etc) are listed there!
-          needs: dev # <<< CORRECTED: Separate key under 'with:'
+          # Add any other direct dependency from davR/DESCRIPTION above if needed
+          # Also install Imports, Depends, AND Suggests from local DESCRIPTION file
+          needs: dev
 
       #------------------------------------------------#
       # Step 5: Install the local davR package         #
       #------------------------------------------------#
       # Crucial for pkgdown to find functions and run vignettes using the package
-      # Should succeed now that dependencies (like httr) are installed in Step 4
+      # Should succeed now that dependencies are installed in Step 4
       - name: Install local davR package
-        # Removed dependencies = FALSE - let devtools handle checks, Step 4 should have installed needed packages.
         run: Rscript -e 'devtools::install("davR", upgrade = "never")'
 
       #------------------------------------------------#
