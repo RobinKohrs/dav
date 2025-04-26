@@ -20,7 +20,8 @@ Imports:
     tibble,
     sf,
     tools,
-    utils
+    utils,
+    gdalUtilities
 Suggests: 
     knitr,
     rmarkdown,
