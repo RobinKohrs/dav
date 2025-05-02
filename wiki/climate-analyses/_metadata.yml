@@ -5,3 +5,4 @@ format:
     css: climate_analyses_styles.css
     fig-height: 12
     fig-width: 7
+    echo: false

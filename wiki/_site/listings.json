@@ -2,8 +2,7 @@
   {
     "listing": "/climate_analyses.html",
     "items": [
-      "/climate-analyses/kjn_tropennächte.html",
-      "/climate-analyses/kjn_tropennächte.knit.html"
+      "/climate-analyses/kjn_tropennächte.html"
     ]
   }
 ]
