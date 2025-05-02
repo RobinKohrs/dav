@@ -81,17 +81,8 @@ data_raw_path = davR::sys_make_path(
 
 - Annahme: Die Minimaltemperaturen steigen
 
-:::{.callout-note collapse=true}
-
+:::{.callout-note}
 ## `klima-v2-1d` ist am geignetsten
-
-```{r get_datasets}
-ds = geosphere_get_datasets()
-ds %>% 
-  filter(str_detect(resource_id, "klima-v2")) %>% 
-  datatable(options = list(pageLength=5))
-
-```
 :::
 
 ### Was wollen wir zeigen?
@@ -112,9 +103,6 @@ ds %>%
 ```{r welcheStationen}
 meta = geosphere_explore_resource("klima-v2-1h")
 # tl -> paramter für Lufttemperatur in 2m
-meta$station_historical_csv$metadata$stations %>% 
-  filter(id==105) %>% 
-  datatable()
 ```
 
 ```{r define_params}
@@ -249,6 +237,36 @@ print(p)
 # ggsave("temperature_plot.png", plot = p, width = 14, height = 10, dpi = 300)
 ```
 
+
+## Durschnittstemperatur in der Nacht im Juli
+
+
+```{r}
+resource_id = "klima-v2-1h"
+start_year = 1900
+end_year = 2025
+month = 7
+
+ex = geosphere_explore_resource("klima-v2-1h")
+
+map(start_year:end_year, function(year){
+  start = glue("{year}-{month}-01")
+  last_day_in_month = lubridate::days_in_month(glue("{year}-{month}-01"))
+  end = glue("{year}-{month}-{last_day_in_month}")
+  
+  data = geosphere_get_data(
+    resource_id = resource_id,
+    parameters = c("tl"),
+    start = start,
+    end = end,
+    station_ids = 105,
+    type = "station",
+    mode ="historical"
+  ) %>% data.table::fread()
+})
+
+
+```
 
 
 
