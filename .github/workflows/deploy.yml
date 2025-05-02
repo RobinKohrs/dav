@@ -54,8 +54,8 @@ jobs:
       #------------------------------------------------#
       # Step 3: Set up Quarto and R                    #
       #------------------------------------------------#
-      - name: Set up Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
+      # - name: Set up Quarto
+        # uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
@@ -111,8 +111,8 @@ jobs:
       #------------------------------------------------#
       # Renders the Quarto project located in ./wiki/
       # Output goes to ./wiki/_site/
-      - name: Render Quarto Wiki Project
-        run: quarto render wiki --output-dir _site
+      # - name: Render Quarto Wiki Project
+      #   run: quarto render wiki --output-dir _site
 
       #------------------------------------------------#
       # Step 8: Deploy both sites to gh-pages branch   #
@@ -129,12 +129,12 @@ jobs:
           # keep_files: false (default)   # Clear the branch on first deploy
 
       # Deploy Quarto wiki site second (to the /wiki/ subdirectory on gh-pages)
-      - name: Deploy Wiki to /wiki/ Subdirectory
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./wiki/_site       # The folder containing the Quarto site
-          keep_files: true                # IMPORTANT: Do not delete the pkgdown files
-          destination_dir: ./wiki         # IMPORTANT: Put the wiki site into a 'wiki' folder
+      # - name: Deploy Wiki to /wiki/ Subdirectory
+      #   uses: peaceiris/actions-gh-pages@v3
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_branch: gh-pages
+      #     publish_dir: ./wiki/_site       # The folder containing the Quarto site
+      #     keep_files: true                # IMPORTANT: Do not delete the pkgdown files
+      #     destination_dir: ./wiki         # IMPORTANT: Put the wiki site into a 'wiki' folder
           # cname: your.custom.domain.com # Uncomment and set if you use a custom domain

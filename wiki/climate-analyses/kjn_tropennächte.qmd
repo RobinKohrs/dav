@@ -71,6 +71,17 @@ data_raw_path = davR::sys_make_path(
   )
 )
 
+data_raw_path_hourly_data = davR::sys_make_path(
+  file.path(
+    here(),
+    "wiki",
+    "data_raw",
+    "kjn",
+    "2025-05-tropennächte",
+    "hourly_data"
+  )
+)
+
 ```
 
 ## Minimaltemperaturen
@@ -120,7 +131,7 @@ station_ids = c(105)
 
 ### Get the data
 
-```{r}
+```{r download_daily_data}
 # download the data
 walk(year_start:year_end, function(year) {
   cli::cli_inform(glue("In year: {year}"))
@@ -135,20 +146,25 @@ walk(year_start:year_end, function(year) {
     
     if(file.exists(op)) return()
     
-    path = geosphere_get_data(
-      resource_id = resource_id,
-      parameters = parameters,
-      start = start_param,
-      end = end_param,
-      station_ids = station_ids,
-      output_format = "csv",
-      version = 1,
-      mode = "historical",
-      type = "station",
-      output_file = op,
-      verbose = T,
-      debug = F
-    )
+    tryCatch({
+      path = geosphere_get_data(
+        resource_id = resource_id,
+        parameters = parameters,
+        start = start_param,
+        end = end_param,
+        station_ids = station_ids,
+        output_format = "csv",
+        version = 1,
+        mode = "historical",
+        type = "station",
+        output_file = op,
+        verbose = T,
+        debug = F
+      )
+   }, error = function(e){
+       cli::cli_warn("Failed processing {year}-{month}: {conditionMessage(e)}")
+       return(NULL) # Return NULL on error
+   })
 })
 
 # list all the files
@@ -249,23 +265,35 @@ month = 7
 
 ex = geosphere_explore_resource("klima-v2-1h")
 
-map(start_year:end_year, function(year){
+data_list = map(start_year:end_year, function(year){
   start = glue("{year}-{month}-01")
   last_day_in_month = lubridate::days_in_month(glue("{year}-{month}-01"))
   end = glue("{year}-{month}-{last_day_in_month}")
-  
-  data = geosphere_get_data(
-    resource_id = resource_id,
-    parameters = c("tl"),
-    start = start,
-    end = end,
-    station_ids = 105,
-    type = "station",
-    mode ="historical"
-  ) %>% data.table::fread()
+
+    fn = glue("{year}_{month}.csv")
+    op = sys_make_path(file.path(data_raw_path_hourly_data, fn))
+    print(op)
+    if(file.exists(op)) return(NULL)
+    result = tryCatch({
+      data = geosphere_get_data(
+        resource_id = resource_id,
+        parameters = c("tl"),
+        start = start,
+        end = end,
+        station_ids = 105,
+        type = "station",
+        mode = "historical",
+        output_file = op
+      ) %>% data.table::fread()
+    }, error = function(e) {
+      cli::cli_warn("Failed processing {year}-{month}: {conditionMessage(e)}")
+      return(NULL) # Return NULL on error
+    })
+
+    return(result)
 })
 
-
+data_hourly = keep(data_list, ~!is.null(.x)) %>% bind_rows()
 ```
 
 
