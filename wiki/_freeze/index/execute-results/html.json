@@ -2,7 +2,9 @@
   "hash": "411995206e3434cefd30422211860ac0",
   "result": {
     "markdown": "# DAV\n\n\n\n\n",
-    "supporting": [],
+    "supporting": [
+      "index_files"
+    ],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],
