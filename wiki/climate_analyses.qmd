@@ -1,0 +1,19 @@
+---
+# Contents of quarto-dir/analyses.qmd
+title: "Climate Analyses"
+listing:
+  filter-ui: [title, date]
+  contents: climate-analyses # Tell it to look in this directory
+  sort: "date desc"       # Optional: sort by date
+  type: grid           # Optional: style (default, grid, table)
+  # Add other options as needed: categories, feed, etc.
+format:
+  html:
+    toc: false
+    sidebar: false # Explicitly disable the sidebar for this page
+    page-layout: full
+    # Apply specific CSS just for THIS page
+    css: ./climate-analyses/climate_analyses_styles.css # Path relative to this qmd file
+---
+
+SOME DESRIPTION TO FOLLOW

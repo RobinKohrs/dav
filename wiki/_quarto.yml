@@ -1,32 +1,32 @@
 # _quarto.yml
 project:
-  type: website       # This tells Quarto it's a website project
+  type: website
 
 website:
-  title: "DAV-R" # The title that appears in the browser tab and navbar
+  title: "DAV"
   navbar:             # Configure the navigation bar
     collapse: true
     pinned: true
     left:             # Links on the left side of the navbar
       - href: index.qmd # Link to your main document
         text: Home    # Text for the link in the navbar
-      - href: misc.qmd  # Link to your new misc document
-        text: Misc Tips # Text for the link in the navbar
+      - href: climate_analyses.qmd
+        text: Climate Analyses
+      - href: misc.qmd
+        text: Misc Tips
   search: true
 
 
 format:
   html:
-    theme: cosmo      # A nice theme (you can change this)
-    toc: true         # Enable TOC globally for all HTML pages
+    theme: cosmo
+    toc: true
     toc-depth: 3
-    toc-location: left # Location of the TOC within the page layout
+    toc-location: left
     code-fold: true
     code-summary: "Show Code"
-    # Add other HTML options here that you want to apply to all pages
-    # css: styles.css # Uncomment and create styles.css if you have a custom CSS file
 
-editor: visual        # Default editor mode (visual or source)
+editor: source
 
 # Execution options applied to all R/Python/etc. chunks in the project
 execute:

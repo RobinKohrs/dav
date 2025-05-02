@@ -45,32 +45,37 @@ definitive required parameters needed to query the data endpoint via
 \code{geosphere_get_data}.
 }
 \details{
-This function first retrieves descriptive metadata (available parameters, time range, etc.)
-from the resource's \verb{/metadata} endpoint. Then, for each combination, it makes a
-deliberate (parameter-less) request to the main \emph{data} endpoint to provoke an
-error message. By parsing this error message (typically JSON with a 'detail'
-field), it accurately identifies the query parameters that the API requires
-for that specific data endpoint.
+This function first retrieves the list of all available datasets using
+\code{geosphere_get_datasets}. It then filters for the specified \code{resource_id}.
+For each unique combination of type, mode, and format found for that ID, it
+retrieves descriptive metadata (available parameters, time range, etc.)
+from the resource's \verb{/metadata} endpoint using \code{geosphere_get_resource_metadata}.
+Finally, for each combination, it makes a deliberate (parameter-less) request
+to the main \emph{data} endpoint to provoke an error message. By parsing this error
+message (typically JSON with a 'detail' field), it accurately identifies the
+query parameters that the API requires for that specific data endpoint.
+Requires \code{geosphere_get_datasets} and \code{geosphere_get_resource_metadata}
+functions to be available.
 }
 \examples{
 \dontrun{
-# Assume geosphere_find_datasets is available
+# Assume geosphere_get_datasets and geosphere_get_resource_metadata are available
 
 # Explore a resource known to have multiple combinations
 exploration_results = geosphere_explore_resource(
-   resource_id = "apolis_short-v1-1d-100m"
+  resource_id = "apolis_short-v1-1d-100m"
 )
 
 # The function prints summaries by default.
 # The returned object is a list named by combinations:
 print(names(exploration_results))
-# > [1] "grid_historical_geojson"     "grid_historical_netcdf" ...
+# > [1] "grid_historical_geojson"      "grid_historical_netcdf" ...
 
 # Inspect the details for one specific combination:
 if ("grid_historical_geojson" \%in\% names(exploration_results)) {
    # Check the *required* parameters found by probing the data endpoint:
    print(exploration_results$grid_historical_geojson$required_query_params)
-   # Should show: [1] "parameters" "start" "end" "bbox" (based on the example error)
+   # Should show: [1] "parameters" "start" "end" "bbox" (based on example error)
 
    # Compare with *available* parameters from metadata:
    print(utils::head(exploration_results$grid_historical_geojson$available_parameters))

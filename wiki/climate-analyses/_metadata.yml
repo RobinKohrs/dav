@@ -1,0 +1,7 @@
+# This file applies settings to all .qmd files within this directory
+# and its subdirectories.
+format:
+  html:
+    css: climate_analyses_styles.css
+    fig-height: 12
+    fig-width: 7
