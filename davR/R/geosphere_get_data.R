@@ -101,7 +101,7 @@
 #' @importFrom glue glue
 #' @importFrom tools file_ext
 #' @importFrom utils head modifyList str
-#' @importFrom cli style_hyperlink cli_alert_info cli_alert_success cli_text # Import necessary cli functions
+#' @importFrom cli style_hyperlink cli_alert_info cli_alert_success cli_text
 geosphere_get_data = function(
     resource_id,
     parameters = NULL,

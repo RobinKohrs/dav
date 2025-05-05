@@ -19,6 +19,7 @@ geosphere_get_data(
   return_format = c("file", "dataframe", "raw"),
   output_file = NULL,
   verbose = FALSE,
+  debug = FALSE,
   timeout_seconds = 120
 )
 }
@@ -39,7 +40,7 @@ geosphere_get_data(
 
 \item{api_url}{Base URL for the Geosphere API.}
 
-\item{version}{API version string.}
+\item{version}{API version string or number (e.g., "v1", "2", 1). Defaults to "v1". Will be formatted as "vX" in the URL path.}
 
 \item{type}{Data type (e.g., "timeseries", "station", "grid").}
 
@@ -47,21 +48,23 @@ geosphere_get_data(
 
 \item{return_format}{Character string specifying the desired return type for the R function:
 \itemize{
-\item \code{"file"}: (Default) Downloads the data to a temporary file (or \code{output_file} if specified) and returns the file path.
+\item \code{"file"}: (Default) Downloads the data. If \code{output_file} is specified and exists, returns the path immediately. Otherwise, downloads to a temporary file (or \code{output_file}) and returns the path. Error responses are \emph{not} written to the file.
 \item \code{"dataframe"}: Attempts to parse the response content (CSV or JSON) directly into a data frame or list. Requires \code{readr} and/or \code{jsonlite} packages.
 \item \code{"raw"}: Returns the raw \code{httr} response object.
 }}
 
-\item{output_file}{Path where the downloaded data should be saved \emph{only} when \code{return_format = "file"}. If \code{NULL} (default), a temporary file is used.}
+\item{output_file}{Path where the downloaded data should be saved \emph{only} when \code{return_format = "file"}. If specified and the file exists, the download is skipped. If \code{NULL} (default), a temporary file is used for successful downloads.}
 
-\item{verbose}{Logical. If \code{TRUE}, prints the constructed URL and shows download progress.}
+\item{verbose}{Logical. If \code{TRUE}, prints standard informational messages (using \code{cli}). Defaults to \code{FALSE}.}
+
+\item{debug}{Logical. If \code{TRUE}, prints detailed internal debugging messages. Defaults to \code{FALSE}.}
 
 \item{timeout_seconds}{Request timeout in seconds. Passed to \code{httr::GET}.}
 }
 \value{
 Depends on \code{return_format}:
 \itemize{
-\item \code{"file"}: The path to the downloaded file.
+\item \code{"file"}: The path to the downloaded file (either \code{output_file} or a temporary path).
 \item \code{"dataframe"}: A data frame (for CSV) or list/data frame (for JSON), parsed from the response. Requires \code{readr} or \code{jsonlite}.
 \item \code{"raw"}: The raw \code{httr} response object.
 }
@@ -87,72 +90,54 @@ Example metadata URL: \href{https://dataset.api.hub.geosphere.at/v1/timeseries/h
 }
 \examples{
 \dontrun{
-# Ensure necessary packages are installed for 'dataframe' return format
-# install.packages(c("readr", "jsonlite"))
+# Ensure necessary packages are installed
+# install.packages(c("readr", "jsonlite", "cli", "httr", "glue"))
 
-# Example 1: Get monthly climate data for a station, save to temp file (default)
-temp_csv_path = geosphere_get_data(
-    resource_id = "klima-v2-1m",
-    parameters = "tl_mittel",
-    start = "2023-01-01",
-    end = "2023-12-31",
-    station_ids = "5925",
-    output_format = "csv", # API format is CSV
-    type = "station"
-    # return_format defaults to "file"
+# --- Example 1: Download to a specific file, first time (verbose) ---
+target_file <- "vienna_monthly_temp_2023.csv"
+if(file.exists(target_file)) file.remove(target_file) # Clean up for demo
+
+path1 <- geosphere_get_data(
+    resource_id = "klima-v2-1m", parameters = "tl_mittel",
+    start = "2023-01-01", end = "2023-12-31", station_ids = "11035", # Wien-Hohe Warte
+    type = "station", verbose = TRUE, return_format = "file",
+    output_file = target_file
 )
-print(temp_csv_path)
-# data = readr::read_csv(temp_csv_path) # Optionally read the data
+# Prints URL, Fetching message, Writing message, Success message
+print(path1)
 
-# Example 2: Get hourly data and return directly as a data frame
-start_time = "2024-04-06T05:00:00"
-end_time = "2024-04-06T17:00:00"
-try({ # Wrap in try in case readr is not installed or parsing fails
-hourly_data = geosphere_get_data(
-    resource_id = "klima-v2-1h",
-    parameters = "tl",
-    start = start_time,
-    end = end_time,
-    station_ids = 5925, # Numeric ID works too, converted to character
-    output_format = "csv", # API format
-    type = "station",
-    return_format = "dataframe", # Request data frame directly
-    verbose = TRUE
+# --- Example 2: Call again (verbose) - should skip download ---
+path2 <- geosphere_get_data(
+    resource_id = "klima-v2-1m", parameters = "tl_mittel",
+    start = "2023-01-01", end = "2023-12-31", station_ids = "11035",
+    type = "station", verbose = TRUE, return_format = "file",
+    output_file = target_file # File now exists
 )
-print(head(hourly_data))
-}, silent = TRUE)
+# Should only print the "already exists" message
+print(path2 == path1) # Should be TRUE, same path returned
 
-# Example 3: Using ... for a less common parameter (e.g., spatial filter)
-# Hypothetical example - check API docs for actual parameters
-grid_data_path = geosphere_get_data(
-    resource_id = "spartacus-v2-1d-1km",
-    parameters = "t_2m",
-    start = "2023-05-01",
-    end = "2023-05-01",
-    bbox = "10,47,11,48", # Passed via ...
-    type = "grid",
-    output_format = "netcdf" # Assuming API supports this
+# --- Example 3: Call again (verbose=FALSE) - should print nothing ---
+path3 <- geosphere_get_data(
+    resource_id = "klima-v2-1m", parameters = "tl_mittel",
+    start = "2023-01-01", end = "2023-12-31", station_ids = "11035",
+    type = "station", verbose = FALSE, return_format = "file",
+    output_file = target_file # File now exists
 )
-print(grid_data_path)
+# Should print nothing
+print(path3 == path1) # Should be TRUE, same path returned
 
-# Example 4: Demonstrating the resource_id check (will cause an error)
-# try(geosphere_get_data())
-# try(geosphere_get_data(resource_id = NULL))
-# try(geosphere_get_data(resource_id = "   "))
+# --- Example 4: Call again (debug=TRUE) - should print debug info ---
+path4 <- geosphere_get_data(
+    resource_id = "klima-v2-1m", parameters = "tl_mittel",
+    start = "2023-01-01", end = "2023-12-31", station_ids = "11035",
+    type = "station", verbose = FALSE, debug = TRUE, return_format = "file",
+    output_file = target_file # File now exists
+)
+# Should print all the "--- Debug: ..." messages, but not the cli messages
+print(path4 == path1) # Should be TRUE
 
-# --- How to get METADATA manually ---
-# You need to construct the specific metadata URL and use httr directly
-metadata_url <- "https://dataset.api.hub.geosphere.at/v1/station/historical/klima-v2-1h/metadata"
-response <- httr::GET(metadata_url)
-httr::stop_for_status(response) # Check for errors
-if (requireNamespace("jsonlite", quietly = TRUE)) {
-  metadata_list <- jsonlite::fromJSON(httr::content(response, as = "text", encoding = "UTF-8"))
-  print(names(metadata_list))
-  print(head(metadata_list$parameters))
-} else {
-   print("Install jsonlite to parse the metadata JSON")
-}
-# ---
+# Clean up demo file
+if(file.exists(target_file)) file.remove(target_file)
 }
 
 }

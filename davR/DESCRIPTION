@@ -21,7 +21,8 @@ Imports:
     sf,
     tools,
     utils,
-    gdalUtilities
+    gdalUtilities,
+    terra
 Suggests: 
     knitr,
     rmarkdown,
