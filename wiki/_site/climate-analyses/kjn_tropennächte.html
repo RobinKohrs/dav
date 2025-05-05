@@ -22,41 +22,6 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
@@ -197,15 +162,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="durschnittstemperatur-in-der-nacht-im-juli" class="level2">
 <h2 class="anchored" data-anchor-id="durschnittstemperatur-in-der-nacht-im-juli">Durschnittstemperatur in der Nacht im Juli</h2>
 <div class="cell">
-<details class="code-fold">
-<summary>Show Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>resource_id <span class="ot">=</span> <span class="st">"klima-v2-1h"</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>start_year <span class="ot">=</span> <span class="dv">1900</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>end_year <span class="ot">=</span> <span class="dv">2025</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>month <span class="ot">=</span> <span class="dv">7</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>ex <span class="ot">=</span> <span class="fu">geosphere_explore_resource</span>(<span class="st">"klima-v2-1h"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 38 × 3
   name      long_name                                      unit 
@@ -228,168 +184,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code 
 # ℹ 32 more rows</code></pre>
 </div>
-<details class="code-fold">
-<summary>Show Code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data_list <span class="ot">=</span> <span class="fu">map</span>(start_year<span class="sc">:</span>end_year, <span class="cf">function</span>(year){</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  start <span class="ot">=</span> <span class="fu">glue</span>(<span class="st">"{year}-{month}-01"</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  last_day_in_month <span class="ot">=</span> lubridate<span class="sc">::</span><span class="fu">days_in_month</span>(<span class="fu">glue</span>(<span class="st">"{year}-{month}-01"</span>))</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  end <span class="ot">=</span> <span class="fu">glue</span>(<span class="st">"{year}-{month}-{last_day_in_month}"</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    fn <span class="ot">=</span> <span class="fu">glue</span>(<span class="st">"{year}_{month}.csv"</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    op <span class="ot">=</span> <span class="fu">sys_make_path</span>(<span class="fu">file.path</span>(data_raw_path_hourly_data, fn))</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span>(op)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">file.exists</span>(op)) <span class="fu">return</span>(<span class="cn">NULL</span>)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    result <span class="ot">=</span> <span class="fu">tryCatch</span>({</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      data <span class="ot">=</span> <span class="fu">geosphere_get_data</span>(</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">resource_id =</span> resource_id,</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">parameters =</span> <span class="fu">c</span>(<span class="st">"tl"</span>),</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="at">start =</span> start,</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">end =</span> end,</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="at">station_ids =</span> <span class="dv">105</span>,</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        <span class="at">type =</span> <span class="st">"station"</span>,</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="at">mode =</span> <span class="st">"historical"</span>,</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        <span class="at">output_file =</span> op</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">%&gt;%</span> data.table<span class="sc">::</span><span class="fu">fread</span>()</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>      cli<span class="sc">::</span><span class="fu">cli_warn</span>(<span class="st">"Failed processing {year}-{month}: {conditionMessage(e)}"</span>)</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(<span class="cn">NULL</span>) <span class="co"># Return NULL on error</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    })</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(result)</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1900_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1901_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1902_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1903_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1904_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1905_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1906_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1907_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1908_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1909_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1910_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1911_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1912_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1913_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1914_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1915_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1916_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1917_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1918_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1919_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1920_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1921_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1922_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1923_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1924_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1925_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1926_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1927_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1928_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1929_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1930_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1931_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1932_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1933_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1934_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1935_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1936_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1937_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1938_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1939_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1940_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1941_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1942_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1943_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1944_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1945_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1946_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1947_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1948_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1949_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1950_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1951_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1952_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1953_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1954_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1955_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1956_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1957_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1958_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1959_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1960_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1961_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1962_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1963_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1964_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1965_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1966_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1967_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1968_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1969_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1970_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1971_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1972_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1973_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1974_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1975_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1976_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1977_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1978_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1979_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1980_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1981_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1982_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1983_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1984_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1985_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1986_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1987_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1988_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1989_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1990_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1991_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1992_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1993_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1994_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1995_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1996_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1997_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1998_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/1999_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2000_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2001_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2002_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2003_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2004_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2005_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2006_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2007_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2008_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2009_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2010_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2011_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2012_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2013_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2014_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2015_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2016_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2017_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2018_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2019_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2020_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2021_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2022_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2023_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2024_7.csv"
-[1] "/home/robin/projects/personal/dav/wiki/data_raw/kjn/2025-05-tropennächte/hourly_data/2025_7.csv"</code></pre>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="kjn_tropennächte_files/figure-html/download_data-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
 </div>
-<details class="code-fold">
-<summary>Show Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data_hourly <span class="ot">=</span> <span class="fu">keep</span>(data_list, <span class="sc">~!</span><span class="fu">is.null</span>(.x)) <span class="sc">%&gt;%</span> <span class="fu">bind_rows</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "/home/robin/projects/personal/dav/wiki/climate-analyses"</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "/home/robin/projects/personal/dav/wiki/climate-analyses"</code></pre>
+</div>
 </div>
 
 
