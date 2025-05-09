@@ -32,3 +32,6 @@ Suggests:
     readr   
 VignetteBuilder: knitr
 URL: https://robinkohrs.github.io/dav/
+Depends: 
+    R (>= 2.10)
+LazyData: true

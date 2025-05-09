@@ -70,7 +70,7 @@
 #' # Example with a potentially non-existent file (will error)
 #' try(gdal_info_table("non_existent_file.nc"))
 #' }
-gdal_info_table = function(file, interactive = FALSE, ...) {
+gdal_get_subdataset_table = function(file, interactive = FALSE, ...) {
   # --- 1. Input Validation and Dependency Checks ---
   if (!is.character(file) || length(file) != 1 || nchar(file) == 0) {
     stop("'file' must be a non-empty character string.", call. = FALSE)

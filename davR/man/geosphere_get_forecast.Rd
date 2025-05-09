@@ -10,7 +10,7 @@ geosphere_get_forecast(
   y = NULL,
   level = NULL,
   subdatasets = NULL,
-  download_dir = "data_raw",
+  download_dir = NULL,
   timezone = "Europe/Paris"
 )
 }
@@ -30,8 +30,13 @@ Filtering depends on layer naming conventions in the source file.}
 to load (e.g., \code{"T"}, \code{"U"}, \code{"V"}). If \code{NULL} (default), \code{terra::rast}
 attempts to load the first/default subdataset(s).}
 
-\item{download_dir}{Character. Path to the directory for storing downloaded files.
-Defaults to \code{"data_raw"}.}
+\item{download_dir}{Character or NULL. Optional. Path to a directory for storing
+downloaded \emph{source} files (allows caching) and saving the \emph{processed results}.
+If \code{NULL} (default), source files are downloaded to a temporary location
+(and removed at session end) and results are not saved to disk. If a path
+is provided, the processed result (raster or point data) will be saved
+there using a timestamped name (e.g., \verb{YYYYMMDD_HHMMSS_<host>_raster.nc}
+or \verb{YYYYMMDD_HHMMSS_<host>_point.csv}).}
 
 \item{timezone}{Character. The target timezone for the time information
 (e.g., \code{"Europe/Vienna"}, \code{"UTC"}). Defaults to \code{"Europe/Paris"}.}
@@ -40,50 +45,55 @@ Defaults to \code{"data_raw"}.}
 If valid \code{x} and \code{y} coordinates within the approximate Austrian
 bounding box are provided, returns a \code{data.frame} with columns \code{value}
 and \code{time}. Otherwise, returns a \code{terra::SpatRaster} object containing
-the requested forecast data layers, potentially filtered by \code{level},
-with its time dimension adjusted to the specified \code{timezone}.
+the requested forecast data layers. In both cases, if \code{download_dir} was
+specified, the returned object will also be saved to that directory.
 }
 \description{
 Downloads the latest forecast data (NWP, Nowcast, or Ensemble)
 and either returns the full raster dataset or extracts a time series
-for a specific point.
+for a specific point. Optionally saves the processed result to disk.
 }
 \examples{
 \dontrun{
 # --- Examples ---
 
-# Example 1: Get point data for Vienna (NWP, default variable)
+# Example 1: Get point data for Vienna, use temp download, return df
 vienna_lon = 16.3738
 vienna_lat = 48.2082
-nwp_vienna_point = geosphere_get_forecast(host = "nwp",
-                                          x = vienna_lon, y = vienna_lat,
-                                          timezone = "Europe/Vienna")
-if (inherits(nwp_vienna_point, "data.frame")) {
-  print(head(nwp_vienna_point))
-  # plot(nwp_vienna_point$time, nwp_vienna_point$value, type = 'l')
+nwp_vienna_point_mem = geosphere_get_forecast(host = "nwp",
+                                              x = vienna_lon, y = vienna_lat,
+                                              timezone = "Europe/Vienna",
+                                              download_dir = NULL) # Explicitly NULL
+if (inherits(nwp_vienna_point_mem, "data.frame")) {
+  print(head(nwp_vienna_point_mem))
 }
 
-# Example 2: Get the full raster for Ensemble Temperature (T) at 850 hPa
-ensemble_t850_raster = geosphere_get_forecast(host = "ensemble",
-                                              x = NULL, y = NULL, # Explicitly request raster
-                                              subdatasets = "T",
-                                              level = 850,
-                                              timezone = "UTC")
-if (inherits(ensemble_t850_raster, "SpatRaster")) {
-  print(ensemble_t850_raster)
-  # terra::plot(ensemble_t850_raster[[1]]) # Plot first time step
+# Example 2: Get point data, specify dir, save CSV, return df
+my_dir = "my_forecast_data"
+nwp_vienna_point_disk = geosphere_get_forecast(host = "nwp",
+                                               x = vienna_lon, y = vienna_lat,
+                                               timezone = "Europe/Vienna",
+                                               download_dir = my_dir)
+# Check if the CSV file exists in my_dir
+list.files(my_dir, pattern = "\\\\.csv$")
+
+# Example 3: Get full raster, specify dir, save NetCDF, return SpatRaster
+ensemble_t850_raster_disk = geosphere_get_forecast(host = "ensemble",
+                                                   x = NULL, y = NULL,
+                                                   subdatasets = "T",
+                                                   level = 850,
+                                                   timezone = "UTC",
+                                                   download_dir = my_dir)
+# Check if the NetCDF file exists in my_dir
+list.files(my_dir, pattern = "\\\\.nc$")
+if (inherits(ensemble_t850_raster_disk, "SpatRaster")) {
+  print(ensemble_t850_raster_disk)
 }
 
-# Example 3: Coordinates outside Austria - should return raster
-outside_raster = geosphere_get_forecast(host = "nwp", x = 0, y = 0)
-if (inherits(outside_raster, "SpatRaster")) {
-  print(outside_raster)
-}
-
-# Example 4: No coordinates specified - should return raster
-nowcast_raster = geosphere_get_forecast(host = "nowcast")
-if (inherits(nowcast_raster, "SpatRaster")) {
-   print(nowcast_raster)
+# Example 4: Get full raster, use temp download, return SpatRaster
+nowcast_raster_mem = geosphere_get_forecast(host = "nowcast", download_dir = NULL)
+if (inherits(nowcast_raster_mem, "SpatRaster")) {
+   print(nowcast_raster_mem)
 }
 
 }
