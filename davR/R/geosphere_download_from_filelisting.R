@@ -1,14 +1,10 @@
-# R/download_utils.R (or similar file in your package's R/ directory)
+#' @title Download HTTPS Files from Geosphere
 
 #' @importFrom httr GET add_headers write_disk progress status_code content timeout
 #' @importFrom glue glue
 #' @importFrom cli cli_h1 cli_alert_info cli_alert_success cli_alert_danger cli_alert_warning cli_abort
 #' @importFrom tools file_path_sans_ext
 #' @importFrom utils packageName packageVersion data
-
-# --- Original geosphere_download_file function (largely unchanged) ---
-
-#' Download a Single File from Geosphere Austria Data Hub
 #'
 #' @description
 #' Downloads a single file from the Geosphere Austria data hub by constructing
@@ -33,8 +29,47 @@
 #'
 #' @return The full path to the successfully downloaded or already existing file if successful,
 #'         otherwise `NA_character_` if the download failed.
-#' @keywords internal
-geosphere_download_file <- function(
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Create a temporary directory for downloads
+#' temp_dl_dir = tempfile("geosphere_pkg_dl_")
+#' dir.create(temp_dl_dir)
+#'
+#' # Example 1: Download SPARTACUS TX data for 2020
+#' spartacus_file = geosphere_download_from_filelisting(
+#'   dest_dir = temp_dl_dir,
+#'   filename = "SPARTACUS2-DAILY_TX_2020.nc",
+#'   resource_id = "spartacus-v2-1d-1km",
+#'   verbose = TRUE
+#' )
+#' if (!is.na(spartacus_file)) print(paste("Downloaded:", spartacus_file))
+#'
+#' # Example 2: Download APOLIS data with subpath
+#' apolis_file = geosphere_download_from_filelisting(
+#'   dest_dir = temp_dl_dir,
+#'   filename = "APOLIS_2006_01.nc",
+#'   resource_id = "apolis-short-daily-dir-hori",
+#'   resource_subpath_parts = c("2006", "01"),
+#'   verbose = TRUE
+#' )
+#' if (!is.na(apolis_file)) print(paste("Downloaded:", apolis_file))
+#'
+#' # Example 3: Download VDL data with multiple subpath parts
+#' vdl_file = geosphere_download_from_filelisting(
+#'   dest_dir = temp_dl_dir,
+#'   filename = "t2m_2022_01_15.nc",
+#'   resource_id = "vdl-standard-v1-1h-1km-era5land-downscaled",
+#'   resource_subpath_parts = c("2022", "01", "15", "t2m"),
+#'   verbose = TRUE
+#' )
+#' if (!is.na(vdl_file)) print(paste("Downloaded:", vdl_file))
+#'
+#' # Clean up
+#' unlink(temp_dl_dir, recursive = TRUE)
+#' }
+geosphere_download_from_filelisting = function(
     dest_dir,
     filename,
     resource_id,
@@ -75,23 +110,23 @@ geosphere_download_file <- function(
       }
     )
   }
-  dest_dir <- normalizePath(dest_dir, mustWork = TRUE)
-  destination_path <- file.path(dest_dir, filename)
+  dest_dir = normalizePath(dest_dir, mustWork = TRUE)
+  destination_path = file.path(dest_dir, filename)
 
-  request_headers <- httr::add_headers(`User-Agent` = user_agent)
+  request_headers = httr::add_headers(`User-Agent` = user_agent)
 
   # --- Construct the URL ---
-  cleaned_base_data_url <- if (endsWith(base_data_url, "/")) base_data_url else paste0(base_data_url, "/")
-  cleaned_resource_id <- gsub("^/|/$", "", resource_id)
-  path_components <- c(cleaned_resource_id)
+  cleaned_base_data_url = if (endsWith(base_data_url, "/")) base_data_url else paste0(base_data_url, "/")
+  cleaned_resource_id = gsub("^/|/$", "", resource_id)
+  path_components = c(cleaned_resource_id)
 
   if (!is.null(resource_subpath_parts)) {
-    cleaned_subpath_parts <- vapply(resource_subpath_parts, function(s) gsub("^/|/$", "", s), character(1))
-    path_components <- c(path_components, cleaned_subpath_parts)
+    cleaned_subpath_parts = vapply(resource_subpath_parts, function(s) gsub("^/|/$", "", s), character(1))
+    path_components = c(path_components, cleaned_subpath_parts)
   }
-  path_components <- c(path_components, filename)
-  relative_url_path <- paste(path_components, collapse = "/")
-  full_url <- paste0(cleaned_base_data_url, relative_url_path)
+  path_components = c(path_components, filename)
+  relative_url_path = paste(path_components, collapse = "/")
+  full_url = paste0(cleaned_base_data_url, relative_url_path)
 
   if (verbose) {
     cli::cli_h1(glue::glue("Downloading File: {filename}"))
@@ -111,7 +146,7 @@ geosphere_download_file <- function(
   }
 
   # --- Perform Download ---
-  response <- tryCatch({
+  response = tryCatch({
     if (verbose) cli::cli_alert_info("Attempting download...")
     httr::GET(
       url = full_url,
@@ -141,7 +176,7 @@ geosphere_download_file <- function(
   } else {
     if (verbose) {
       cli::cli_alert_danger("Download failed for '{filename}'. HTTP Status: {httr::status_code(response)}")
-      error_content <- tryCatch(httr::content(response, "text", encoding = "UTF-8"), error = function(e) "Could not retrieve error content.")
+      error_content = tryCatch(httr::content(response, "text", encoding = "UTF-8"), error = function(e) "Could not retrieve error content.")
       cli::cli_alert_info("Response content (first 200 chars): {.val {substr(error_content, 1, 200)}}")
     }
     if (file.exists(destination_path)) try(file.remove(destination_path), silent = TRUE)
@@ -155,7 +190,7 @@ geosphere_download_file <- function(
 #' @description
 #' Constructs the filename and subpath based on a predefined internal schema for a given
 #' Geosphere Austria `resource_id` and a set of parameters, then downloads the file.
-#' This is the primary user-facing function for downloading known datasets.
+#' This is an internal helper function for downloading known datasets.
 #'
 #' @param dest_dir Directory to save the file.
 #' @param resource_id The key in the internal schemas list corresponding to the dataset
@@ -170,49 +205,8 @@ geosphere_download_file <- function(
 #' @param timeout_seconds Request timeout.
 #'
 #' @return Path to the downloaded file or `NA_character_` on failure.
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Ensure your package is loaded, which makes GEOSPHERE_DATA_SCHEMAS available.
-#'
-#' temp_dl_dir <- tempfile("geosphere_pkg_dl_")
-#' dir.create(temp_dl_dir)
-#'
-#' # Example 1: Download SPARTACUS TX for 2020
-#' spartacus_file <- geosphere_download_from_schema(
-#'   dest_dir = temp_dl_dir,
-#'   resource_id = "spartacus-v2-1d-1km",
-#'   params = list(year = 2020, variable_type = "TX"),
-#'   verbose = TRUE
-#' )
-#' if (!is.na(spartacus_file)) print(paste("Downloaded SPARTACUS:", spartacus_file))
-#'
-#' # Example 2: Download APOLIS for Jan 2006
-#' apolis_file <- geosphere_download_from_schema(
-#'   dest_dir = temp_dl_dir,
-#'   resource_id = "apolis-short-daily-dir-hori",
-#'   params = list(year = 2006, month = "01"),
-#'   verbose = TRUE
-#' )
-#' if (!is.na(apolis_file)) print(paste("Downloaded APOLIS:", apolis_file))
-#'
-#' # Example 3: Download VDL data
-#' vdl_file <- geosphere_download_from_schema(
-#'  dest_dir = temp_dl_dir,
-#'  resource_id = "vdl-standard-v1-1h-1km-era5land-downscaled",
-#'  params = list(year = 2022, month = "01", day = "15", variable_code = "t2m"),
-#'  verbose = TRUE
-#' )
-#' if (!is.na(vdl_file)) print(paste("Downloaded VDL:", vdl_file))
-#'
-#' print("Files in download directory:")
-#' print(list.files(temp_dl_dir))
-#'
-#' # Clean up
-#' unlink(temp_dl_dir, recursive = TRUE)
-#' }
-geosphere_download_from_schema <- function(
+#' @keywords internal
+geosphere_download_from_schema = function(
     dest_dir,
     resource_id,
     params,
@@ -225,12 +219,12 @@ geosphere_download_from_schema <- function(
 
   # Access GEOSPHERE_DATA_SCHEMAS from the package's internal data
   # This object is created by the script in data-raw/ and saved to R/sysdata.rda
-  current_package_name <- utils::packageName()
+  current_package_name = utils::packageName()
   if (is.null(current_package_name)) {
     # This might happen if run interactively not as part of a loaded package
     # For development, you might load it manually or ensure it's in .GlobalEnv
     if (exists("GEOSPHERE_DATA_SCHEMAS", envir = .GlobalEnv)) {
-      current_schemas <- get("GEOSPHERE_DATA_SCHEMAS", envir = .GlobalEnv)
+      current_schemas = get("GEOSPHERE_DATA_SCHEMAS", envir = .GlobalEnv)
     } else {
       cli::cli_abort(
         "Internal `GEOSPHERE_DATA_SCHEMAS` not found. If developing, ensure it's loaded or run `source('data-raw/your_schema_script.R')`."
@@ -242,7 +236,7 @@ geosphere_download_from_schema <- function(
     # Note: Direct access `GEOSPHERE_DATA_SCHEMAS` usually works if R/sysdata.rda is correct
     # and the package is loaded. The `get()` below is more explicit.
     if (exists("GEOSPHERE_DATA_SCHEMAS", envir = asNamespace(current_package_name), inherits = FALSE)) {
-      current_schemas <- get("GEOSPHERE_DATA_SCHEMAS", envir = asNamespace(current_package_name))
+      current_schemas = get("GEOSPHERE_DATA_SCHEMAS", envir = asNamespace(current_package_name))
     } else {
       cli::cli_abort(
         "Internal `GEOSPHERE_DATA_SCHEMAS` not found in package '{current_package_name}'. This is a package setup issue. Ensure R/sysdata.rda is correctly built and contains this object."
@@ -256,12 +250,12 @@ geosphere_download_from_schema <- function(
     return(NA_character_)
   }
 
-  schema <- current_schemas[[resource_id]]
+  schema = current_schemas[[resource_id]]
 
-  defined_params <- names(schema$parameters)
-  provided_params <- names(params)
-  missing_params <- setdiff(defined_params, provided_params)
-  extra_params <- setdiff(provided_params, defined_params)
+  defined_params = names(schema$parameters)
+  provided_params = names(params)
+  missing_params = setdiff(defined_params, provided_params)
+  extra_params = setdiff(provided_params, defined_params)
 
   if (length(missing_params) > 0) {
     cli::cli_abort("Missing required parameters for schema '{resource_id}': {missing_params}")
@@ -271,11 +265,11 @@ geosphere_download_from_schema <- function(
     if (verbose) {
       cli::cli_alert_warning("Ignoring extra parameters provided for schema '{resource_id}': {extra_params}")
     }
-    params <- params[names(params) %in% defined_params]
+    params = params[names(params) %in% defined_params]
   }
 
   for (p_name in defined_params) {
-    param_schema <- schema$parameters[[p_name]]
+    param_schema = schema$parameters[[p_name]]
     if (!is.null(param_schema$allowed_values)) {
       if (!(params[[p_name]] %in% param_schema$allowed_values)) {
         cli::cli_abort(c(
@@ -286,18 +280,18 @@ geosphere_download_from_schema <- function(
       }
     }
     if (!is.null(param_schema$type)) {
-      expected_type <- param_schema$type
-      actual_value <- params[[p_name]]
-      type_match <- FALSE
+      expected_type = param_schema$type
+      actual_value = params[[p_name]]
+      type_match = FALSE
       if (expected_type == "integer" && (is.integer(actual_value) || (is.numeric(actual_value) && actual_value == round(actual_value)))) {
-        type_match <- TRUE
-        if(!is.integer(actual_value)) params[[p_name]] <- as.integer(actual_value) # Coerce if numeric whole number
+        type_match = TRUE
+        if(!is.integer(actual_value)) params[[p_name]] = as.integer(actual_value) # Coerce if numeric whole number
       } else if (expected_type == "numeric" && is.numeric(actual_value)) {
-        type_match <- TRUE
+        type_match = TRUE
       } else if (expected_type == "character" && is.character(actual_value)) {
-        type_match <- TRUE
+        type_match = TRUE
       } else if (expected_type == "logical" && is.logical(actual_value)) {
-        type_match <- TRUE
+        type_match = TRUE
       }
 
       if (!type_match) {
@@ -311,7 +305,7 @@ geosphere_download_from_schema <- function(
   }
 
   # Construct filename using glue (FIXED)
-  generated_filename <- tryCatch(
+  generated_filename = tryCatch(
     do.call(glue::glue, c(list(schema$filename_template, .open = "{", .close = "}"), params)),
     error = function(e) {
       cli::cli_abort(c(
@@ -326,7 +320,7 @@ geosphere_download_from_schema <- function(
   if (is.null(generated_filename)) return(NA_character_)
 
   # Construct resource_subpath_parts using glue (FIXED)
-  generated_subpath_parts <- tryCatch({
+  generated_subpath_parts = tryCatch({
     if (is.null(schema$resource_subpath_parts_template)) {
       NULL
     } else {
@@ -358,18 +352,18 @@ geosphere_download_from_schema <- function(
     }
   }
 
-  final_user_agent <- if (!is.null(user_agent)) {
+  final_user_agent = if (!is.null(user_agent)) {
     user_agent
   } else {
-    pkg_name_str <- if(!is.null(current_package_name)) current_package_name else "UnknownPackage"
-    pkg_version_str <- tryCatch(as.character(utils::packageVersion(pkg_name_str)), error = function(e) "dev")
+    pkg_name_str = if(!is.null(current_package_name)) current_package_name else "UnknownPackage"
+    pkg_version_str = tryCatch(as.character(utils::packageVersion(pkg_name_str)), error = function(e) "dev")
     if(pkg_version_str == "dev" && !is.null(current_package_name)) { # try again if it was UnknownPackage
-      pkg_version_str <- tryCatch(as.character(utils::packageVersion(current_package_name)), error = function(e) "dev")
+      pkg_version_str = tryCatch(as.character(utils::packageVersion(current_package_name)), error = function(e) "dev")
     }
     paste0(pkg_name_str, "/", pkg_version_str, " (R Package; +https://your-package-url-if-any)") # Replace with actual URL if you have one
   }
 
-  return(geosphere_download_file(
+  return(geosphere_download_from_filelisting(
     dest_dir = dest_dir,
     filename = generated_filename,
     resource_id = resource_id,

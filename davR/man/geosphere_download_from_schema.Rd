@@ -41,47 +41,6 @@ Path to the downloaded file or \code{NA_character_} on failure.
 \description{
 Constructs the filename and subpath based on a predefined internal schema for a given
 Geosphere Austria \code{resource_id} and a set of parameters, then downloads the file.
-This is the primary user-facing function for downloading known datasets.
+This is an internal helper function for downloading known datasets.
 }
-\examples{
-\dontrun{
-# Ensure your package is loaded, which makes GEOSPHERE_DATA_SCHEMAS available.
-# (This example assumes the schemas are correctly set up in your package)
-
-temp_dl_dir <- tempfile("geosphere_pkg_dl_")
-dir.create(temp_dl_dir)
-
-# Example 1: Download SPARTACUS TX for 2020
-spartacus_file <- geosphere_download_from_schema(
-  dest_dir = temp_dl_dir,
-  resource_id = "spartacus-v2-1d-1km",
-  params = list(year = 2020, variable_type = "TX"),
-  verbose = TRUE
-)
-if (!is.na(spartacus_file)) print(paste("Downloaded SPARTACUS:", spartacus_file))
-
-# Example 2: Download APOLIS for Jan 2006
-apolis_file <- geosphere_download_from_schema(
-  dest_dir = temp_dl_dir,
-  resource_id = "apolis-short-daily-dir-hori",
-  params = list(year = 2006, month = "01"),
-  verbose = TRUE
-)
-if (!is.na(apolis_file)) print(paste("Downloaded APOLIS:", apolis_file))
-
-# Example 3: Download VDL data
-vdl_file <- geosphere_download_from_schema(
- dest_dir = temp_dl_dir,
- resource_id = "vdl-standard-v1-1h-1km-era5land-downscaled",
- params = list(year = 2022, month = "01", day = "15", variable_code = "t2m"),
- verbose = TRUE
-)
-if (!is.na(vdl_file)) print(paste("Downloaded VDL:", vdl_file))
-
-print("Files in download directory:")
-print(list.files(temp_dl_dir))
-
-# Clean up
-unlink(temp_dl_dir, recursive = TRUE)
-}
-}
+\keyword{internal}

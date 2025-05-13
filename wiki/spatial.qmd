@@ -41,6 +41,8 @@ cat(ncdump, sep="\n")
 
 ## Read in the data
 
+- Here all have the same dimensions!
+
 ```{r}
 
 # the  austrian shape
@@ -55,11 +57,20 @@ print(data_raw_stars)
 # load it using terra
 data_raw_terra = terra::rast(raster_file_path)
 print(data_raw_terra)
-
 ```
 :::
 
 
+:::{.callout-note collapse="true"}
+
+## Transform to 4326
+
+```{r}
+
+```
+
+
+:::
 
 
 
