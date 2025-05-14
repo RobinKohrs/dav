@@ -21,6 +21,53 @@ usage() {
   exit 1
 }
 
+# --- Check for CRITICAL dependencies (fzf, gum) ---
+for cmd in fzf gum; do
+  if ! command -v "$cmd" &> /dev/null; then
+    echo "--------------------------------------------------------------------------------" >&2
+    echo "Error: Required command '$cmd' not found. This script cannot continue." >&2
+    echo "Please install it:" >&2
+    if [[ "$cmd" == "fzf" ]]; then
+      echo "  - fzf: Visit https://github.com/junegunn/fzf for installation instructions." >&2
+      echo "         (e.g., 'brew install fzf' on macOS)" >&2
+    elif [[ "$cmd" == "gum" ]]; then
+      echo "  - gum: Visit https://github.com/charmbracelet/gum for installation instructions." >&2
+      echo "         (e.g., 'brew install gum' on macOS)" >&2
+    fi
+    echo "--------------------------------------------------------------------------------" >&2
+    exit 1
+  fi
+done
+
+# --- Check for OPTIONAL dependency (numfmt/gnumfmt for human-readable sizes) ---
+NUMFMT_CMD=""
+if command -v numfmt &> /dev/null; then
+  NUMFMT_CMD="numfmt"
+elif command -v gnumfmt &> /dev/null; then # GNU numfmt, common on macOS via Homebrew's coreutils
+  NUMFMT_CMD="gnumfmt"
+fi
+
+if [[ -z "$NUMFMT_CMD" ]]; then
+  echo "--------------------------------------------------------------------------------" >&2
+  echo "INFO: Utility 'numfmt' (or 'gnumfmt') not found." >&2
+  echo "File sizes will be displayed in raw bytes, which might be less readable." >&2
+  echo "The script will still function correctly." >&2
+  if [[ "$(uname)" == "Darwin" ]]; then # macOS specific advice
+    echo "" >&2
+    echo "To get human-readable sizes (e.g., 1.2K, 3.4M, 5.6G) on macOS," >&2
+    echo "you can install 'gnumfmt' (part of GNU coreutils) via Homebrew:" >&2
+    echo "  brew install coreutils" >&2
+  else # General advice for other Linux/Unix systems
+    echo "" >&2
+    echo "To get human-readable sizes, consider installing 'numfmt'," >&2
+    echo "which is usually part of the 'coreutils' package for your distribution." >&2
+    echo "(e.g., 'sudo apt install coreutils' or 'sudo yum install coreutils')" >&2
+  fi
+  echo "--------------------------------------------------------------------------------" >&2
+  # Wait a moment so the user has a chance to see the message if it scrolls by fast
+  # sleep 1 # Optional: uncomment if you want a slight pause
+fi
+
 # --- Parse Command Line Arguments ---
 N_FILES=$DEFAULT_N
 TARGET_DIR=$DEFAULT_DIR
@@ -58,142 +105,124 @@ if [ $# -gt 0 ]; then
     usage
 fi
 
-# --- Check for dependencies ---
-for cmd in fzf gum; do
-  if ! command -v "$cmd" &> /dev/null; then
-    echo "Error: Required command '$cmd' not found. Please install it." >&2
-    exit 1
-  fi
-done
-
-NUMFMT_CMD="numfmt"
-if ! command -v numfmt &> /dev/null && command -v gnumfmt &> /dev/null; then
-  NUMFMT_CMD="gnumfmt"
-elif ! command -v numfmt &> /dev/null && ! command -v gnumfmt &> /dev/null; then
-  echo "Warning: 'numfmt' (or 'gnumfmt') not found. Sizes will be in bytes." >&2
-  NUMFMT_CMD=""
-fi
-
 # --- Validate Target Directory ---
 if [ ! -d "$TARGET_DIR" ]; then
   echo "Error: Directory '$TARGET_DIR' not found." >&2
   exit 1
 fi
 
-# --- Temporary file for fzf state ---
-# This file will store lines like: "[ ] 1.2G      /path/to/file" (size is padded)
-# The first part is the "checkbox", then human size, then tab, then actual path.
+# --- Temporary files ---
 STATE_FILE=$(mktemp "/tmp/fzf_bigdel_state.XXXXXX")
-# Ensure cleanup of the state file
-trap 'rm -f "$STATE_FILE"' EXIT
+TMP_FILE_LIST=$(mktemp "/tmp/fzf_bigdel_tmplist.XXXXXX")
+# Ensure cleanup
+trap 'rm -f "$STATE_FILE" "$TMP_FILE_LIST"' EXIT
 
-echo "Searching for the largest files in '$TARGET_DIR'..."
+
+echo "Searching for files in '$TARGET_DIR'..."
+# --- Find files and their sizes, store in TMP_FILE_LIST ---
+(
+  find "$TARGET_DIR" -type f -print0 2>/dev/null | while IFS= read -r -d $'\0' filepath_raw_loop; do
+    if [[ -n "$filepath_raw_loop" ]]; then
+      size_bytes_loop=""
+      if [[ "$(uname)" == "Darwin" ]]; then
+        size_bytes_loop=$(stat -f "%z" -- "$filepath_raw_loop" 2>/dev/null)
+      else
+        size_bytes_loop=$(stat -c "%s" -- "$filepath_raw_loop" 2>/dev/null)
+      fi
+
+      if [[ -n "$size_bytes_loop" && "$size_bytes_loop" =~ ^[0-9]+$ ]]; then
+        echo -e "${size_bytes_loop}\t${filepath_raw_loop}"
+      else
+        echo "Warning: Could not get size for '$filepath_raw_loop'" >&2
+      fi
+    fi
+  done
+) > "$TMP_FILE_LIST"
+
+
+if [ ! -s "$TMP_FILE_LIST" ]; then
+    actual_file_count=$(grep -c $'\t' "$TMP_FILE_LIST" 2>/dev/null || echo 0)
+    if [ "$actual_file_count" -eq 0 ]; then
+        echo "No files found or processed in '$TARGET_DIR'."
+        exit 0
+    fi
+fi
+
 echo "Preparing list for fzf (top $N_FILES)..."
-
-# --- Find, Sort, Format, and Populate Initial State File ---
-> "$STATE_FILE" # Clear or create the state file
+# --- Sort, Format, and Populate Initial State File from TMP_FILE_LIST ---
+> "$STATE_FILE"
 declare -a initial_lines_for_state_file
 
-# Process find output
 while IFS=$'\t' read -r size_bytes filepath_raw; do
   if [[ -n "$filepath_raw" ]]; then
     human_size=""
-    if [[ -n "$NUMFMT_CMD" ]]; then
-      # Pad size for better alignment. Adjust padding (e.g., --padding=7) if needed.
+    if [[ -n "$NUMFMT_CMD" ]]; then # Use the NUMFMT_CMD determined earlier
       human_size=$($NUMFMT_CMD --to=iec-i --suffix=B --padding=7 --format="%.1f" "$size_bytes" 2>/dev/null || echo "${size_bytes}B")
     else
-      human_size=$(printf "%7sB" "$size_bytes") # Basic padding for bytes
+      human_size=$(printf "%7sB" "$size_bytes")
     fi
-    # Format: "[ ] PADDED_HUMAN_SIZE\tACTUAL_FILEPATH"
-    # The tab is important so we can extract the path later reliably.
     initial_lines_for_state_file+=("$(printf "%s %s\t%s" "$UNCHECKED_MARKER" "$human_size" "$filepath_raw")")
   fi
-done < <(find "$TARGET_DIR" -type f -printf "%s\t%p\n" 2>/dev/null | sort -k1,1nr | head -n "$N_FILES")
-
+done < <(sort -k1,1nr "$TMP_FILE_LIST" | head -n "$N_FILES")
 
 if [ ${#initial_lines_for_state_file[@]} -eq 0 ]; then
-  echo "No files found or processed in '$TARGET_DIR'."
+  echo "No files found or processed after sorting/filtering in '$TARGET_DIR'."
   exit 0
 fi
 
-# Write initial state to the state file
 printf "%s\n" "${initial_lines_for_state_file[@]}" > "$STATE_FILE"
 
-
 # --- Helper function to toggle selection state in the STATE_FILE ---
-# This function will be called by fzf's execute binding.
 toggle_fzf_line_selection() {
-    local line_number_to_toggle="$1" # 0-based line number from fzf's {n}
+    local line_number_to_toggle="$1"
     local state_file_path="$2"
-    
-    # Convert to 1-based for sed
     local sed_line_number=$((line_number_to_toggle + 1))
     
-    # Debug output
-    echo "Toggling line $sed_line_number in $state_file_path" >&2
-
-    # Read the specific line from the state file
-    # Add -r to read to prevent backslash interpretation
     IFS= read -r current_line_in_state < <(sed -n "${sed_line_number}p" "$state_file_path")
-    echo "Current line: $current_line_in_state" >&2
 
     local new_line_for_state
-    # Toggle the marker. Use fixed string comparison for robustness.
-    # Include the space after the marker in the comparison
     if [[ "$current_line_in_state" == "$CHECKED_MARKER "* ]]; then
         new_line_for_state="${UNCHECKED_MARKER} ${current_line_in_state#"$CHECKED_MARKER "}"
-        echo "Toggling to unchecked" >&2
     elif [[ "$current_line_in_state" == "$UNCHECKED_MARKER "* ]]; then
         new_line_for_state="${CHECKED_MARKER} ${current_line_in_state#"$UNCHECKED_MARKER "}"
-        echo "Toggling to checked" >&2
     else
-        # Should not happen if markers are consistent
         echo "Error: Line does not start with a known marker: $current_line_in_state" >&2
-        return 1 # Prevent modification
+        return 1
     fi
 
-    # Escape for sed 's' command replacement string: primarily backslashes and the delimiter
-    # Using # as delimiter, so escape # and \
     local safe_new_line_for_state
     safe_new_line_for_state=$(echo "$new_line_for_state" | sed -e 's/\\/\\\\/g' -e 's/#/\\#/g')
-    echo "New line will be: $new_line_for_state" >&2
 
-    # Update the line in the state file. Use # as sed delimiter.
-    sed -i "${sed_line_number}s#.*#${safe_new_line_for_state}#" "$state_file_path"
-    echo "Line updated" >&2
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "${sed_line_number}s#.*#${safe_new_line_for_state}#" "$state_file_path"
+    else
+        sed -i "${sed_line_number}s#.*#${safe_new_line_for_state}#" "$state_file_path"
+    fi
 }
-
-# Export the function and variables needed by it
 export -f toggle_fzf_line_selection
 export CHECKED_MARKER UNCHECKED_MARKER
 
 # Helper function to select/deselect all
 toggle_all_fzf_lines() {
-    local target_marker="$1" # The marker to set ([x] or [ ])
-    local current_marker="$2" # The marker to find and replace
+    local target_marker="$1"
+    local current_marker="$2"
     local state_file_path="$3"
 
-    # sed -i "s/^\[ \] /[x] /" "$STATE_FILE" -> wrong, CHECKED_MARKER is var
-    # Need to escape the markers for sed's regex part
     local escaped_current_marker regex_current_marker
-    escaped_current_marker=$(printf '%s' "$current_marker" | sed 's/[].[^$\\*]/\\&/g') # Escape regex special chars
+    escaped_current_marker=$(printf '%s' "$current_marker" | sed 's/[].[^$\\*]/\\&/g')
     regex_current_marker="^${escaped_current_marker}"
+    local replacement_marker="$target_marker"
 
-    local replacement_marker
-    replacement_marker="$target_marker"
-
-    sed -i "s/${regex_current_marker}/${replacement_marker}/" "$state_file_path"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "s/${regex_current_marker}/${replacement_marker}/" "$state_file_path"
+    else
+        sed -i "s/${regex_current_marker}/${replacement_marker}/" "$state_file_path"
+    fi
 }
 export -f toggle_all_fzf_lines
 
-
 echo "Launching fzf for selection..."
-
 # --- fzf Selection ---
-# Capture fzf's exit code to see if it was cancelled.
-# fzf reads from STATE_FILE. On Enter, it will print the key and the *final highlighted line*.
-# We don't really need fzf's stdout if we just re-read the state file on successful exit.
-# But --expect means it will print something, so direct to /dev/null if not used.
 fzf --ansi \
     --header="SPACE to toggle, ENTER to confirm, CTRL-A all, CTRL-D none, CTRL-C cancel" \
     --height=${FZF_HEIGHT:-40%} \
@@ -205,29 +234,21 @@ fzf --ansi \
     --bind="ctrl-a:execute-silent(bash -c 'toggle_all_fzf_lines \"$CHECKED_MARKER\" \"$UNCHECKED_MARKER\" \"$STATE_FILE\"')+reload(cat \"$STATE_FILE\")" \
     --bind="ctrl-d:execute-silent(bash -c 'toggle_all_fzf_lines \"$UNCHECKED_MARKER\" \"$CHECKED_MARKER\" \"$STATE_FILE\"')+reload(cat \"$STATE_FILE\")" \
     --expect=enter \
-    < "$STATE_FILE" > /dev/null # Discard fzf's stdout as we parse STATE_FILE
+    < "$STATE_FILE" > /dev/null
 fzf_exit_code=$?
 
-# Check fzf exit code
-# 0: Normal exit (e.g., Enter key from --expect)
-# 1: No match (not applicable here as we provide all lines)
-# 130: Cancelled with Ctrl-C or Esc (or other signal)
 if [ $fzf_exit_code -eq 130 ]; then
   echo "Selection cancelled."
   exit 0
 elif [ $fzf_exit_code -ne 0 ]; then
-  # If --expect=enter, fzf prints "enter" then the line. Exit code is 0.
-  # If other keys are specified in --expect, their exit codes may vary or be 0.
-  # If fzf simply exits due to an error or unexpected signal, it might be non-zero other than 130.
   echo "fzf exited (code: $fzf_exit_code). Assuming cancellation or error."
   exit 1
 fi
 
 # --- Extract selected filepaths from the STATE_FILE ---
 declare -a files_to_delete
-while IFS= read -r line_from_state; do # Use IFS= and -r for robust line reading
+while IFS= read -r line_from_state; do
   if [[ "$line_from_state" == "$CHECKED_MARKER"* ]]; then
-    # Extract the path part: everything after the first tab.
     filepath_selected=$(echo "$line_from_state" | cut -d$'\t' -f2-)
     if [[ -n "$filepath_selected" ]]; then
       files_to_delete+=("$filepath_selected")
@@ -237,7 +258,6 @@ while IFS= read -r line_from_state; do # Use IFS= and -r for robust line reading
   fi
 done < "$STATE_FILE"
 
-
 if [ ${#files_to_delete[@]} -eq 0 ]; then
   echo "No files were selected for deletion."
   exit 0
@@ -246,9 +266,7 @@ fi
 # --- Gum Confirmation ---
 echo
 echo "You have selected the following ${#files_to_delete[@]} file(s) for DELETION:"
-for file_path_to_display in "${files_to_delete[@]}"; do
-    echo "  - $file_path_to_display"
-done
+printf "  - %s\n" "${files_to_delete[@]}"
 echo
 
 if gum confirm "Are you sure you want to PERMANENTLY DELETE these files?" --affirmative "Delete" --negative "Cancel"; then
@@ -274,4 +292,3 @@ else
 fi
 
 echo "Done."
-# trap will clean up $STATE_FILE

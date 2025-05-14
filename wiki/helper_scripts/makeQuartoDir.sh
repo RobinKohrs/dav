@@ -221,7 +221,7 @@ if [[ $is_project -eq 1 ]]; then
     if [[ -n "$format_yaml_block" ]]; then
         quarto_yml_content+="\n$(echo -e "$format_yaml_block")\n"
     fi
-    quarto_yml_content+="\neditor: visual\n"
+    quarto_yml_content+="\neditor: source\n"
     echo -e "$quarto_yml_content" > _quarto.yml
     if [[ $? -ne 0 ]]; then echo "Error writing _quarto.yml"; exit 1; fi
 
@@ -264,8 +264,11 @@ Welcome to your new Quarto document!
 
 \`\`\`{r setup, include=FALSE}
 knitr::opts_chunk\$set(echo = TRUE, warning = FALSE, message = FALSE)
-# library(tidyverse)
-# library(djtools) # Consider adding your package if commonly needed
+library(tidyverse)
+library(davR)
+library(sf)
+library(jsonlite)
+library(jsonlite)
 \`\`\`
 
 Start writing your content here.

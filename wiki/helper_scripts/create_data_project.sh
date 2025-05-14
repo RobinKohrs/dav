@@ -17,7 +17,7 @@ check_dependency() {
 
 print_success() {
   gum style --border="double" --border-foreground="green" --padding="1 2" \
-            "Success!" "$1" "Project created at: $(gum style --bold "$2")"
+            "Success!" "$1" "Project root: $(gum style --bold "$2")"
 }
 
 print_error() {
@@ -30,79 +30,110 @@ check_dependency "gum" "https://github.com/charmbracelet/gum"
 check_dependency "fzf" "https://github.com/junegunn/fzf"
 check_dependency "find" "Standard system utility"
 check_dependency "git" "https://git-scm.com/"
+check_dependency "realpath" "Standard system utility (usually coreutils)"
 
 # --- Main Script ---
 
-# 1. Get Project Name
-PROJECT_NAME=$(gum input --placeholder "Enter a name for your project (e.g., 'urban_growth_analysis')")
-if [ -z "$PROJECT_NAME" ]; then
-  print_error "Project name cannot be empty."
-fi
-PROJECT_NAME=$(echo "$PROJECT_NAME" | tr ' ' '_' | sed 's:/*$::')
-gum format -- "- Project name set to: **$PROJECT_NAME**"
+# 1. Determine Project Root and Project Name
+PROJECT_MODE=$(gum choose "Create a new project directory" "Use an existing directory as project root" --header "Select project setup mode:" --height 4)
 
-# 2. Get Project Location (Parent Directory) using fzf
-gum format -- "- Preparing location selection..."
-
-# Start spinner in background and get its PID
-gum spin --spinner="line" --title="Searching for directories (max depth $FIND_MAX_DEPTH from $SEARCH_START_DIR)..." -- sleep infinity &
-SPIN_PID=$!
-trap 'kill $SPIN_PID >/dev/null 2>&1' EXIT SIGINT SIGTERM
-
-# Run find | fzf and capture output
-FZF_HEADER="Navigate & Select PARENT directory"
-PARENT_DIR=$(find "$SEARCH_START_DIR" -maxdepth "$FIND_MAX_DEPTH" -type d \
-  \( -name ".git" -o -name "node_modules" -o -name ".cache" -o -name "venv" -o -name ".venv" -o -path "*/.*" \) -prune \
-  -o -print 2>/dev/null | fzf --header="$FZF_HEADER" \
-                               --height="$FZF_HEIGHT" --border \
-                               --preview='ls -lah --color=always {} | head -n 20' --exit-0 --select-1 --no-multi)
-FZF_EXIT_CODE=$?
-
-# Stop the spinner gracefully
-kill $SPIN_PID >/dev/null 2>&1
-wait $SPIN_PID 2>/dev/null
-trap - EXIT SIGINT SIGTERM
-
-# Check fzf exit code AND if the selection is empty
-if [ $FZF_EXIT_CODE -ne 0 ] || [ -z "$PARENT_DIR" ]; then
-    print_error "No parent directory selected or selection cancelled. Aborting."
+if [ -z "$PROJECT_MODE" ]; then
+  print_error "No mode selected. Aborting."
 fi
 
-# Verify it's actually a directory
-if [ ! -d "$PARENT_DIR" ]; then
-  print_error "The selected path '$PARENT_DIR' is not a valid directory."
+PROJECT_ROOT_DIR=""
+PROJECT_NAME=""
+
+if [[ "$PROJECT_MODE" == "Create a new project directory" ]]; then
+  PROJECT_NAME_INPUT=$(gum input --placeholder "Enter a name for your new project (e.g., 'urban_growth_analysis')")
+  if [ -z "$PROJECT_NAME_INPUT" ]; then
+    print_error "Project name cannot be empty for a new project."
+  fi
+  PROJECT_NAME=$(echo "$PROJECT_NAME_INPUT" | tr ' ' '_' | sed 's:/*$::')
+  gum format -- "- Project name set to: **$PROJECT_NAME**"
+
+  gum format -- "- Select PARENT directory for the new '$PROJECT_NAME' folder..."
+  gum spin --spinner="line" --title="Searching for parent directories (max depth $FIND_MAX_DEPTH from $SEARCH_START_DIR)..." -- sleep infinity &
+  SPIN_PID=$!
+  trap 'kill $SPIN_PID >/dev/null 2>&1' EXIT SIGINT SIGTERM
+
+  FZF_HEADER_NEW="Select PARENT directory for the new '$PROJECT_NAME' folder"
+  PARENT_DIR_FOR_NEW=$(find "$SEARCH_START_DIR" -maxdepth "$FIND_MAX_DEPTH" -type d \
+    \( -name ".git" -o -name "node_modules" -o -name ".cache" -o -name "venv" -o -name ".venv" -o -path "*/.*" \) -prune \
+    -o -print 2>/dev/null | fzf --header="$FZF_HEADER_NEW" \
+                                 --height="$FZF_HEIGHT" --border \
+                                 --preview='ls -lah --color=always {} | head -n 20' --exit-0 --select-1 --no-multi)
+  FZF_EXIT_CODE=$?
+  kill $SPIN_PID >/dev/null 2>&1; wait $SPIN_PID 2>/dev/null; trap - EXIT SIGINT SIGTERM
+
+  if [ $FZF_EXIT_CODE -ne 0 ] || [ -z "$PARENT_DIR_FOR_NEW" ]; then
+      print_error "No parent directory selected for new project. Aborting."
+  fi
+  if [ ! -d "$PARENT_DIR_FOR_NEW" ]; then
+    print_error "The selected path '$PARENT_DIR_FOR_NEW' is not a valid directory."
+  fi
+  PARENT_DIR_FOR_NEW=$(realpath "$PARENT_DIR_FOR_NEW")
+  PROJECT_ROOT_DIR="$PARENT_DIR_FOR_NEW/$PROJECT_NAME"
+
+  gum format -- "- New project root will be: **$PROJECT_ROOT_DIR**"
+  if [ -e "$PROJECT_ROOT_DIR" ]; then
+    gum confirm "Directory '$PROJECT_ROOT_DIR' already exists. Continue and potentially add files?" --default=false || {
+      echo "Operation cancelled by user."
+      exit 0
+    }
+    echo "Proceeding with existing directory..."
+  else
+    mkdir -p "$PROJECT_ROOT_DIR" || print_error "Failed to create directory '$PROJECT_ROOT_DIR'. Check permissions."
+  fi
+
+elif [[ "$PROJECT_MODE" == "Use an existing directory as project root" ]]; then
+  gum format -- "- Select an EXISTING directory to use as the project root..."
+  gum spin --spinner="line" --title="Searching for directories (max depth $FIND_MAX_DEPTH from $SEARCH_START_DIR)..." -- sleep infinity &
+  SPIN_PID=$!
+  trap 'kill $SPIN_PID >/dev/null 2>&1' EXIT SIGINT SIGTERM
+
+  FZF_HEADER_EXISTING="Select an EXISTING directory to use as the project root"
+  EXISTING_PROJECT_ROOT_DIR=$(find "$SEARCH_START_DIR" -maxdepth "$FIND_MAX_DEPTH" -type d \
+    \( -name ".git" -o -name "node_modules" -o -name ".cache" -o -name "venv" -o -name ".venv" \) -prune \
+    -o -print 2>/dev/null | fzf --header="$FZF_HEADER_EXISTING" \
+                                 --height="$FZF_HEIGHT" --border \
+                                 --preview='ls -lah --color=always {} | head -n 20' --exit-0 --select-1 --no-multi)
+  FZF_EXIT_CODE=$?
+  kill $SPIN_PID >/dev/null 2>&1; wait $SPIN_PID 2>/dev/null; trap - EXIT SIGINT SIGTERM
+
+  if [ $FZF_EXIT_CODE -ne 0 ] || [ -z "$EXISTING_PROJECT_ROOT_DIR" ]; then
+      print_error "No existing directory selected as project root. Aborting."
+  fi
+  if [ ! -d "$EXISTING_PROJECT_ROOT_DIR" ]; then
+    print_error "The selected path '$EXISTING_PROJECT_ROOT_DIR' is not a valid directory."
+  fi
+  PROJECT_ROOT_DIR=$(realpath "$EXISTING_PROJECT_ROOT_DIR")
+
+  SUGGESTED_PROJECT_NAME=$(basename "$PROJECT_ROOT_DIR")
+  PROJECT_NAME_INPUT=$(gum input --placeholder "Confirm or enter project name (for .Rproj, .qgs files)" --value "$SUGGESTED_PROJECT_NAME")
+  if [ -z "$PROJECT_NAME_INPUT" ]; then
+    print_error "Project name (for files) cannot be empty."
+  fi
+  PROJECT_NAME=$(echo "$PROJECT_NAME_INPUT" | tr ' ' '_' | sed 's:/*$::')
+  gum format -- "- Using existing directory as project root: **$PROJECT_ROOT_DIR**"
+  gum format -- "- Project name (for files like .Rproj, .qgs) set to: **$PROJECT_NAME**"
 fi
 
-# Construct the full project path
-PROJECT_PATH="$PARENT_DIR/$PROJECT_NAME"
-gum format -- "- Project root will be: **$PROJECT_PATH**"
 
-# 3. Check if project directory already exists
-if [ -e "$PROJECT_PATH" ]; then
-  gum confirm "Directory '$PROJECT_PATH' already exists. Continue and potentially add files?" --default=false || {
-    echo "Operation cancelled by user."
-    exit 0
-  }
-  echo "Proceeding with existing directory..."
-else
-  mkdir -p "$PROJECT_PATH" || print_error "Failed to create directory '$PROJECT_PATH'. Check permissions."
-fi
+# --- Change to Project Root and Setup ---
+cd "$PROJECT_ROOT_DIR" || print_error "Failed to change directory to $PROJECT_ROOT_DIR"
 
-
-# --- Git Initialization and Base Setup ---
-cd "$PROJECT_PATH" || print_error "Failed to change directory to $PROJECT_PATH"
-
-# 4. Initialize Git Repository (if not already one)
+# 2. Initialize Git Repository (if not already one)
 if [ ! -d ".git" ]; then
-    gum spin --spinner="dot" --title="Initializing Git repository..." -- \
+    gum spin --spinner="dot" --title="Initializing Git repository in $PROJECT_ROOT_DIR..." -- \
     git init -q || print_error "Failed to initialize Git repository."
     gum format -- "- Initialized Git repository."
 else
     gum format -- "- Git repository already exists."
 fi
 
-# 5. Create comprehensive .gitignore
-gum format -- "- Creating/Updating .gitignore..."
+# 3. Create comprehensive .gitignore
+gum format -- "- Creating/Updating .gitignore in **$PROJECT_ROOT_DIR/.gitignore**..."
 cat << EOF > ".gitignore"
 # --- General ---
 .DS_Store
@@ -114,21 +145,27 @@ ehthumbs.db
 Thumbs.db
 *~
 
-# --- R ---
-.Rhistory
-.Rapp.history
-.RData
+# --- R (Project file .Rproj is at root, R code/data in R/ subdir) ---
+.Rhistory        # If R is run from project root
+.Rapp.history    # If R is run from project root
+.RData           # If R is run from project root, SAVE THIS?
 .Ruserdata
-R/.Rproj.user/
+.Rproj.user/     # User-specific RStudio files for the .Rproj at root
+R/.Rhistory      # If R is run from R/ sub-directory
+R/.RData         # If R is run from R/ sub-directory, SAVE THIS?
 R/*_cache/
 R/cache/
-.Renviron
-.httr-oauth
-rsconnect/
+.Renviron        # Project-specific R environment variables at root
+.httr-oauth      # OAuth tokens, typically at root or where script runs
+rsconnect/       # RStudio Connect deployment files, typically at root
 
-# --- QGIS ---
-qgis/*.qgs~
-qgis/*.qgz~
+# --- QGIS (Project file .qgs/.qgz is at root, QGIS data in qgis/ subdir) ---
+# QGIS backup files for the project file at root
+*.qgs~
+*.qgz~
+# QGIS backup files if a project file were inside qgis/ (less likely with new structure)
+# qgis/*.qgs~
+# qgis/*.qgz~
 
 # --- Python ---
 .venv/
@@ -137,9 +174,9 @@ venv/
 __pycache__/
 .env
 
-# --- Data (Consider uncommenting or being more specific) ---
-# R/data_raw/
-# R/data_output/
+# --- Data (adjust paths as needed) ---
+# R/data_raw/    # Example, if you want to ignore raw R data
+# R/data_output/ # Example, if you want to ignore R output
 # qgis/data_raw/
 # qgis/data_output/
 
@@ -149,7 +186,7 @@ __pycache__/
 # *.shp
 # *.parquet
 # *.feather
-# *.rds
+# *.rds # Often large, consider for LFS if in R/data_output/
 # *.pdf
 # *.pptx
 # *.docx
@@ -174,19 +211,21 @@ EOF
 
 # --- Optional Components ---
 
-# 6. Ask about R components
-ADD_R=false # Flag to track if R components were added
-if gum confirm "Add R project components?"; then
+# 4. Ask about R components
+ADD_R=false
+RPROJ_FILE_ABS="$PROJECT_ROOT_DIR/$PROJECT_NAME.Rproj"
+R_SUBDIRS_PATH="$PROJECT_ROOT_DIR/R"
+
+if gum confirm "Add R project components? ($PROJECT_NAME.Rproj in root, subdirs in R/)?"; then
   ADD_R=true
   gum spin --spinner="dot" --title="Setting up R components..." -- sleep 0.5
 
-  mkdir -p "R/analysis"
-  mkdir -p "R/data_raw"
-  mkdir -p "R/data_output"
+  mkdir -p "$R_SUBDIRS_PATH/analysis"
+  mkdir -p "$R_SUBDIRS_PATH/data_raw"
+  mkdir -p "$R_SUBDIRS_PATH/data_output"
 
-  RPROJ_FILE_RELATIVE="R/$PROJECT_NAME.Rproj" # Relative path needed later
-  echo "Creating R project file: $RPROJ_FILE_RELATIVE"
-  cat << EOF_RPROJ > "$RPROJ_FILE_RELATIVE"
+  echo "Creating R project file: $RPROJ_FILE_ABS"
+  cat << EOF_RPROJ > "$RPROJ_FILE_ABS"
 Version: 1.0
 ProjectName: $PROJECT_NAME
 RestoreWorkspace: Default
@@ -199,37 +238,39 @@ Encoding: UTF-8
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
 
-# Project located in: R/
-# Analysis scripts/docs likely in R/analysis/
-# Raw data in R/data_raw/, Processed data in R/data_output/
-# Use here::here() for robust paths relative to the project root ($PROJECT_PATH)
+# Project Root is: $PROJECT_ROOT_DIR
+# R code/data subdirectories in: R/ (relative to this .Rproj file)
+# Analysis scripts/docs likely in: R/analysis/
+# Raw data in: R/data_raw/, Processed data in: R/data_output/
+# Use here::here() for robust paths relative to the project root ($PROJECT_ROOT_DIR)
 EOF_RPROJ
-  gum format -- "- Added R components in **R/** subdirectory (analysis, data_raw, data_output)."
+  gum format -- "- Added R project file: **$RPROJ_FILE_ABS**"
+  gum format -- "- Added R subdirectories in: **$R_SUBDIRS_PATH/**"
+fi
 
-  # --- EDITOR CHOICE MOVED FROM HERE ---
+# 5. Ask about QGIS components
+ADD_QGIS=false
+QGIS_PROJ_FILE_ABS="$PROJECT_ROOT_DIR/$PROJECT_NAME.qgs" # Using .qgs, change to .qgz if preferred
+QGIS_SUBDIRS_PATH="$PROJECT_ROOT_DIR/qgis"
 
-fi # End of ADD_R block
-
-# 7. Ask about QGIS components
-ADD_QGIS=false # Flag (optional, but good practice)
-if gum confirm "Add QGIS project components?"; then
+if gum confirm "Add QGIS project components? ($PROJECT_NAME.qgs in root, subdirs in qgis/)?"; then
   ADD_QGIS=true
   gum spin --spinner="line" --title="Setting up QGIS components..." -- sleep 0.5
 
-  mkdir -p "qgis/data_raw/polygon"
-  mkdir -p "qgis/data_raw/raster"
-  mkdir -p "qgis/data_raw/tabular"
-  mkdir -p "qgis/data_output"
-  mkdir -p "qgis/graphic_output"
-  mkdir -p "qgis/scripts"
+  mkdir -p "$QGIS_SUBDIRS_PATH/data_raw/polygon"
+  mkdir -p "$QGIS_SUBDIRS_PATH/data_raw/raster"
+  mkdir -p "$QGIS_SUBDIRS_PATH/data_raw/tabular"
+  mkdir -p "$QGIS_SUBDIRS_PATH/data_output"
+  mkdir -p "$QGIS_SUBDIRS_PATH/graphic_output"
+  mkdir -p "$QGIS_SUBDIRS_PATH/scripts"
 
-  gum format -- "- Added QGIS components in **qgis/** subdirectory."
+  gum format -- "- Added QGIS subdirectories in **$QGIS_SUBDIRS_PATH/**"
 
-  # Create the QGIS project file (.qgs) with provided template
-  QGIS_PROJ_FILE_RELATIVE="qgis/$PROJECT_NAME.qgs"
-  echo "Creating QGIS project file: $QGIS_PROJ_FILE_RELATIVE"
+  echo "Creating QGIS project file: $QGIS_PROJ_FILE_ABS"
   # Note: Using the provided template, only substituting projectname
-  cat << EOF_QGIS > "$QGIS_PROJ_FILE_RELATIVE"
+  # The homePath="" means paths inside the .qgs file will be relative to its location (PROJECT_ROOT_DIR)
+  # So, layers from qgis/data_raw/ would be referenced as "qgis/data_raw/layer.shp"
+  cat << EOF_QGIS > "$QGIS_PROJ_FILE_ABS"
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis saveUser="rk" saveDateTime="2025-04-21T14:41:32" version="3.40.3-Bratislava" projectname="$PROJECT_NAME" saveUserFull="Robin Kohrs">
   <homePath path=""/>
@@ -504,96 +545,73 @@ if gum confirm "Add QGIS project components?"; then
   </ProjectGpsSettings>
 </qgis>
 EOF_QGIS
-  gum format -- "- Created QGIS project file: **$QGIS_PROJ_FILE_RELATIVE**"
+  gum format -- "- Created QGIS project file: **$QGIS_PROJ_FILE_ABS**"
 
   if gum confirm "Do you want to try launching QGIS with the new project file?"; then
     OS_TYPE=$(uname -s)
     LAUNCHED=false
+    QGIS_OPEN_TARGET="$QGIS_PROJ_FILE_ABS" # Absolute path
 
     if [[ "$OS_TYPE" == "Darwin" ]]; then
-        # macOS
         if command -v open >/dev/null 2>&1; then
-          echo "Attempting to launch QGIS for '$QGIS_PROJ_FILE_RELATIVE' using 'open'..."
-          open "$QGIS_PROJ_FILE_RELATIVE" &>/dev/null &
+          echo "Attempting to launch QGIS for '$QGIS_OPEN_TARGET' using 'open'..."
+          open "$QGIS_OPEN_TARGET" &>/dev/null &
           LAUNCHED=true
-        else
-           gum style --foreground="yellow" "Warning: 'open' command not found? Cannot open project."
-        fi
+        else gum style --foreground="yellow" "Warning: 'open' command not found? Cannot open project."; fi
     elif [[ "$OS_TYPE" == "Linux" ]]; then
-        # Linux
         if command -v xdg-open >/dev/null 2>&1; then
-          echo "Attempting to launch QGIS for '$QGIS_PROJ_FILE_RELATIVE' using 'xdg-open'..."
-          xdg-open "$QGIS_PROJ_FILE_RELATIVE" &>/dev/null &
+          echo "Attempting to launch QGIS for '$QGIS_OPEN_TARGET' using 'xdg-open'..."
+          xdg-open "$QGIS_OPEN_TARGET" &>/dev/null &
           LAUNCHED=true
-        else
-          gum style --foreground="yellow" "Warning: 'xdg-open' command not found in PATH. Cannot open project."
-        fi
+        else gum style --foreground="yellow" "Warning: 'xdg-open' command not found. Cannot open project."; fi
     else
         gum style --foreground="yellow" "Warning: Unsupported OS for automatic QGIS project opening via system handler."
     fi
 
-    # Final warning if the specific OS handler wasn't found/used
     if ! $LAUNCHED; then
-        gum style --foreground="yellow" "Could not automatically launch QGIS project using system handler ('open' or 'xdg-open')." \
-                  "Please open the file manually:" \
-                  "'$PROJECT_PATH/$QGIS_PROJ_FILE_RELATIVE'"
+        gum style --foreground="yellow" "Could not automatically launch QGIS." \
+                  "Please open manually: '$QGIS_OPEN_TARGET'"
     fi
   fi
-fi # End of ADD_QGIS block
+fi
 
-
-# 8. Ask to open R project in Editor (if R components were added)
+# 6. Ask to open R project in Editor (if R components were added)
 if $ADD_R; then
-  echo "" # Add a newline for spacing
-  OPEN_WITH=$(gum choose "RStudio" "Cursor" "Neither" --header "Open R sub-project (${PROJECT_NAME}/R) with:" --height 5)
+  echo ""
+  OPEN_WITH=$(gum choose "RStudio" "Cursor" "Neither" --header "Open R project ($PROJECT_NAME.Rproj) with:" --height 5)
+  R_OPEN_TARGET_FILE="$RPROJ_FILE_ABS" # Absolute path to .Rproj
+  R_OPEN_TARGET_DIR="$PROJECT_ROOT_DIR" # For Cursor, open the project root
 
   case "$OPEN_WITH" in
     "RStudio")
-      # Use the relative path to the .Rproj file
       OS_TYPE=$(uname -s)
       if [[ "$OS_TYPE" == "Darwin" ]]; then
-        # macOS
         if command -v open >/dev/null 2>&1; then
-          echo "Launching default application for '$RPROJ_FILE_RELATIVE' using 'open'..."
-          open "$RPROJ_FILE_RELATIVE" &>/dev/null &
-        else
-           # Should generally not happen on macOS
-           gum style --foreground="yellow" "Warning: 'open' command not found? Cannot open project."
-        fi
+          echo "Launching default application for '$R_OPEN_TARGET_FILE' using 'open'..."
+          open "$R_OPEN_TARGET_FILE" &>/dev/null &
+        else gum style --foreground="yellow" "Warning: 'open' command not found? Cannot open project."; fi
       elif [[ "$OS_TYPE" == "Linux" ]]; then
-        # Linux
         if command -v xdg-open >/dev/null 2>&1; then
-          echo "Launching default application for '$RPROJ_FILE_RELATIVE' using 'xdg-open'..."
-          xdg-open "$RPROJ_FILE_RELATIVE" &>/dev/null &
-        else
-          gum style --foreground="yellow" "Warning: 'xdg-open' command not found in PATH. Cannot open project."
-        fi
+          echo "Launching default application for '$R_OPEN_TARGET_FILE' using 'xdg-open'..."
+          xdg-open "$R_OPEN_TARGET_FILE" &>/dev/null &
+        else gum style --foreground="yellow" "Warning: 'xdg-open' command not found. Cannot open project."; fi
       else
-        # Fallback for other OSes (like Windows via Git Bash/WSL without xdg-utils)
-        # Try the original rstudio command as a last resort
-      if command -v rstudio >/dev/null 2>&1; then
-          echo "Launching RStudio with '$RPROJ_FILE_RELATIVE' (OS detection fallback)..."
-        rstudio "$RPROJ_FILE_RELATIVE" &>/dev/null &
-      else
-          gum style --foreground="yellow" "Warning: Neither 'open' (Mac), 'xdg-open' (Linux), nor 'rstudio' found in PATH. Cannot open project automatically."
-        fi
+        if command -v rstudio >/dev/null 2>&1; then
+          echo "Launching RStudio with '$R_OPEN_TARGET_FILE' (OS detection fallback)..."
+          rstudio "$R_OPEN_TARGET_FILE" &>/dev/null &
+        else gum style --foreground="yellow" "Warning: Neither 'open', 'xdg-open', nor 'rstudio' found. Cannot open project automatically."; fi
       fi
       ;;
     "Cursor")
-      # Target the R subdirectory directly
       if command -v cursor >/dev/null 2>&1; then
-        echo "Launching Cursor in R subdirectory ('R')..."
-        cursor R &>/dev/null & # Open the R directory relative to current dir ($PROJECT_PATH)
+        echo "Launching Cursor in project root directory ('$R_OPEN_TARGET_DIR')..."
+        cursor "$R_OPEN_TARGET_DIR" &>/dev/null &
       else
-         gum style --foreground="yellow" "Warning: 'cursor' command not found in PATH. Cannot open project."
+         gum style --foreground="yellow" "Warning: 'cursor' command not found. Cannot open project."
       fi
       ;;
-    "Neither")
-      echo "Okay, not opening any editor for the R project."
-      ;;
-    *)
-      echo "No editor selected."
-      ;;
+    "Neither") echo "Okay, not opening any editor for the R project.";;
+    *) echo "No editor selected.";;
   esac
 fi
 
@@ -604,11 +622,10 @@ if ! $ADD_R && ! $ADD_QGIS; then
     SUMMARY_MSG="Basic project structure and Git repo created. No specific R or QGIS components added."
 fi
 
-print_success "$SUMMARY_MSG" "$(pwd)" # Use pwd as we already cd'd
+print_success "$SUMMARY_MSG" "$PROJECT_ROOT_DIR"
 
-# Optional: Offer to change directory (needs sourcing to persist)
 echo ""
-echo "Current directory: $(pwd)"
+echo "Current directory: $(pwd)" # Should be $PROJECT_ROOT_DIR
 echo "(Run script using 'source $0' or '. $0' to stay in this directory after the script exits)"
 
 exit 0
