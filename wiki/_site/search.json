@@ -1,10 +1,31 @@
 [
   {
-    "objectID": "data_raw/austria_4326.html",
-    "href": "data_raw/austria_4326.html",
-    "title": "DAV",
+    "objectID": "link_dirs/gaza damage data-20250516192811.html",
+    "href": "link_dirs/gaza damage data-20250516192811.html",
+    "title": "gaza damage data",
     "section": "",
-    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     \n\n\n         0 0     false"
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/gaza damage data-20250516192811.html#gaza-damage-data",
+    "href": "link_dirs/gaza damage data-20250516192811.html#gaza-damage-data",
+    "title": "gaza damage data",
+    "section": "",
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "misc.html",
+    "href": "misc.html",
+    "title": "Tips and Tricks for this and that",
+    "section": "",
+    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
+  },
+  {
+    "objectID": "misc.html#mac",
+    "href": "misc.html#mac",
+    "title": "Tips and Tricks for this and that",
+    "section": "",
+    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
   },
   {
     "objectID": "climate-analyses/kjn_tropennächte.html",
@@ -42,20 +63,6 @@
     "text": "DAV"
   },
   {
-    "objectID": "links.html",
-    "href": "links.html",
-    "title": "Useful Links",
-    "section": "",
-    "text": "Gaza Damage Oregon State#data #geospatial"
-  },
-  {
-    "objectID": "links.html#links-collection",
-    "href": "links.html#links-collection",
-    "title": "Useful Links",
-    "section": "",
-    "text": "Gaza Damage Oregon State#data #geospatial"
-  },
-  {
     "objectID": "climate_analyses.html",
     "href": "climate_analyses.html",
     "title": "Climate Analyses",
@@ -63,17 +70,17 @@
     "text": "SOME DESRIPTION TO FOLLOW\n\n\n\n\n\n\n    \n      \n      \n    \n\n\n\n\n\n\n\nTemperaturen in der Nacht\n\n\n\nRobin Kohrs / Netzwerk Klimajournalismus\n\n\nApr 27, 2025\n\n\n\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "misc.html",
-    "href": "misc.html",
-    "title": "Tips and Tricks for this and that",
+    "objectID": "all_links.html",
+    "href": "all_links.html",
+    "title": "My Link Collection",
     "section": "",
-    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
+    "text": "This page lists all the useful links I’ve collected. You can sort and filter them using the controls above.\n\n\n\n\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "misc.html#mac",
-    "href": "misc.html#mac",
-    "title": "Tips and Tricks for this and that",
+    "objectID": "data_raw/austria_4326.html",
+    "href": "data_raw/austria_4326.html",
+    "title": "DAV",
     "section": "",
-    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
+    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     \n\n\n         0 0     false"
   }
 ]
