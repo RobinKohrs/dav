@@ -1,0 +1,15 @@
+---
+title: "My Link Collection"
+listing:
+  contents: "link_documents/*.qmd" # Or whatever subdirectory you use
+  sort: "date desc" # Sort by date, newest first
+  type: default # Or table, or grid
+  categories: true # Enable category filtering
+  fields: [title, description, date, categories] # Customize displayed fields
+  # Optional: add page-size, image-placeholder, etc.
+page-layout: full
+---
+
+This page lists all the useful links I've collected. You can sort and filter them using the controls above.
+
+    

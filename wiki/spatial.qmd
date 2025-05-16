@@ -14,7 +14,7 @@ library(stars)
 library(terra)
 
 # path to raster
-raster_file_path = here::here("wiki", "data_raw", "SPARTACUS", "SPARTACUS2-DAILY_TX_2024.nc")
+#raster_file_path = here::here("wiki", "data_raw", "SPARTACUS", "SPARTACUS2-DAILY_TX_2024.nc")
 
 austria_4326_path = here::here("wiki", "data_raw", "austria_4326.fgb")
 ```
@@ -30,8 +30,8 @@ austria_4326_path = here::here("wiki", "data_raw", "austria_4326.fgb")
 
 ```{r}
 # Use intern = TRUE to capture the output
-ncdump = system(glue("ncdump -h {raster_file_path}"), intern = TRUE)
-cat(ncdump, sep="\n")
+#ncdump = system(glue("ncdump -h {raster_file_path}"), intern = TRUE)
+#cat(ncdump, sep="\n")
 ```
 
 :::
@@ -44,33 +44,6 @@ cat(ncdump, sep="\n")
 - Here all have the same dimensions!
 
 ```{r}
-
 # the  austrian shape
 austria = read_sf(austria_4326_path)
-prin(austria)
-
-# load it using stars
-data_raw_stars = read_ncdf(raster_file_path)
-print(data_raw_stars)
-
-
-# load it using terra
-data_raw_terra = terra::rast(raster_file_path)
-print(data_raw_terra)
 ```
-:::
-
-
-:::{.callout-note collapse="true"}
-
-## Transform to 4326
-
-```{r}
-
-```
-
-
-:::
-
-
-

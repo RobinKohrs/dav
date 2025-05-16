@@ -1,67 +1,85 @@
-# data-raw/prepare_geosphere_schemas.R
 
-# This script defines the schemas for accessing Geosphere Austria data
-# and saves them as internal package data (R/sysdata.rda).
-# Run this script whenever you add or modify a schema.
-
-## Define known Geosphere data schemas
-## This list is maintained by the package developer based on knowledge of the datasets.
-GEOSPHERE_DATA_SCHEMAS <- list(
+# --- GEOSPHERE_DATA_SCHEMAS ---
+# --- RESOURCE IDs ARE NOW CORRECT. FILENAME TEMPLATES AND PARAMETERS ARE EDUCATED GUESSES ---
+# --- YOU MUST VERIFY filename_templates, variable codes, and season codes! ---
+GEOSPHERE_DATA_SCHEMAS = list(
+  # --- SPARTACUS v2 Daily Data ---
   "spartacus-v2-1d-1km" = list(
-    description = "SPARTACUS v2 Daily 1km Gridded Data",
-    resource_subpath_parts_template = c("filelisting", "{variable_type}"),
-    filename_template = "SPARTACUS2-DAILY_{variable_type}_{year}.nc",
+    description = "SPARTACUS v2 Daily Gridded Data (1km resolution)",
     parameters = list(
-      year = list(type = "integer", example = 2020, notes = "Four-digit year, e.g., 1961-current"),
+      year = list(
+        type = "integer",
+        description = "Year of the data (e.g., 2020)."
+      ),
       variable_type = list(
         type = "character",
-        allowed_values = c("TX", "TN", "RR", "GLOB", "SD"), # TX:MaxTemp, TN:MinTemp, RR:Precip, GLOB:GlobalRad, SD:SnowDepth
-        example = "TX",
-        notes = "TX: Max Temp, TN: Min Temp, RR: Precipitation, GLOB: Global Radiation, SD: Snow Depth"
+        description = "Climate variable: TX (Max Temp), TN (Min Temp), RR (Precip), SL (Global Rad), SD (Snow Depth). Verify exact codes!",
+        # Assuming similar variables to your first example, but check Geosphere for "spartacus-v2-1d-1km" specifics
+        allowed_values = c("TX", "TN", "RR", "SL", "SD", "SA") # Added SA based on other descriptions
       )
-    )
+    ),
+    # ASSUMPTION: Filename pattern is similar to your first example
+    # Example: SPARTACUS2-DAILY_TX_2020.nc
+    filename_template = "SPARTACUS2-DAILY_{toupper(variable_type)}_{year}.nc",
+    resource_subpath_parts_template = NULL # Assuming no subpath
   ),
-  "apolis-short-daily-dir-hori" = list(
-    description = "APOLIS Shortwave Daily Direct Horizontal Sum (kWh/m^2)",
-    resource_subpath_parts_template = c("daily", "DIR_hori_daysum_kWh"), # This seems fixed
-    filename_template = "APOLIS-SHORT-DAILY_DIR_hori_daysum_kWh_{year}{month}.nc",
+
+  # --- SPARTACUS v2 Monthly Data ---
+  "spartacus-v2-1m-1km" = list(
+    description = "SPARTACUS v2 Monthly Gridded Data (1km resolution)",
     parameters = list(
-      year = list(type = "integer", example = 2006, notes = "Four-digit year, e.g., 2001-current"),
-      month = list(type = "character", example = "01", notes = "Two-digit month, zero-padded (e.g., '01' for Jan, '12' for Dec)")
-    )
-  ),
-  "vdl-standard-v1-1h-1km-era5land-downscaled" = list(
-    description = "VDL Standard v1 Hourly 1km ERA5-Land Downscaled Data (INCA-analysed)",
-    resource_subpath_parts_template = c("{year}", "{month}", "{variable_code}"), # e.g. 2022/01/t2m
-    filename_template = "vdl-standard-v1_1h_1km_era5land-downscaled_{year}{month}{day}_{variable_code}.nc",
-    parameters = list(
-      year = list(type = "integer", example = 2022, notes = "Four-digit year"),
-      month = list(type = "character", example = "01", notes = "Two-digit month, zero-padded"),
-      day = list(type = "character", example = "01", notes = "Two-digit day, zero-padded"),
-      variable_code = list(
+      year = list(type = "integer"),
+      variable_type = list(
         type = "character",
-        allowed_values = c(
-          "t2m", "td2m", "u10m", "v10m", "rh2m", "msl", "tp", "ssr", "str", "sd", "cloudcover"
-          # t2m: Temp 2m, td2m: Dewpoint 2m, u10m/v10m: Wind, rh2m: RelHum, msl: Pressure,
-          # tp: Total Precip, ssr: Surf Shortwave Rad, str: Surf Thermal Rad, sd: SnowDepth
-        ),
-        example = "t2m",
-        notes = "Variable codes (e.g., t2m for 2m temperature)"
+        description = "Climate variable: TM (Mean Temp), RR (Precip), SA (Sunshine Duration). Verify exact codes!",
+        allowed_values = c("TM", "RR", "SA") # Based on general descriptions
       )
-    )
+      # month = list(type = "integer") # Add if files are per month, and update template
+    ),
+    # ASSUMPTION: One file per year, variable. Example: SPARTACUS2-MONTHLY_TM_2020.nc
+    filename_template = "SPARTACUS2-MONTHLY_{toupper(variable_type)}_{year}.nc",
+    resource_subpath_parts_template = NULL # Assuming no subpath
+  ),
+
+  # --- SPARTACUS v2 Seasonal (Quarterly) Data ---
+  "spartacus-v2-1q-1km" = list( # Corrected from 1s to 1q
+    description = "SPARTACUS v2 Seasonal (Quarterly) Gridded Data (1km resolution)",
+    parameters = list(
+      year = list(type = "integer"),
+      variable_type = list(
+        type = "character",
+        description = "Climate variable: TM (Mean Temp), RR (Precip), SA (Sunshine Duration). Verify exact codes!",
+        allowed_values = c("TM", "RR", "SA")
+      ),
+      season_code = list(
+        type = "character",
+        description = "Season code (e.g., 'DJF', 'MAM', 'JJA', 'SON'). Verify format!",
+        allowed_values = c("DJF", "MAM", "JJA", "SON") # Common meteorological season codes
+      )
+    ),
+    # ASSUMPTION: Example: SPARTACUS2-SEASONAL_TM_2020_JJA.nc
+    filename_template = "SPARTACUS2-SEASONAL_{toupper(variable_type)}_{year}_{toupper(season_code)}.nc",
+    resource_subpath_parts_template = NULL # Assuming no subpath
+  ),
+
+  # --- SPARTACUS v2 Yearly Data ---
+  "spartacus-v2-1y-1km" = list(
+    description = "SPARTACUS v2 Yearly Gridded Data (1km resolution)",
+    parameters = list(
+      year = list(type = "integer"),
+      variable_type = list(
+        type = "character",
+        description = "Climate variable: TM (Mean Temp), RR (Precip), SA (Sunshine Duration). Verify exact codes!",
+        allowed_values = c("TM", "RR", "SA")
+      )
+    ),
+    # ASSUMPTION: Example: SPARTACUS2-YEARLY_TM_2020.nc
+    filename_template = "SPARTACUS2-YEARLY_{toupper(variable_type)}_{year}.nc",
+    resource_subpath_parts_template = NULL # Assuming no subpath
   )
-  # Add more schemas here as you discover/need them.
-  # For example:
-  # "another-dataset-id" = list(
-  #   description = "Another Dataset Example",
-  #   resource_subpath_parts_template = c("some", "path"),
-  #   filename_template = "datafile_{location_code}_{date_iso}.csv",
-  #   parameters = list(
-  #     location_code = list(type = "character", example = "VIENNA"),
-  #     date_iso = list(type = "character", example = "2023-10-26", notes = "YYYY-MM-DD format")
-  #   )
-  # )
 )
+# --- End of GEOSPHERE_DATA_SCHEMAS ---
+
 
 # Use usethis to save this list as internal package data (in R/sysdata.rda)
 # This makes GEOSPHERE_DATA_SCHEMAS available to your package functions

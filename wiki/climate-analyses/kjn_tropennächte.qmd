@@ -244,7 +244,7 @@ file_dir = ifelse(
   knitr::current_input(dir = TRUE)
 ) |> dirname()
 
-op = sys_make_path(file_dir, "images", "jährliche_nachttemperatur.png")
+op = sys_make_path(file.path(file_dir, "images", "jährliche_nachttemperatur.png"))
 print(op)
 ggsave(op)
 ```
