@@ -1,17 +1,31 @@
 [
   {
-    "objectID": "link_dirs/gaza damage data-20250516193649.html",
-    "href": "link_dirs/gaza damage data-20250516193649.html",
-    "title": "Gaza Damage Data",
+    "objectID": "link_dirs/fonts for data visualization.html",
+    "href": "link_dirs/fonts for data visualization.html",
+    "title": "Fonts For Data Visualization",
     "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
-    "objectID": "link_dirs/gaza damage data-20250516193649.html#gaza-damage-data",
-    "href": "link_dirs/gaza damage data-20250516193649.html#gaza-damage-data",
-    "title": "Gaza Damage Data",
+    "objectID": "link_dirs/fonts for data visualization.html#fonts-for-data-visualization",
+    "href": "link_dirs/fonts for data visualization.html#fonts-for-data-visualization",
+    "title": "Fonts For Data Visualization",
     "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/overture maps.html",
+    "href": "link_dirs/overture maps.html",
+    "title": "Overture Maps",
+    "section": "",
+    "text": "Some fancy derivate of osm data\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/overture maps.html#overture-maps",
+    "href": "link_dirs/overture maps.html#overture-maps",
+    "title": "Overture Maps",
+    "section": "",
+    "text": "Some fancy derivate of osm data\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
     "objectID": "data_raw/austria_4326.html",
@@ -19,41 +33,6 @@
     "title": "DAV",
     "section": "",
     "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     \n\n\n         0 0     false"
-  },
-  {
-    "objectID": "all_links.html",
-    "href": "all_links.html",
-    "title": "My Link Collection",
-    "section": "",
-    "text": "This page lists all the useful links I’ve collected. You can sort and filter them using the controls above.\n\n\n\n\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "climate_analyses.html",
-    "href": "climate_analyses.html",
-    "title": "Climate Analyses",
-    "section": "",
-    "text": "SOME DESRIPTION TO FOLLOW\n\n\n\n\n\n\n    \n      \n      \n    \n\n\n\n\n\n\n\nTemperaturen in der Nacht\n\n\n\nRobin Kohrs / Netzwerk Klimajournalismus\n\n\nApr 27, 2025\n\n\n\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "DAV",
-    "section": "",
-    "text": "DAV"
-  },
-  {
-    "objectID": "spatial.html",
-    "href": "spatial.html",
-    "title": "Spatial",
-    "section": "",
-    "text": "ncdump -h on the large file\n\n\n\n\n\n\n\nShow Code\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n\n\n\n\n\n\n\n\n\n\n\nRead in the data\n\n\n\n\n\n\nHere all have the same dimensions!\n\n\n\nShow Code\n# the  austrian shape\naustria = read_sf(austria_4326_path)"
-  },
-  {
-    "objectID": "spatial.html#load-data",
-    "href": "spatial.html#load-data",
-    "title": "Spatial",
-    "section": "",
-    "text": "ncdump -h on the large file\n\n\n\n\n\n\n\nShow Code\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n\n\n\n\n\n\n\n\n\n\n\nRead in the data\n\n\n\n\n\n\nHere all have the same dimensions!\n\n\n\nShow Code\n# the  austrian shape\naustria = read_sf(austria_4326_path)"
   },
   {
     "objectID": "climate-analyses/kjn_tropennächte.html",
@@ -70,6 +49,41 @@
     "text": "# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n\n\n\n\n\n\n\n[1] \"/Users/rk/projects/personal/dav/wiki/climate-analyses/images/jährliche_nachttemperatur.png\"\n\n\n\n\n\n\n\nShow Code\nresource_id = \"klima-v2-1h\"\nend_year = 2025\nmonth = 7\n\n# download data\nwalk(min_start_year:2025, function(year){\n  start = glue(\"{year}-{month}-01\")\n  last_day_in_month = lubridate::days_in_month(glue(\"{year}-{month}-01\"))\n  end = glue(\"{year}-{month}-{last_day_in_month}\")\n\n  fn = glue(\"capitals_{year}_{month}.csv\")\n  op = sys_make_path(file.path(data_raw_path_hourly_data, fn))\n  if (file.exists(op)) {\n    result = data.table::fread(op)\n  } else{\n    result = tryCatch({\n      data = geosphere_get_data(\n        resource_id = resource_id,\n        parameters = c(\"tl\"),\n        start = start,\n        end = end,\n        station_ids = davR::geosphere_stations_in_capitals$id,\n        type = \"station\",\n        mode = \"historical\",\n        output_file = op) %&gt;% data.table::fread()\n    }, error = function(e) {\n      cli::cli_warn(\"Failed processing {year}-{month}: {conditionMessage(e)}\")\n      return(NULL) # Return NULL on error\n    })\n  }\n})\n\n# read in all data\npaths = paths = dir(data_raw_path_hourly_data, \"^capitals\", full.names = T)\ndata_per_year = map(paths, data.table::fread) \ndata_all_years = data_per_year %&gt;% map(function(dpy) {\n  year = dpy$time[[1]] %&gt;% lubridate::year()\n  dpy %&gt;%\n    group_by(station) %&gt;%\n    filter(hour(time) &gt;= 22 | hour(time) &lt;= 6) %&gt;%\n    summarise(mean_night_temp_july = mean(tl, na.rm = TRUE)) %&gt;%\n    mutate(year = year) -&gt; data_one_year_summarised\n  \n})\n\n\n# put all stations together\nbind_rows(data_all_years) %&gt;% \n  group_by(station) %&gt;% \n  arrange(year, .by_group = T) %&gt;% \n  mutate(smoothed_5yr_mean = zoo::rollmean(\n    x = mean_night_temp_july,\n    k = 5,\n    fill = NA,\n    align = \"right\"           # Align window to the right (uses current year and previous 4)\n  )) -&gt; data_per_year\n\n\ndata_per_year = data_per_year %&gt;%\n  left_join(davR::geosphere_stations_in_capitals %&gt;% select(id, name) %&gt;% st_drop_geometry(), join_by(station == id)) %&gt;% \n  ungroup() %&gt;% \n  select(-station)\n  \n  \n\n\n\ncolor_yearly &lt;- \"tomato\"\ncolor_smoothed &lt;- \"#343434\" # A dark grey\n\nsmoothed_means_long &lt;- data_per_year %&gt;%\n  pivot_longer(\n    cols = c(mean_night_temp_july, smoothed_5yr_mean), # Columns to lengthen\n    names_to = \"average_type\",                         # New column for names of original cols\n    values_to = \"temperature\"                          # New column for the values\n  ) %&gt;%\n  # *** Use German labels for the factor levels ***\n  mutate(average_type = factor(average_type,\n                               levels = c(\"mean_night_temp_july\", \"smoothed_5yr_mean\"),\n                               labels = c(\"Jährlich\", \"5-Jahres Glättung\"))) # German labels\n\n# --- Step 2: Find the first year where smoothed data exists ---\nmin_start_year &lt;- smoothed_means_long %&gt;%\n  filter(average_type == \"5-Jahres Glättung\" & !is.na(temperature)) %&gt;%\n  pull(year) %&gt;%\n  min()\n\nif (!is.finite(min_start_year)) {\n  warning(\"Could not find a starting year with non-NA smoothed data. Using overall minimum year.\")\n  min_start_year &lt;- min(smoothed_means_long$year, na.rm = TRUE)\n}\n\nggplot(smoothed_means_long, aes(x = year, y = temperature, color = average_type)) +\n\n  # Draw POINTS only for \"Jährlich\" (Yearly)\n  geom_point(data = . %&gt;% filter(average_type == \"Jährlich\"),\n             size = 1,\n             alpha = 0.7) +\n\n  # Draw a LINE only for \"5-Jahres Glättung\" (Smoothed)\n  # geom_line(data = . %&gt;% filter(average_type == \"5-Jahres Glättung\"),\n  #           linewidth = 0.8) +\n  geom_smooth(data = . %&gt;% filter(average_type == \"Jährlich\"), method = \"loess\", linewidth=0.5, colour=\"#353535\")+\n\n  # Add Horizontal Line and GERMAN Label for \"Tropennacht\"\n  geom_hline(yintercept = 20, linetype = \"dashed\", color = \"darkgrey\", linewidth=0.8) +\n  annotate(geom = \"text\",\n           x = Inf,\n           y = 20.1,\n           # *** German label ***\n           label = \"Tropennacht (&gt;= 20°C)\",\n           hjust = 1.05,\n           vjust = 0,\n           color = \"darkgrey\",\n           size = 1.2) +\n\n\n  # *** Use scale_color_manual to assign specific colors ***\n  scale_color_manual(\n     # *** Legend title in German ***\n     name = \"Mittelwerttyp\",\n     # *** Values map German factor levels to desired colors ***\n     values = c(\"Jährlich\" = color_yearly,\n                \"5-Jahres Glättung\" = color_smoothed)\n  ) +\n\n  # Adjust X-axis limits using coord_cartesian\n  coord_cartesian(xlim = c(min_start_year - 0.5, NA),\n                  # Optional: Ensure y-axis includes the annotation comfortably\n                  ylim = c(NA, NA), # Let ggplot decide y limits mostly\n                  clip = \"off\") +   # Allow annotation to potentially go outside plot panel slightly if needed\n\n  # Add labels (in German) and the ggtext title\n  labs(\n    # *** Use ggtext markdown/HTML for the title ***\n    title = paste0(\n      \"Juli Nachttemperatur: &lt;span style='color:\", color_yearly,\n      \";'&gt;Jährlich&lt;/span&gt; vs &lt;span style='color:\", color_smoothed,\n      \";'&gt;5-Jahres Glättung&lt;/span&gt;\"\n      ),\n    # *** German subtitle ***\n    subtitle = \"Nacht definiert als 18:00 - 05:59 | Station Wien Hohe Warte\",\n    # *** German axis labels ***\n    x = \"Jahr\",\n    y = \"Mittlere Temperatur (°C)\"\n  ) +\n  facet_wrap(~name) + \n  # Apply a theme and enable ggtext rendering for the title\n  theme_minimal(base_size = 7) +\n  theme(\n    legend.position = \"bottom\",\n    # *** Use element_markdown for plot title to render HTML/markdown ***\n    plot.title = element_markdown(hjust = 0.5, size = 14), # size optional\n    plot.subtitle = element_text(hjust = 0.5),\n    strip.background = element_rect(fill = \"grey90\", color = NA),\n    strip.text = element_text(face = \"bold\"),\n    # Optional: Add margin above plot title for annotation space if needed\n    plot.margin = margin(t = 15, r = 5.5, b = 5.5, l = 5.5, unit = \"pt\")\n  )"
   },
   {
+    "objectID": "spatial.html",
+    "href": "spatial.html",
+    "title": "Spatial",
+    "section": "",
+    "text": "ncdump -h on the large file\n\n\n\n\n\n\n\nShow Code\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n\n\n\n\n\n\n\n\n\n\n\nRead in the data\n\n\n\n\n\n\nHere all have the same dimensions!\n\n\n\nShow Code\n# the  austrian shape\naustria = read_sf(austria_4326_path)"
+  },
+  {
+    "objectID": "spatial.html#load-data",
+    "href": "spatial.html#load-data",
+    "title": "Spatial",
+    "section": "",
+    "text": "ncdump -h on the large file\n\n\n\n\n\n\n\nShow Code\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n\n\n\n\n\n\n\n\n\n\n\nRead in the data\n\n\n\n\n\n\nHere all have the same dimensions!\n\n\n\nShow Code\n# the  austrian shape\naustria = read_sf(austria_4326_path)"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "DAV",
+    "section": "",
+    "text": "DAV"
+  },
+  {
+    "objectID": "all-links.html",
+    "href": "all-links.html",
+    "title": "Links Collection",
+    "section": "",
+    "text": "Order By\n       Default\n         \n          Title\n        \n         \n          Date - Oldest\n        \n         \n          Date - Newest\n        \n         \n          Author\n        \n     \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\n\n\n\narticle\n\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nState of Palestine Humdata\n\n\n\n\n\n\ndataset\n\n\nreference\n\n\n\nHumdata datasets for the state of palestine\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\n\n\n\narticle\n\n\nreference\n\n\ntechnical\n\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "climate_analyses.html",
+    "href": "climate_analyses.html",
+    "title": "Climate Analyses",
+    "section": "",
+    "text": "SOME DESRIPTION TO FOLLOW\n\n\n\n\n\n\n    \n      \n      \n    \n\n\n\n\n\n\n\nTemperaturen in der Nacht\n\n\n\nRobin Kohrs / Netzwerk Klimajournalismus\n\n\nApr 27, 2025\n\n\n\n\n\n\n\n\nNo matching items"
+  },
+  {
     "objectID": "misc.html",
     "href": "misc.html",
     "title": "Tips and Tricks for this and that",
@@ -84,80 +98,31 @@
     "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
   },
   {
-    "objectID": "link_dirs/gaza damage assesment-20250516194110.html",
-    "href": "link_dirs/gaza damage assesment-20250516194110.html",
-    "title": "gaza damage assesment",
+    "objectID": "link_dirs/deepl account page.html",
+    "href": "link_dirs/deepl account page.html",
+    "title": "Deepl Account Page",
     "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "Get the API Key…\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
-    "objectID": "link_dirs/gaza damage assesment-20250516194110.html#gaza-damage-assesment",
-    "href": "link_dirs/gaza damage assesment-20250516194110.html#gaza-damage-assesment",
-    "title": "gaza damage assesment",
+    "objectID": "link_dirs/deepl account page.html#deepl-account-page",
+    "href": "link_dirs/deepl account page.html#deepl-account-page",
+    "title": "Deepl Account Page",
     "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "Get the API Key…\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
-    "objectID": "link_dirs/gaza-20250516194555.html",
-    "href": "link_dirs/gaza-20250516194555.html",
-    "title": "Gaza",
+    "objectID": "link_dirs/state of palestine humdata.html",
+    "href": "link_dirs/state of palestine humdata.html",
+    "title": "State of Palestine Humdata",
     "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "Humdata datasets for the state of palestine\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
-    "objectID": "link_dirs/gaza-20250516194555.html#gaza",
-    "href": "link_dirs/gaza-20250516194555.html#gaza",
-    "title": "Gaza",
+    "objectID": "link_dirs/state of palestine humdata.html#state-of-palestine-humdata",
+    "href": "link_dirs/state of palestine humdata.html#state-of-palestine-humdata",
+    "title": "State of Palestine Humdata",
     "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
-  },
-  {
-    "objectID": "all-links.html",
-    "href": "all-links.html",
-    "title": "Links Collection",
-    "section": "",
-    "text": "Order By\n       Default\n         \n          Title\n        \n         \n          Date - Oldest\n        \n         \n          Date - Newest\n        \n         \n          Author\n        \n     \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\n\n\n\narticle\n\n\nreference\n\n\ntechnical\n\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "link_dirs/gaza title-20250516195200.html",
-    "href": "link_dirs/gaza title-20250516195200.html",
-    "title": "gaza title",
-    "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
-  },
-  {
-    "objectID": "link_dirs/gaza title-20250516195200.html#gaza-title",
-    "href": "link_dirs/gaza title-20250516195200.html#gaza-title",
-    "title": "gaza title",
-    "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
-  },
-  {
-    "objectID": "link_dirs/gaza title.html",
-    "href": "link_dirs/gaza title.html",
-    "title": "gaza title",
-    "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
-  },
-  {
-    "objectID": "link_dirs/gaza title.html#gaza-title",
-    "href": "link_dirs/gaza title.html#gaza-title",
-    "title": "gaza title",
-    "section": "",
-    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
-  },
-  {
-    "objectID": "link_dirs/fonts for data visualization.html",
-    "href": "link_dirs/fonts for data visualization.html",
-    "title": "Fonts For Data Visualization",
-    "section": "",
-    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
-  },
-  {
-    "objectID": "link_dirs/fonts for data visualization.html#fonts-for-data-visualization",
-    "href": "link_dirs/fonts for data visualization.html#fonts-for-data-visualization",
-    "title": "Fonts For Data Visualization",
-    "section": "",
-    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "Humdata datasets for the state of palestine\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   }
 ]
