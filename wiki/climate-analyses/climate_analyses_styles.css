@@ -106,8 +106,6 @@ h1, h2, h3, h4, h5, h6 {
   color: #fa6847;
 }
 
-/* Optional: Adjust other elements for better contrast if needed */
-/* For example, if code blocks look bad on the light blue background */
-/* pre, code { */
-/*   background-color: #f8f9fa; /* A slightly off-white */
-/* } */
+#quarto-sidebar {
+  background: #e1edf7;
+}

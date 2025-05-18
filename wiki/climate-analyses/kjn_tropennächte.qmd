@@ -51,6 +51,8 @@ data_raw_path_daily_data = sys_make_path("data_raw/2025-05-tropennächte/station
 
 ```{r download_data}
 #| echo: false
+#| cache: true
+
 resource_id = "klima-v2-1h"
 start_year = 1900
 end_year = 2025
@@ -208,8 +210,10 @@ ggplot(smoothed_means_long, aes(x = year, y = temperature, color = average_type)
     plot.subtitle = element_text(hjust = 0.5),
     strip.background = element_rect(fill = "grey90", color = NA),
     strip.text = element_text(face = "bold"),
+    plot.background = element_rect(fill="#e1edf7", colour = "transparent"),
     # Optional: Add margin above plot title for annotation space if needed
-    plot.margin = margin(t = 15, r = 5.5, b = 5.5, l = 5.5, unit = "pt")
+    plot.margin = margin(t = 15, r = 5.5, b = 5.5, l = 5.5, unit = "pt"),
+    panel.grid = element_line(color="#35353599",linewidth = 0.05)
   )
 
 file_dir = ifelse(
@@ -322,72 +326,81 @@ if (!is.finite(min_start_year)) {
   min_start_year <- min(smoothed_means_long$year, na.rm = TRUE)
 }
 
-ggplot(smoothed_means_long, aes(x = year, y = temperature, color = average_type)) +
-
+ggplot(smoothed_means_long, aes(x = year, y = temperature)) +
   # Draw POINTS only for "Jährlich" (Yearly)
   geom_point(data = . %>% filter(average_type == "Jährlich"),
              size = 1,
-             alpha = 0.7) +
+             alpha = 0.7,
+             aes(color = average_type),
+            key_glyph="point" 
+             ) +
 
   # Draw a LINE only for "5-Jahres Glättung" (Smoothed)
   # geom_line(data = . %>% filter(average_type == "5-Jahres Glättung"),
   #           linewidth = 0.8) +
-  geom_smooth(data = . %>% filter(average_type == "Jährlich"), method = "loess", linewidth=0.5, colour="#353535")+
-
+  geom_smooth(
+    data = . %>% filter(average_type == "Jährlich"),
+    method = "loess",
+    linewidth = 0.5,
+    colour = "black",
+    show.legend = T,
+    aes(linetype = "Loess Glättung"),
+    key_glyph = "timeseries"
+  ) +
+  # Define linetype for the "Loess Glättung"
+  scale_linetype_manual(
+    name = NULL,
+    values = c("Loess Glättung" = "solid"),
+    labels = c("Loess Glättung" = "Loess Glättung", "b")
+  ) +
+  
   # Add Horizontal Line and GERMAN Label for "Tropennacht"
-  geom_hline(yintercept = 20, linetype = "dashed", color = "darkgrey", linewidth=0.8) +
+  geom_hline(yintercept = 20, linetype = "dashed", color = "darkgrey", linewidth=0.5) +
   annotate(geom = "text",
-           x = Inf,
+           x = 1950,
            y = 20.1,
-           # *** German label ***
            label = "Tropennacht (>= 20°C)",
-           hjust = 1.05,
-           vjust = 0,
-           color = "darkgrey",
-           size = 1.2) +
+           hjust = 0,
+           vjust = -1,
+           color = "#353535",
+           size = 1.5) +
 
 
-  # *** Use scale_color_manual to assign specific colors ***
   scale_color_manual(
-     # *** Legend title in German ***
-     name = "Mittelwerttyp",
-     # *** Values map German factor levels to desired colors ***
-     values = c("Jährlich" = color_yearly,
-                "5-Jahres Glättung" = color_smoothed)
+     name = NULL,
+     values = c("Jährlich" = color_yearly),
+     guide = guide_legend(override.aes = list(shape = 16, linetype = 0)) 
   ) +
 
-  # Adjust X-axis limits using coord_cartesian
   coord_cartesian(xlim = c(min_start_year - 0.5, NA),
                   # Optional: Ensure y-axis includes the annotation comfortably
                   ylim = c(NA, NA), # Let ggplot decide y limits mostly
                   clip = "off") +   # Allow annotation to potentially go outside plot panel slightly if needed
 
-  # Add labels (in German) and the ggtext title
   labs(
-    # *** Use ggtext markdown/HTML for the title ***
     title = paste0(
       "Juli Nachttemperatur: <span style='color:", color_yearly,
       ";'>Jährlich</span> vs <span style='color:", color_smoothed,
       ";'>5-Jahres Glättung</span>"
       ),
-    # *** German subtitle ***
     subtitle = "Nacht definiert als 18:00 - 05:59 | Station Wien Hohe Warte",
-    # *** German axis labels ***
     x = "Jahr",
     y = "Mittlere Temperatur (°C)"
   ) +
   facet_wrap(~name) + 
-  # Apply a theme and enable ggtext rendering for the title
   theme_minimal(base_size = 7) +
   theme(
     legend.position = "bottom",
     # *** Use element_markdown for plot title to render HTML/markdown ***
     plot.title = element_markdown(hjust = 0.5, size = 14), # size optional
     plot.subtitle = element_text(hjust = 0.5),
-    strip.background = element_rect(fill = "grey90", color = NA),
+    strip.background = element_rect(fill = "transparent", color = NA),
     strip.text = element_text(face = "bold"),
+    panel.grid = element_line(color="#35353599",linewidth = 0.05),
+    panel.border = element_rect(fill = "transparent",colour = "#353535"),
     # Optional: Add margin above plot title for annotation space if needed
-    plot.margin = margin(t = 15, r = 5.5, b = 5.5, l = 5.5, unit = "pt")
+    plot.margin = margin(t = 15, r = 5.5, b = 5.5, l = 5.5, unit = "pt"),
+    plot.background = element_rect(fill="#e1edf7", colour = "transparent")
   )
 
 
