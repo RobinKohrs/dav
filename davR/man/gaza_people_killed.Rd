@@ -2,50 +2,40 @@
 % Please edit documentation in R/daza_people_killed.R
 \name{gaza_people_killed}
 \alias{gaza_people_killed}
-\title{Download Data from HDX (State of Palestine - Hostilities)}
+\title{Download and Read "Killed in Gaza" Data from HDX}
 \usage{
-gaza_people_killed()
+gaza_people_killed(sheet = 1)
+}
+\arguments{
+\item{sheet}{The sheet to read from the Excel file. Can be a string (sheet name)
+or an integer (sheet number). Defaults to \code{1} (the first sheet).}
+
+\item{...}{Additional arguments to pass to \code{readxl::read_excel()}.}
 }
 \value{
-A character string: the path to the downloaded temporary file.
-The file extension is inferred from the download URL.
+A tibble containing the data from the "Killed in Gaza" Excel file.
 }
 \description{
-This function downloads the primary dataset (assumed to be the
-"Killed in Gaza" data or similar) from the Humanitarian Data Exchange (HDX)
-page for "The State of Palestine - Escalation of Hostilities". It uses a
-simple CSS selector (\code{a.resource-download-button}) to find the first
-matching download link, downloads the file to a temporary location,
-and returns the path to this temporary file.
+This function downloads the "Killed in Gaza" dataset from the
+Humanitarian Data Exchange (HDX) page for "The State of Palestine -
+Escalation of Hostilities". It then reads the downloaded Excel file
+and returns its content as a tibble.
 }
 \details{
-Download "Killed in Gaza" Data (Simplified)
+Data on people killed in the gaza strip
 
-The function attempts to fetch the main HTML page, locate the download
-link via the CSS selector \code{a.resource-download-button}, construct an absolute
-URL for the download, and then download the file. It uses a minimal
-User-Agent for the download request. Error handling is basic, focusing
-on the success of reading the page and downloading the file.
+The function specifies the HDX page URL for the "Killed in Gaza"
+data, calls an internal helper (\code{humdata_download_file}) to download the file
+to a temporary location, reads the data from the first sheet of the Excel
+file using \code{readxl::read_excel()}, and then deletes the temporary file.
+Column names are cleaned using \code{janitor::clean_names()}.
 }
 \examples{
 \dontrun{
   try({
     # Ensure you have an internet connection for this example to run.
-    temp_file_location = gaza_people_killed() # Assuming this is the exported name
-    print(paste("Data downloaded to:", temp_file_location))
-
-    # Example: if it's an Excel file
-    if (tools::file_ext(temp_file_location) \%in\% c("xlsx", "xls")) {
-      if (requireNamespace("readxl", quietly = TRUE)) {
-        # To read the data:
-        # gaza_data = readxl::read_excel(temp_file_location)
-        # print(head(gaza_data))
-        message("To read the Excel file, you can use: \n",
-                "gaza_data <- readxl::read_excel('", temp_file_location, "')")
-      } else {
-        message("Package 'readxl' is recommended for reading Excel files.")
-      }
-    }
+    killed_data = gaza_people_killed()
+    print(head(killed_data))
   }, error = function(e) {
     message("An error occurred during the example: ", e$message)
   })

@@ -33,6 +33,6 @@ Suggests:
     readr,
     readxl      
 Depends:
-    R (>= 2.10)
+    R (>= 3.5)
 LazyData: true
 URL: https://robinkohrs.github.io/dav/
