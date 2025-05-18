@@ -428,6 +428,54 @@ save_new_category_to_dav_config() {
     return 0
 }
 
+create_or_update_main_listing_qmd() {
+    print_info "Attempting to create/update main listing file (all-links.qmd)..."
+    local main_listing_filename="all-links.qmd"
+    local main_listing_filepath="$QUARTO_PROJECT_DIR_ABSOLUTE/$main_listing_filename"
+    
+    # Ensure LINK_DOCS_SUBDIR_NAME is not empty and QUARTO_PROJECT_DIR_ABSOLUTE is set
+    if [[ -z "$QUARTO_PROJECT_DIR_ABSOLUTE" ]]; then
+        print_warning "Quarto project directory is not set. Cannot create main listing file."
+        return 1
+    fi
+    if [[ -z "$LINK_DOCS_SUBDIR_NAME" ]]; then
+        print_warning "Link documents subdirectory name is not set. Cannot create main listing file."
+        return 1
+    fi
+
+    # Contents path relative to the main_listing_filepath
+    local listing_contents_path="$LINK_DOCS_SUBDIR_NAME/*.qmd"
+
+    # Create/overwrite the main listing file
+    # Using echo for all lines to avoid printf issues
+    {
+        echo "---"
+        echo "title: \"Links Collection\""
+        echo "listing:"
+        echo "  contents: $LINK_DOCS_SUBDIR_NAME"
+        echo "  type: default"
+        echo "  sort: \"date desc\""
+        echo "  sort-ui: [title, date, author]"
+        echo "  filter-ui: [title, date, author, categories, description]"
+        echo "  fields: [date, title, author, description, categories, image]"
+        echo "  page-size: 25"
+        echo "---" 
+        echo ""
+        echo "<!--"
+        echo "This page lists all link documents from the '$LINK_DOCS_SUBDIR_NAME' directory."
+        echo "It is automatically generated/updated by the $SCRIPT_NAME script."
+        echo "-->"
+    } > "$main_listing_filepath"
+
+    if [ $? -eq 0 ]; then
+        print_success "Main listing file created/updated: $main_listing_filepath"
+        print_info "You can include this file in your Quarto project's navigation or link to it directly."
+    else
+        print_warning "Failed to create/update main listing file: $main_listing_filepath"
+        return 1
+    fi
+    return 0
+}
 
 # --- Argument Parsing ---
 while getopts ":h" opt; do
@@ -574,14 +622,17 @@ main() {
     if [ ${#FINAL_CATEGORIES_ARRAY[@]} -eq 0 ]; then print_warning "No categories will be assigned to this link."; fi
 
     print_header "Step 3: Create Link Document"
-    local SANITIZED_TITLE TIMESTAMP NEW_QMD_FILENAME NEW_QMD_FILE_PATH
+    local SANITIZED_TITLE NEW_QMD_FILENAME NEW_QMD_FILE_PATH
     SANITIZED_TITLE=$(echo "$LINK_TITLE" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9]\+/-/g' -e 's/^-*//' -e 's/-*$//')
     if [[ -z "$SANITIZED_TITLE" ]]; then SANITIZED_TITLE="untitled-link"; fi
-    TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-    NEW_QMD_FILENAME="${SANITIZED_TITLE}-${TIMESTAMP}.qmd"
+    NEW_QMD_FILENAME="${SANITIZED_TITLE}.qmd"
     NEW_QMD_FILE_PATH="$LINK_DOCS_DIR_ABSOLUTE/$NEW_QMD_FILENAME"
 
-    if [[ -f "$NEW_QMD_FILE_PATH" ]]; then print_error "File '$NEW_QMD_FILE_PATH' already exists. Aborting."; fi
+    if [[ -f "$NEW_QMD_FILE_PATH" ]]; then 
+        print_warning "File '$NEW_QMD_FILE_PATH' already exists. It will be overwritten."
+        # Add a confirmation step if you prefer not to overwrite automatically
+        # For example, using gum confirm or read -p
+    fi
 
     local YAML_CATEGORIES="["
     local first_cat=true
@@ -598,25 +649,28 @@ main() {
     local ESCAPED_DESCRIPTION; ESCAPED_DESCRIPTION=$(echo "$LINK_DESCRIPTION" | sed 's/"/\\"/g')
 
     # Create the .qmd file content
-    # Using printf for better control over newlines
-    printf -- "---\n" > "$NEW_QMD_FILE_PATH"
+    # Using a mix of echo for separators and printf for content lines
+    echo "---" > "$NEW_QMD_FILE_PATH"
     printf "title: \"%s\"\n" "$LINK_TITLE" >> "$NEW_QMD_FILE_PATH"
-    printf "date: \"%s\"\n" "$(date --iso-8601=seconds)" >> "$NEW_QMD_FILE_PATH" # Ensure this date command works on user's OS
+    printf "date: \"%s\"\n" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$NEW_QMD_FILE_PATH"
     if [[ -n "$LINK_DESCRIPTION" ]]; then printf "description: \"%s\"\n" "$ESCAPED_DESCRIPTION" >> "$NEW_QMD_FILE_PATH"; fi
     if [[ -n "$YAML_CATEGORIES" ]]; then printf "categories: %s\n" "$YAML_CATEGORIES" >> "$NEW_QMD_FILE_PATH"; fi
     printf "link-url: \"%s\"\n" "$LINK_URL" >> "$NEW_QMD_FILE_PATH"
     printf "format: html\n" >> "$NEW_QMD_FILE_PATH" # Assuming default format
-    printf -- "---\n\n" >> "$NEW_QMD_FILE_PATH"
+    echo "---" >> "$NEW_QMD_FILE_PATH" # End YAML frontmatter
+    echo "" >> "$NEW_QMD_FILE_PATH" # Extra newline after frontmatter
     printf "## [%s](%s)\n\n" "$LINK_TITLE" "$LINK_URL" >> "$NEW_QMD_FILE_PATH"
     if [[ -n "$LINK_DESCRIPTION" ]]; then printf "%s\n\n" "$LINK_DESCRIPTION" >> "$NEW_QMD_FILE_PATH"; fi
-    printf -- "---\n" >> "$NEW_QMD_FILE_PATH"
-    printf "[View External Link](%s){:target=\"_blank\" rel=\"noopener noreferrer\"}\n" "$LINK_URL" >> "$NEW_QMD_FILE_PATH"
+    echo "---" >> "$NEW_QMD_FILE_PATH" # Horizontal rule
+    printf "[View External Link](%s)%s\n" "$LINK_URL" '{:target="_blank" rel="noopener noreferrer"}' >> "$NEW_QMD_FILE_PATH"
 
     if [ $? -eq 0 ]; then 
         print_success "New link document created: $NEW_QMD_FILE_PATH"
         if [ ${#NEW_CATEGORIES_TO_SAVE[@]} -gt 0 ]; then
              print_info "Note: New categorie(s) '${NEW_CATEGORIES_TO_SAVE[*]}' were processed for the configuration file."
         fi
+        # Attempt to create/update the main listing file
+        create_or_update_main_listing_qmd
     else 
         print_error "Failed to create link document: $NEW_QMD_FILE_PATH"
     fi

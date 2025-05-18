@@ -13,6 +13,7 @@ DEFAULT_BASE_PROJECT_DIR_FALLBACK="$HOME/projects" # Fallback if nothing is conf
 FZF_HEIGHT="70%"
 FZF_FIND_MAX_DEPTH_CUSTOM=7
 GUM_CHOOSE_HEIGHT=7
+ENABLE_VERBOSE_LOGGING=false # Set to true to see detailed debug logs for this script
 
 # --- Helper Functions ---
 check_dependency() {
@@ -38,23 +39,45 @@ print_error_dpc() {
 load_dav_config_value() {
   local key_to_load="$1"
   local value=""
+  local raw_value_from_file=""
+
   if [ -f "$DAV_CONFIG_FILE" ]; then
-    value=$(grep -E "^${key_to_load}\s*=" "$DAV_CONFIG_FILE" | head -n 1 | cut -d'=' -f2- | sed 's/^"//;s/"$//;s/^\s*//;s/\s*$//') # Remove quotes and trim whitespace
-    if [ -n "$value" ]; then
-        gum log --level debug "Loaded $key_to_load from $DAV_CONFIG_FILE: $value"
+    raw_value_from_file=$(grep -E "^[[:space:]]*${key_to_load}[[:space:]]*=" "$DAV_CONFIG_FILE" | head -n 1 | cut -d'=' -f2-)
+    
+    local value_trimmed_whitespace
+    value_trimmed_whitespace=$(echo "$raw_value_from_file" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    if [[ "$value_trimmed_whitespace" == \"*\" && "$value_trimmed_whitespace" == *\" ]]; then
+      value=$(echo "$value_trimmed_whitespace" | sed 's/^"//;s/"$//')
     else
-        gum log --level debug "$key_to_load not found or empty in $DAV_CONFIG_FILE."
+      value="$value_trimmed_whitespace"
+    fi
+    value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    if $ENABLE_VERBOSE_LOGGING; then
+      if [ -n "$value" ] || [ -n "$raw_value_from_file" ]; then # Log if either original or cleaned has content
+          gum log --level debug "Loaded '$key_to_load'. Raw: [$raw_value_from_file]. Trimmed: [$value_trimmed_whitespace]. Cleaned: [$value]"
+      else
+        if grep -q -E "^[[:space:]]*${key_to_load}[[:space:]]*=" "$DAV_CONFIG_FILE"; then
+             gum log --level debug "$key_to_load found but empty/whitespace only. Raw: [$raw_value_from_file]. Trimmed: [$value_trimmed_whitespace]. Cleaned: [$value]"
+        else
+            gum log --level debug "$key_to_load not found in $DAV_CONFIG_FILE."
+        fi
+      fi
     fi
   else
-    gum log --level debug "Shared DAV config file not found: $DAV_CONFIG_FILE"
+    if $ENABLE_VERBOSE_LOGGING; then
+      gum log --level debug "Shared DAV config file not found: $DAV_CONFIG_FILE"
+    fi
   fi
   echo "$value"
 }
 
+
 # Save a specific key-value pair to the shared DAV config file
 save_dav_config_value() {
   local key_to_save="$1"
-  local value_to_save="$2"
+  local value_to_save="$2" 
   mkdir -p "$DAV_CONFIG_DIR"
 
   local tmp_config_file
@@ -70,28 +93,21 @@ save_dav_config_value() {
     section_header_present=true
   fi
 
-  # Using awk for safer replacement/addition of the key-value pair
-  awk -v key="$key_to_save" -v val="\"$value_to_save\"" '
-    BEGIN { FS="="; OFS="="; found=0 }
-    $1 ~ "^" key "[[:space:]]*$" { # Match key, allowing optional spaces after key before =
-        $2 = val
+  awk -v key="$key_to_save" -v val_unquoted="$value_to_save" '
+    BEGIN { FS="="; OFS="="; found=0; key_regex = "^[[:space:]]*" key "[[:space:]]*$"}
+    $1 ~ key_regex { 
+        $2 = " \"" val_unquoted "\""
         found = 1
     }
     { print }
-    END {
-        if (!found) {
-            # If key was not found to be updated, append it.
-            # This append logic might need to be smarter if section headers are critical
-            # For now, it appends if not found.
-            # This part of awk is tricky for conditional append WITH section header logic
-            # So, handling section header separately if appending a new key
-        }
-    }
   ' "$DAV_CONFIG_FILE" > "$tmp_config_file"
 
-  # If the key was not found by awk (meaning it's a new key to append)
-  if ! grep -q -E "^${key_to_save}\s*=" "$DAV_CONFIG_FILE"; then
+  key_regex_for_grep="^[[:space:]]*${key_to_save}[[:space:]]*="
+  if ! grep -q -E "$key_regex_for_grep" "$tmp_config_file"; then
     if ! $section_header_present && ! grep -q -E "^# --- For Data Project Creator.*---" "$tmp_config_file" ; then
+        echo "" >> "$tmp_config_file" 
+        echo "# --- For Data Project Creator ($SCRIPT_NAME) ---" >> "$tmp_config_file"
+    elif ! $section_header_present && grep -q -E "^# --- For Data Project Creator.*---" "$DAV_CONFIG_FILE" && ! grep -q -E "^# --- For Data Project Creator.*---" "$tmp_config_file" ; then
         echo "" >> "$tmp_config_file"
         echo "# --- For Data Project Creator ($SCRIPT_NAME) ---" >> "$tmp_config_file"
     fi
@@ -99,8 +115,8 @@ save_dav_config_value() {
   fi
 
   mv "$tmp_config_file" "$DAV_CONFIG_FILE" || { rm -f "$tmp_config_file"; print_error_dpc "Failed to update config file."; return 1; }
-  [ -f "$tmp_config_file" ] && rm -f "$tmp_config_file" # Should be gone, but just in case
-  gum log --level info "Saved $key_to_save=\"$value_to_save\" to shared config: $DAV_CONFIG_FILE"
+  [ -f "$tmp_config_file" ] && rm -f "$tmp_config_file"
+  gum log --level info "Saved $key_to_save=\"$value_to_save\" to shared config: $DAV_CONFIG_FILE" # This is an info log, not debug
 }
 
 # --- Dependency Checks ---
@@ -112,7 +128,6 @@ check_dependency "realpath" "Standard system utility (usually coreutils)"
 check_dependency "date" "Standard system utility"
 check_dependency "dirname" "Standard system utility"
 check_dependency "basename" "Standard system utility"
-check_dependency "uuidgen" "Standard system utility (e.g. util-linux or bsdmainutils)"
 check_dependency "awk" "Standard system utility"
 check_dependency "mktemp" "Standard system utility"
 
@@ -120,11 +135,12 @@ check_dependency "mktemp" "Standard system utility"
 DEFAULT_BASE_PROJECT_DIR_CONFIGURED=$(load_dav_config_value "$THIS_SCRIPT_CONFIG_KEY_BASE_PROJECT_DIR")
 DEFAULT_BASE_PROJECT_DIR_FOR_PROMPT="${DEFAULT_BASE_PROJECT_DIR_CONFIGURED:-$DEFAULT_BASE_PROJECT_DIR_FALLBACK}"
 
+if $ENABLE_VERBOSE_LOGGING; then
+  gum log --level debug "For prompt: DEFAULT_BASE_PROJECT_DIR_FOR_PROMPT is [$DEFAULT_BASE_PROJECT_DIR_FOR_PROMPT]"
+fi
+
 # --- Main Script ---
-CONFIG_STATUS_MSG="Shared Config: $DAV_CONFIG_FILE" # Default message
-# Check if the DAV_CONFIG_FILE *actually* exists before printing the header
-# This check is after load_dav_config_value, which logs if it's not found.
-# We use a simple -f check here for the header message.
+CONFIG_STATUS_MSG="Shared Config: $DAV_CONFIG_FILE"
 if [ ! -f "$DAV_CONFIG_FILE" ]; then
     CONFIG_STATUS_MSG="Shared Config (will be created): $DAV_CONFIG_FILE"
 fi
@@ -138,12 +154,16 @@ BASE_PROJECT_DIR_INPUT=$(gum input --header "Base directory for new projects (e.
                             --value "$DEFAULT_BASE_PROJECT_DIR_FOR_PROMPT" --width 70)
 if [ -z "$BASE_PROJECT_DIR_INPUT" ]; then print_error_dpc "Base project directory cannot be empty."; fi
 
-if [ "$BASE_PROJECT_DIR_INPUT" != "$DEFAULT_BASE_PROJECT_DIR_CONFIGURED" ] || [ -z "$DEFAULT_BASE_PROJECT_DIR_CONFIGURED" ]; then
-    save_dav_config_value "$THIS_SCRIPT_CONFIG_KEY_BASE_PROJECT_DIR" "$BASE_PROJECT_DIR_INPUT"
-    DEFAULT_BASE_PROJECT_DIR_CONFIGURED="$BASE_PROJECT_DIR_INPUT"
-fi
+CLEANED_BASE_PROJECT_DIR_INPUT=$(echo "$BASE_PROJECT_DIR_INPUT" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
-TEMP_BASE_PATH="${BASE_PROJECT_DIR_INPUT/#\~/$HOME}"
+if [ "$CLEANED_BASE_PROJECT_DIR_INPUT" != "$DEFAULT_BASE_PROJECT_DIR_CONFIGURED" ] || [ -z "$DEFAULT_BASE_PROJECT_DIR_CONFIGURED" ]; then
+    save_dav_config_value "$THIS_SCRIPT_CONFIG_KEY_BASE_PROJECT_DIR" "$CLEANED_BASE_PROJECT_DIR_INPUT"
+    DEFAULT_BASE_PROJECT_DIR_CONFIGURED="$CLEANED_BASE_PROJECT_DIR_INPUT"
+fi
+BASE_PROJECT_DIR_TO_USE="$CLEANED_BASE_PROJECT_DIR_INPUT"
+
+
+TEMP_BASE_PATH="${BASE_PROJECT_DIR_TO_USE/#\~/$HOME}"
 if [[ "$TEMP_BASE_PATH" != /* ]]; then TEMP_BASE_PATH="$(pwd)/$TEMP_BASE_PATH"; fi
 
 BASE_PROJECT_DIR_RESOLVED=""
@@ -312,20 +332,37 @@ if gum confirm "Add R project components? ($PROJECT_NAME_FOR_FILES.Rproj in root
   cat << EOF_RPROJ > "$RPROJ_FILE_ABS"
 Version: 1.0
 ProjectName: $PROJECT_NAME_FOR_FILES
+
 RestoreWorkspace: Default
 SaveWorkspace: Default
 AlwaysSaveHistory: Default
+
 EnableCodeIndexing: Yes
 UseSpacesForTab: Yes
 NumSpacesForTab: 2
 Encoding: UTF-8
+
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
 
-# Project Root is: $PROJECT_ROOT_DIR
-# R specific code/docs subdirectories in: R/
-# Common data in: data_raw/; Common outputs in: data_output/
-# Use here::here() for robust paths relative to the project root ($PROJECT_ROOT_DIR)
+# --------------------------------------------------------------------------
+# Project Information (generated by $SCRIPT_NAME)
+#
+# Project Display Name: $CORE_PROJECT_NAME_DISPLAY
+# Project Identifier (for files/dirs): $PROJECT_NAME_FOR_FILES
+# Project Root Directory: $PROJECT_ROOT_DIR
+#
+# Recommended R project structure:
+# - R scripts/functions should ideally go into: ./R/
+# - Raw data is typically stored in: ./data_raw/
+# - Processed data or outputs can be saved to: ./data_output/
+#
+# For robust file paths within R scripts, consider using the 'here' package:
+# e.g., data_path <- here::here("data_raw", "my_input_file.csv")
+#
+# This project file was created on: $(date +"%Y-%m-%d %H:%M:%S")
+# Script responsible for creation: $SCRIPT_NAME
+# --------------------------------------------------------------------------
 EOF_RPROJ
   gum format -- "- Added R project file: **$RPROJ_FILE_ABS**"
   gum format -- "- Added R specific subdirectories in: **$R_SPECIFIC_SUBDIRS_PATH/**"
@@ -341,7 +378,6 @@ if gum confirm "Add QGIS project components? ($PROJECT_NAME_FOR_FILES.qgs in roo
   mkdir -p "$QGIS_SPECIFIC_SUBDIRS_PATH/scripts" "$QGIS_SPECIFIC_SUBDIRS_PATH/models" "$QGIS_SPECIFIC_SUBDIRS_PATH/styles"
   gum format -- "- Added QGIS specific subdirectories in **$QGIS_SPECIFIC_SUBDIRS_PATH/**"
   gum format -- "- Note: Common geodata is expected in **$PROJECT_ROOT_DIR/data_raw/geodata/**"
-  # Using CORE_PROJECT_NAME_DISPLAY for the QGIS project title if it's more readable
   cat << EOF_QGIS > "$QGIS_PROJ_FILE_ABS"
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis saveUser="$QGIS_SAVE_USER" saveDateTime="$QGIS_SAVE_DATETIME" version="3.34.0-Prizzi" projectname="$PROJECT_NAME_FOR_FILES" saveUserFull="$QGIS_SAVE_USER">
@@ -380,7 +416,11 @@ if gum confirm "Initialize a Quarto project in the root directory?"; then
       QUARTO_PROJECT_TYPE_CMD=$(echo "$QUARTO_PROJECT_TYPE_INPUT" | awk '{print $1}' | tr '[:upper:]' '[:lower:]')
       QUARTO_OUTPUT="" QUARTO_ERROR="" stderr_file_quarto=$(mktemp)
       if [ -z "$stderr_file_quarto" ] || [ ! -f "$stderr_file_quarto" ]; then print_error_dpc "Failed to create temporary file for Quarto error log."; fi
-      gum log --level debug "Attempting to initialize Quarto project: quarto create-project . --type \"$QUARTO_PROJECT_TYPE_CMD\""
+      
+      if $ENABLE_VERBOSE_LOGGING; then
+        gum log --level debug "Attempting to initialize Quarto project: quarto create-project . --type \"$QUARTO_PROJECT_TYPE_CMD\""
+      fi
+      
       if ! QUARTO_OUTPUT=$(quarto create-project . --type "$QUARTO_PROJECT_TYPE_CMD" 2> "$stderr_file_quarto"); then
           QUARTO_ERROR=$(<"$stderr_file_quarto"); rm -f "$stderr_file_quarto"
           gum style --foreground="red" --border="heavy" --padding="1" "Quarto Initialization Failed!" "Type: $QUARTO_PROJECT_TYPE_CMD" "Project Root: $(pwd)"
@@ -522,7 +562,7 @@ fi
 print_success_dpc "$SUMMARY_MSG" "$PROJECT_ROOT_DIR"
 echo ""; gum style --italic "Created project structure (top level):"
 if command -v tree >/dev/null 2>&1; then
-    tree -L 2 -a -I ".git|.Rproj.user|.venv|__pycache__|.DS_Store" "$PROJECT_ROOT_DIR"
+    tree -L 2 -a -I ".git|.Rproj.user|.venv|__pycache__|.DS_Store|.quarto" "$PROJECT_ROOT_DIR"
 else
   gum style --faint " (tree command not found, showing basic ls instead)"
   ls -Ap "$PROJECT_ROOT_DIR" | sed 's:^:  :'

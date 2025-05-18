@@ -1,37 +1,38 @@
 Package: davR
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
-Authors@R: 
+Authors@R:
     person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+License: MIT # Replaced with an example, choose your actual license
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-Imports: 
+Imports:
     cli,
     glue,
     httr,
     jsonlite,
     magrittr,
     purrr,
-    tibble,
+    rvest,    
     sf,
+    tibble,
     tools,
     utils,
+    xml2,      
     gdalUtilities,
     terra
-Suggests: 
+Suggests:
     knitr,
     rmarkdown,
     DT,
-    dplyr,     
-    ggplot2,  
-    readr   
-VignetteBuilder: knitr
-URL: https://robinkohrs.github.io/dav/
-Depends: 
+    dplyr,
+    ggplot2,
+    readr,
+    readxl      
+Depends:
     R (>= 2.10)
 LazyData: true
+URL: https://robinkohrs.github.io/dav/

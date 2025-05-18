@@ -1,0 +1,15 @@
+---
+title: "State of Palestine Humdata"
+date: "2025-05-18T07:58:02Z"
+description: "Humdata datasets for the state of palestine"
+categories: ["dataset", "reference"]
+link-url: "https://data.humdata.org/group/pse"
+format: html
+---
+
+## [State of Palestine Humdata](https://data.humdata.org/group/pse)
+
+Humdata datasets for the state of palestine
+
+---
+[View External Link](https://data.humdata.org/group/pse){:target="_blank" rel="noopener noreferrer"}

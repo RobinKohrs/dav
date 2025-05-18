@@ -14,7 +14,7 @@ website:
         text: Climate Analyses
       - href: misc.qmd
         text: Misc Tips
-      - href: links.qmd
+      - href: all-links.qmd
         text: Links
   search: true
 

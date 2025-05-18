@@ -1,45 +1,45 @@
 [
   {
-    "objectID": "link_dirs/gaza damage data-20250516192811.html",
-    "href": "link_dirs/gaza damage data-20250516192811.html",
-    "title": "gaza damage data",
+    "objectID": "link_dirs/gaza damage data-20250516193649.html",
+    "href": "link_dirs/gaza damage data-20250516193649.html",
+    "title": "Gaza Damage Data",
     "section": "",
     "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
-    "objectID": "link_dirs/gaza damage data-20250516192811.html#gaza-damage-data",
-    "href": "link_dirs/gaza damage data-20250516192811.html#gaza-damage-data",
-    "title": "gaza damage data",
+    "objectID": "link_dirs/gaza damage data-20250516193649.html#gaza-damage-data",
+    "href": "link_dirs/gaza damage data-20250516193649.html#gaza-damage-data",
+    "title": "Gaza Damage Data",
     "section": "",
     "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
-    "objectID": "misc.html",
-    "href": "misc.html",
-    "title": "Tips and Tricks for this and that",
+    "objectID": "data_raw/austria_4326.html",
+    "href": "data_raw/austria_4326.html",
+    "title": "DAV",
     "section": "",
-    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
+    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     \n\n\n         0 0     false"
   },
   {
-    "objectID": "misc.html#mac",
-    "href": "misc.html#mac",
-    "title": "Tips and Tricks for this and that",
+    "objectID": "all_links.html",
+    "href": "all_links.html",
+    "title": "My Link Collection",
     "section": "",
-    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
+    "text": "This page lists all the useful links I’ve collected. You can sort and filter them using the controls above.\n\n\n\n\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "climate-analyses/kjn_tropennächte.html",
-    "href": "climate-analyses/kjn_tropennächte.html",
-    "title": "Temperaturen in der Nacht",
+    "objectID": "climate_analyses.html",
+    "href": "climate_analyses.html",
+    "title": "Climate Analyses",
     "section": "",
-    "text": "# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n\n\n\n\n\n\n\n[1] \"/Users/rk/projects/personal/dav/wiki/climate-analyses/images/jährliche_nachttemperatur.png\""
+    "text": "SOME DESRIPTION TO FOLLOW\n\n\n\n\n\n\n    \n      \n      \n    \n\n\n\n\n\n\n\nTemperaturen in der Nacht\n\n\n\nRobin Kohrs / Netzwerk Klimajournalismus\n\n\nApr 27, 2025\n\n\n\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "climate-analyses/kjn_tropennächte.html#durschnittstemperatur-in-der-nacht-im-juli",
-    "href": "climate-analyses/kjn_tropennächte.html#durschnittstemperatur-in-der-nacht-im-juli",
-    "title": "Temperaturen in der Nacht",
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "DAV",
     "section": "",
-    "text": "# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n\n\n\n\n\n\n\n[1] \"/Users/rk/projects/personal/dav/wiki/climate-analyses/images/jährliche_nachttemperatur.png\""
+    "text": "DAV"
   },
   {
     "objectID": "spatial.html",
@@ -56,31 +56,108 @@
     "text": "ncdump -h on the large file\n\n\n\n\n\n\n\nShow Code\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n\n\n\n\n\n\n\n\n\n\n\nRead in the data\n\n\n\n\n\n\nHere all have the same dimensions!\n\n\n\nShow Code\n# the  austrian shape\naustria = read_sf(austria_4326_path)"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "DAV",
+    "objectID": "climate-analyses/kjn_tropennächte.html",
+    "href": "climate-analyses/kjn_tropennächte.html",
+    "title": "Temperaturen in der Nacht",
     "section": "",
-    "text": "DAV"
+    "text": "# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n\n\n\n\n\n\n\n[1] \"/Users/rk/projects/personal/dav/wiki/climate-analyses/images/jährliche_nachttemperatur.png\""
   },
   {
-    "objectID": "climate_analyses.html",
-    "href": "climate_analyses.html",
-    "title": "Climate Analyses",
+    "objectID": "climate-analyses/kjn_tropennächte.html#durschnittstemperatur-in-der-nacht-im-juli",
+    "href": "climate-analyses/kjn_tropennächte.html#durschnittstemperatur-in-der-nacht-im-juli",
+    "title": "Temperaturen in der Nacht",
     "section": "",
-    "text": "SOME DESRIPTION TO FOLLOW\n\n\n\n\n\n\n    \n      \n      \n    \n\n\n\n\n\n\n\nTemperaturen in der Nacht\n\n\n\nRobin Kohrs / Netzwerk Klimajournalismus\n\n\nApr 27, 2025\n\n\n\n\n\n\n\n\nNo matching items"
+    "text": "# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n# A tibble: 38 × 3\n  name      long_name                                      unit \n  &lt;chr&gt;     &lt;chr&gt;                                          &lt;chr&gt;\n1 cglo      Globalstrahlung Mittelwert                     W/m² \n2 cglo_flag Qualitätsflag für Globalstrahlung Mittelwert   code \n3 dd        Windrichtung 360° Mittelwert                   °    \n4 dd_flag   Qualitätsflag für Windrichtung 360° Mittelwert code \n5 ddx       Windrichtung zur Spitzenböe                    °    \n6 ddx_flag  Qualitätsflag für Windrichtung zur Spitzenböe  code \n# ℹ 32 more rows\n\n\n\n\n\n\n\n\n\n[1] \"/Users/rk/projects/personal/dav/wiki/climate-analyses/images/jährliche_nachttemperatur.png\""
   },
   {
-    "objectID": "all_links.html",
-    "href": "all_links.html",
-    "title": "My Link Collection",
+    "objectID": "misc.html",
+    "href": "misc.html",
+    "title": "Tips and Tricks for this and that",
     "section": "",
-    "text": "This page lists all the useful links I’ve collected. You can sort and filter them using the controls above.\n\n\n\n\n\n\n\n\n\nNo matching items"
+    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
   },
   {
-    "objectID": "data_raw/austria_4326.html",
-    "href": "data_raw/austria_4326.html",
-    "title": "DAV",
+    "objectID": "misc.html#mac",
+    "href": "misc.html#mac",
+    "title": "Tips and Tricks for this and that",
     "section": "",
-    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     \n\n\n         0 0     false"
+    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
+  },
+  {
+    "objectID": "link_dirs/gaza damage assesment-20250516194110.html",
+    "href": "link_dirs/gaza damage assesment-20250516194110.html",
+    "title": "gaza damage assesment",
+    "section": "",
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/gaza damage assesment-20250516194110.html#gaza-damage-assesment",
+    "href": "link_dirs/gaza damage assesment-20250516194110.html#gaza-damage-assesment",
+    "title": "gaza damage assesment",
+    "section": "",
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/gaza-20250516194555.html",
+    "href": "link_dirs/gaza-20250516194555.html",
+    "title": "Gaza",
+    "section": "",
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/gaza-20250516194555.html#gaza",
+    "href": "link_dirs/gaza-20250516194555.html#gaza",
+    "title": "Gaza",
+    "section": "",
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "all-links.html",
+    "href": "all-links.html",
+    "title": "Links Collection",
+    "section": "",
+    "text": "Order By\n       Default\n         \n          Title\n        \n         \n          Date - Oldest\n        \n         \n          Date - Newest\n        \n         \n          Author\n        \n     \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\n\n\n\narticle\n\n\nreference\n\n\ntechnical\n\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "link_dirs/gaza title-20250516195200.html",
+    "href": "link_dirs/gaza title-20250516195200.html",
+    "title": "gaza title",
+    "section": "",
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/gaza title-20250516195200.html#gaza-title",
+    "href": "link_dirs/gaza title-20250516195200.html#gaza-title",
+    "title": "gaza title",
+    "section": "",
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/gaza title.html",
+    "href": "link_dirs/gaza title.html",
+    "title": "gaza title",
+    "section": "",
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/gaza title.html#gaza-title",
+    "href": "link_dirs/gaza title.html#gaza-title",
+    "title": "gaza title",
+    "section": "",
+    "text": "tba\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/fonts for data visualization.html",
+    "href": "link_dirs/fonts for data visualization.html",
+    "title": "Fonts For Data Visualization",
+    "section": "",
+    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "link_dirs/fonts for data visualization.html#fonts-for-data-visualization",
+    "href": "link_dirs/fonts for data visualization.html#fonts-for-data-visualization",
+    "title": "Fonts For Data Visualization",
+    "section": "",
+    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   }
 ]
