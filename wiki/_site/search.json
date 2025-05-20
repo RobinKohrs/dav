@@ -166,5 +166,26 @@
     "title": "State of Palestine Humdata",
     "section": "",
     "text": "Humdata datasets for the state of palestine\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "scrolly.html",
+    "href": "scrolly.html",
+    "title": "DAV",
+    "section": "",
+    "text": "&lt;button id=\"toggleScrollButton\"&gt;Toggle to Site Scroll&lt;/button&gt;\n\n&lt;div class=\"image-content-wrapper\" id=\"imageContentWrapper\"&gt;\n    &lt;img src=\"./scrolly_test.png\" alt=\"Tall scrolling image\" id=\"mainImage\" onerror=\"this.src='https://via.placeholder.com/600x1200/CCCCCC/969696?text=Placeholder+Image+Error'; this.style.backgroundColor='#e0e0e0';\"&gt;\n    \n    &lt;div class=\"top-fade-overlay\" id=\"topFadeOverlay\"&gt;&lt;/div&gt;\n    &lt;div class=\"bottom-fade-overlay\" id=\"bottomFadeOverlay\"&gt;&lt;/div&gt;\n    &lt;button id=\"customScrollDownBtn\" class=\"custom-scroll-button\" aria-label=\"Scroll Down\"&gt;↓&lt;/button&gt;\n&lt;/div&gt;\n\n&lt;div class=\"scroll-progress-track\" id=\"scrollProgressTrack\"&gt;\n    &lt;div class=\"scroll-progress-bar\" id=\"scrollProgressBar\"&gt;&lt;/div&gt;\n&lt;/div&gt;"
+  },
+  {
+    "objectID": "gaza_scroller/scrolly.html",
+    "href": "gaza_scroller/scrolly.html",
+    "title": "Scrolling Image Widget - External Files",
+    "section": "",
+    "text": "Here is the custom image scroller:\n\n&lt;button id=\"toggleScrollButton\"&gt;Toggle to Site Scroll&lt;/button&gt;\n&lt;div class=\"image-content-wrapper\" id=\"imageContentWrapper\"&gt;\n    &lt;img src=\"./scrolly_test.png\" alt=\"Tall scrolling image\" id=\"mainImage\" onerror=\"this.src='https://via.placeholder.com/600x1200/CCCCCC/969696?text=Placeholder+Image+Error'; this.style.backgroundColor='#e0e0e0';\"&gt;\n    &lt;div class=\"top-fade-overlay\" id=\"topFadeOverlay\"&gt;&lt;/div&gt;\n    &lt;div class=\"bottom-fade-overlay\" id=\"bottomFadeOverlay\"&gt;&lt;/div&gt;\n    &lt;button id=\"customScrollDownBtn\" class=\"custom-scroll-button\" aria-label=\"Scroll Down\"&gt;↓&lt;/button&gt;\n&lt;/div&gt;\n&lt;div class=\"scroll-progress-track\" id=\"scrollProgressTrack\"&gt;\n    &lt;div class=\"scroll-progress-bar\" id=\"scrollProgressBar\"&gt;&lt;/div&gt;\n&lt;/div&gt;"
+  },
+  {
+    "objectID": "gaza_scroller/scrolly.html#my-interactive-scrolling-image",
+    "href": "gaza_scroller/scrolly.html#my-interactive-scrolling-image",
+    "title": "Scrolling Image Widget - External Files",
+    "section": "",
+    "text": "Here is the custom image scroller:\n\n&lt;button id=\"toggleScrollButton\"&gt;Toggle to Site Scroll&lt;/button&gt;\n&lt;div class=\"image-content-wrapper\" id=\"imageContentWrapper\"&gt;\n    &lt;img src=\"./scrolly_test.png\" alt=\"Tall scrolling image\" id=\"mainImage\" onerror=\"this.src='https://via.placeholder.com/600x1200/CCCCCC/969696?text=Placeholder+Image+Error'; this.style.backgroundColor='#e0e0e0';\"&gt;\n    &lt;div class=\"top-fade-overlay\" id=\"topFadeOverlay\"&gt;&lt;/div&gt;\n    &lt;div class=\"bottom-fade-overlay\" id=\"bottomFadeOverlay\"&gt;&lt;/div&gt;\n    &lt;button id=\"customScrollDownBtn\" class=\"custom-scroll-button\" aria-label=\"Scroll Down\"&gt;↓&lt;/button&gt;\n&lt;/div&gt;\n&lt;div class=\"scroll-progress-track\" id=\"scrollProgressTrack\"&gt;\n    &lt;div class=\"scroll-progress-bar\" id=\"scrollProgressBar\"&gt;&lt;/div&gt;\n&lt;/div&gt;"
   }
 ]
