@@ -17,7 +17,7 @@ website:
       - href: qgis_tips.qmd
         text: QGis
       - href: datasets.qmd
-        text: Links
+        text: Datasets
   search: true
 
 
