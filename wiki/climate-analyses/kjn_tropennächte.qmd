@@ -400,7 +400,7 @@ ggplot(smoothed_means_long, aes(x = year, y = temperature)) +
     panel.border = element_rect(fill = "transparent",colour = "#353535"),
     # Optional: Add margin above plot title for annotation space if needed
     plot.margin = margin(t = 15, r = 5.5, b = 5.5, l = 5.5, unit = "pt"),
-    plot.background = element_rect(fill="#e1edf7", colour = "transparent")
+    plot.background = element_rect(fill="#ffffff", colour = "transparent")
   )
 
 

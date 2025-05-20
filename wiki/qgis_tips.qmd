@@ -1,0 +1,13 @@
+# Qgis Tips and Tricks
+
+## Only Shared Borders
+
+from [here](https://gis.stackexchange.com/questions/468817/drawing-borders-only-for-common-border-of-polygons-in-qgis)
+```sql
+collect_geometries(
+    array_foreach(
+        overlay_intersects (@layer, boundary($geometry)),
+        shared_paths (@element, boundary($geometry))
+    )
+)
+```
