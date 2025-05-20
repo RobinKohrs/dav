@@ -1,7 +1,7 @@
 ---
-title: "Links Collection"
+title: "Datasets"
 listing:
-  contents: link_dirs
+  contents: datasets
   type: default
   sort: "date desc"
   sort-ui: [title, date, author]

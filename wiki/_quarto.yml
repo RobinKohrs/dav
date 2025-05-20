@@ -16,7 +16,7 @@ website:
         text: Misc Tips
       - href: qgis_tips.qmd
         text: QGis
-      - href: all-links.qmd
+      - href: datasets.qmd
         text: Links
   search: true
 
