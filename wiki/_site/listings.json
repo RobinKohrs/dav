@@ -15,5 +15,17 @@
     "items": [
       "/climate-analyses/kjn_tropennächte.html"
     ]
+  },
+  {
+    "listing": "/datasets.html",
+    "items": [
+      "/datasets/timeline-damage-gaza-corey-scher.html",
+      "/datasets/planet-images-of-gaza.html",
+      "/datasets/gaza-unosat-hub.html",
+      "/datasets/overture maps.html",
+      "/datasets/state of palestine humdata.html",
+      "/datasets/deepl account page.html",
+      "/datasets/fonts for data visualization.html"
+    ]
   }
 ]
