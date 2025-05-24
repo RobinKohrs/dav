@@ -2,7 +2,7 @@
 # set -x # Keep commented out unless actively debugging
 
 # --- Load Shared Configuration ---
-source "$(dirname "$0")/dav_common.sh" || exit 1
+source "$(cd "$(dirname -- "$(readlink -f -- "$0")")" && pwd)/dav_common.sh" || exit 1
 
 # --- Script Information ---
 SCRIPT_NAME="quarto-link-doc-creator"
@@ -662,10 +662,16 @@ main() {
     printf "format: html\n" >> "$NEW_QMD_FILE_PATH" # Assuming default format
     echo "---" >> "$NEW_QMD_FILE_PATH" # End YAML frontmatter
     echo "" >> "$NEW_QMD_FILE_PATH" # Extra newline after frontmatter
-    printf "## [%s](%s)\n\n" "$DATASET_TITLE" "$DATASET_URL" >> "$NEW_QMD_FILE_PATH"
-    if [[ -n "$DATASET_DESCRIPTION" ]]; then printf "%s\n\n" "$DATASET_DESCRIPTION" >> "$NEW_QMD_FILE_PATH"; fi
-    echo "---" >> "$NEW_QMD_FILE_PATH" # Horizontal rule
-    printf "[View External Dataset](%s)%s\n" "$DATASET_URL" '{:target="_blank" rel="noopener noreferrer"}' >> "$NEW_QMD_FILE_PATH"
+    printf "## [%s](%s)\n\n" "$DATASET_TITLE" "$DATASET_URL" >> "$NEW_QMD_FILE_PATH" # Top H2 link
+
+    # Description section
+    if [[ -n "$DATASET_DESCRIPTION" ]]; then
+        printf "## Description\n\n" >> "$NEW_QMD_FILE_PATH"
+        printf "%s\n\n" "$DATASET_DESCRIPTION" >> "$NEW_QMD_FILE_PATH"
+    fi
+
+    # Getting Data section
+    printf "## Getting Data\n\n" >> "$NEW_QMD_FILE_PATH"
 
     if [ $? -eq 0 ]; then 
         print_success "New dataset document created: $NEW_QMD_FILE_PATH"
