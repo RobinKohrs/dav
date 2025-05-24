@@ -55,7 +55,6 @@ __pycache__/
 .ruff_cache/
 
 # --- Quarto ---
-_site/
 _freeze/
 .quarto/
 
