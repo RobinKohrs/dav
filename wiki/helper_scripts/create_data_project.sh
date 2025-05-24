@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
-# --- Configuration ---
+# --- Load Shared Configuration ---
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")"
+source "$SCRIPT_DIR/dav_common.sh" || exit 1
+
+# --- Script Configuration ---
 SCRIPT_NAME="data-project-creator"
-DAV_CONFIG_DIR="$HOME/.config/dav" # SHARED config directory
-DAV_CONFIG_FILE="$DAV_CONFIG_DIR/settings.ini" # SHARED config file name
 
 # Key specific to this script within the shared config file
 THIS_SCRIPT_CONFIG_KEY_BASE_PROJECT_DIR="DATA_PROJECT_BASE_DIR"
@@ -140,6 +142,9 @@ if $ENABLE_VERBOSE_LOGGING; then
 fi
 
 # --- Main Script ---
+# Check for config file existence first
+check_dav_config || exit 1
+
 CONFIG_STATUS_MSG="Shared Config: $DAV_CONFIG_FILE"
 if [ ! -f "$DAV_CONFIG_FILE" ]; then
     CONFIG_STATUS_MSG="Shared Config (will be created): $DAV_CONFIG_FILE"
@@ -318,17 +323,16 @@ awk '{gsub(/;/,"\n")}1' .gitignore > .gitignore_tmp && mv .gitignore_tmp .gitign
 
 
 gum format -- "- Creating common project subdirectories..."
-mkdir -p "data_raw/geodata/vector/polygon" "data_raw/geodata/vector/line" "data_raw/geodata/vector/point" \
-           "data_raw/geodata/raster" "data_raw/geodata/tabular" \
+mkdir -p "data_raw/geodata" "data_raw/tabular" \
            "data_output" "graphic_output" "docs" "scripts"
-gum format -- "- Created: data_raw/geodata/, data_output/, graphic_output/, docs/, scripts/"
+gum format -- "- Created: data_raw/geodata/, data_raw/tabular/, data_output/, graphic_output/, docs/, scripts/"
 
 ADD_R=false; ADD_QGIS=false; ADD_QUARTO=false
 RPROJ_FILE_ABS="$PROJECT_ROOT_DIR/$PROJECT_NAME_FOR_FILES.Rproj"
 R_SPECIFIC_SUBDIRS_PATH="$PROJECT_ROOT_DIR/R"
 if gum confirm "Add R project components? ($PROJECT_NAME_FOR_FILES.Rproj in root, specific subdirs in R/)?"; then
   ADD_R=true; gum spin --show-output --spinner="dot" --title="Setting up R components..." -- sleep 0.5
-  mkdir -p "$R_SPECIFIC_SUBDIRS_PATH/analysis" "$R_SPECIFIC_SUBDIRS_PATH/functions" "$R_SPECIFIC_SUBDIRS_PATH/doc"
+  mkdir -p "$R_SPECIFIC_SUBDIRS_PATH/analysis" "$R_SPECIFIC_SUBDIRS_PATH/functions"
   cat << EOF_RPROJ > "$RPROJ_FILE_ABS"
 Version: 1.0
 ProjectName: $PROJECT_NAME_FOR_FILES
@@ -457,12 +461,13 @@ $(date +"%Y-%m-%d %H:%M:%S") by $SCRIPT_NAME
 ## Directory Structure
 - \`PROJECT_ROOT/\` ($(realpath .))
   - \`data_raw/\`: Raw, immutable input data.
-    - \`geodata/\`: Raw geospatial data (vector, raster, tabular).
+    - \`geodata/\`: Raw geospatial data.
+    - \`tabular/\`: Raw tabular data.
   - \`data_output/\`: Processed data, intermediate files, and final outputs derived from \`data_raw/\`.
   - \`graphic_output/\`: Charts, maps, and other visual outputs.
   - \`scripts/\`: General purpose scripts (e.g., Python, shell) not specific to R or QGIS workflows.
   - \`docs/\`: Project documentation, reports, notes, literature.
-$(if $ADD_R; then echo "  - \`R/\`: R specific files."; echo "    - \`analysis/\`: R Markdown/Quarto scripts for analysis, main R scripts."; echo "    - \`functions/\`: Custom R functions."; echo "    - \`doc/\`: R-specific documentation or rendered reports (if not using root Quarto)."; fi)
+$(if $ADD_R; then echo "  - \`R/\`: R specific files."; echo "    - \`analysis/\`: R Markdown/Quarto scripts for analysis, main R scripts."; echo "    - \`functions/\`: Custom R functions."; fi)
 $(if $ADD_QGIS; then echo "  - \`qgis/\`: QGIS specific files."; echo "    - \`models/\`: QGIS processing models."; echo "    - \`scripts/\`: QGIS processing Python scripts."; echo "    - \`styles/\`: QGIS layer styles (.qml)."; fi)
   - \`.gitignore\`: Specifies intentionally untracked files that Git should ignore.
 $(if $ADD_R; then echo "  - \`$PROJECT_NAME_FOR_FILES.Rproj\`: RStudio Project file. Open this to work with R in this project."; fi)

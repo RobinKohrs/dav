@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # set -x # Keep commented out unless actively debugging
 
+# --- Load Shared Configuration ---
+source "$(dirname "$0")/dav_common.sh" || exit 1
+
 # --- Script Information ---
 SCRIPT_NAME="quarto-link-doc-creator"
 
@@ -17,7 +20,7 @@ KEY_DATA_PROJECT_BASE_DIR="DATA_PROJECT_BASE_DIR" # Used as delimiter for catego
 # --- Global Variables for Resolved Paths ---
 LINK_MANAGER_BASE_DIR_ABSOLUTE=""
 LINK_DOCS_DIR_ABSOLUTE=""
-LINK_DOCS_SUBDIR_NAME="link_docs" # Default value, can be overridden from config
+LINK_DOCS_SUBDIR_NAME="datasets" # Default value, can be overridden from config
 QUARTO_PROJECT_DIR_ABSOLUTE=""
 
 # --- Default Initial Categories ---
@@ -81,21 +84,21 @@ show_help() {
     read -r -d '' help_text_content <<EOF
 # $SCRIPT_NAME Help
 **Usage:** \`$SCRIPT_NAME [-h]\`
-Creates individual Quarto document files for each link, suitable for a Quarto listing page.
+Creates individual Quarto document files for each dataset, suitable for a Quarto listing page.
 Configuration is stored in: \`$DAV_CONFIG_DIR/$DAV_CONFIG_FILE_NAME\`
 ---
 ## Relevant Configuration in \`$DAV_CONFIG_FILE_NAME\`
-- **Base Directory for Link System:**
-  \`$KEY_LINK_MANAGER_BASE_DIR=/path/to/your/link_project_root\`
-- **Subdirectory for Link Documents (Optional):**
-  \`$KEY_LINK_DOCS_SUBDIR=link_items\` (Defaults to '$LINK_DOCS_SUBDIR_NAME' if not set)
+- **Base Directory for Dataset System:**
+  \`$KEY_LINK_MANAGER_BASE_DIR=/path/to/your/dataset_project_root\`
+- **Subdirectory for Dataset Documents (Optional):**
+  \`$KEY_LINK_DOCS_SUBDIR=dataset_items\` (Defaults to '$LINK_DOCS_SUBDIR_NAME' if not set)
 - **Categories (Suggested):**
   Categories are listed as separate lines **after** \`$KEY_LINK_MANAGER_BASE_DIR\` (and \`$KEY_LINK_DOCS_SUBDIR\` if present)
   and **before** any other script's settings or the end-of-section marker for $SCRIPT_NAME.
 ---
 ## Output
-- A new \`.qmd\` file is created in \`<Base Directory>/<Link Docs Subdir>/\` for each link.
-- This \`.qmd\` file contains front matter (title, description, categories, date, link-url).
+- A new \`.qmd\` file is created in \`<Base Directory>/<Dataset Docs Subdir>/\` for each dataset.
+- This \`.qmd\` file contains front matter (title, description, categories, date, dataset-url).
 ---
 ## Options
   \`-h\`         Show this help message and exit.
@@ -187,13 +190,13 @@ load_config_and_categories() {
     local config_dir_abs; config_dir_abs=$(normalize_path_absolute "$DAV_CONFIG_DIR")
     DAV_CONFIG_FILE_ABSOLUTE="$config_dir_abs/$DAV_CONFIG_FILE_NAME"
 
-    LINK_DOCS_SUBDIR_NAME="link_docs" # Initialize with default
+    LINK_DOCS_SUBDIR_NAME="datasets" # Initialize with default
 
     if [[ ! -f "$DAV_CONFIG_FILE_ABSOLUTE" ]]; then
         print_header "Welcome! Initial $SCRIPT_NAME Setup"
         print_warning "Shared DAV configuration file not found: $DAV_CONFIG_FILE_ABSOLUTE"
         
-        LINK_MANAGER_BASE_DIR_ABSOLUTE=$(prompt_for_dir_interactive "Enter Base Directory for this Link System (e.g., Quarto project root):" "MyLinkWebsite")
+        LINK_MANAGER_BASE_DIR_ABSOLUTE=$(prompt_for_dir_interactive "Enter Base Directory for this Dataset System (e.g., Quarto project root):" "MyDatasetWebsite")
         [[ -z "$LINK_MANAGER_BASE_DIR_ABSOLUTE" ]] && print_error "Base Directory setup failed. Exiting."
         
         if [[ ! -d "$LINK_MANAGER_BASE_DIR_ABSOLUTE" ]]; then
@@ -204,10 +207,10 @@ load_config_and_categories() {
             else print_error "Base directory not created. Exiting."; fi
         fi
 
-        local default_docs_subdir_init="link_items"
-        print_plain "Subdirectory for link .qmd files (default: '$default_docs_subdir_init'):"
+        local default_docs_subdir_init="datasets"
+        print_plain "Subdirectory for dataset .qmd files (default: '$default_docs_subdir_init'):"
         local temp_subdir_input
-        if $GUM_AVAILABLE; then temp_subdir_input=$(gum input --value "$default_docs_subdir_init" --placeholder="e.g., posts, articles, link_items")
+        if $GUM_AVAILABLE; then temp_subdir_input=$(gum input --value "$default_docs_subdir_init" --placeholder="e.g., posts, articles, dataset_items")
         else read -r -p "> " temp_subdir_input; fi
         LINK_DOCS_SUBDIR_NAME=${temp_subdir_input:-$default_docs_subdir_init}
         LINK_DOCS_SUBDIR_NAME=$(echo "$LINK_DOCS_SUBDIR_NAME" | xargs | tr -s ' /' '_' | sed 's/^_*//;s/_*$//') # Sanitize
@@ -288,13 +291,13 @@ load_config_and_categories() {
             print_warning "$KEY_LINK_MANAGER_BASE_DIR not found in $DAV_CONFIG_FILE_ABSOLUTE."
             print_info "Setting it up now (will append to existing config)."
             # This will re-run parts of the initial setup logic but append to file
-            LINK_MANAGER_BASE_DIR_ABSOLUTE=$(prompt_for_dir_interactive "Enter Base Directory for $SCRIPT_NAME:" "MyLinkWebsite")
+            LINK_MANAGER_BASE_DIR_ABSOLUTE=$(prompt_for_dir_interactive "Enter Base Directory for $SCRIPT_NAME:" "MyDatasetWebsite")
             [[ -z "$LINK_MANAGER_BASE_DIR_ABSOLUTE" ]] && print_error "Base Directory setup failed."
             if [[ ! -d "$LINK_MANAGER_BASE_DIR_ABSOLUTE" ]]; then if gum confirm "Create '$LINK_MANAGER_BASE_DIR_ABSOLUTE'?"; then mkdir -p "$LINK_MANAGER_BASE_DIR_ABSOLUTE" || print_error "Failed create"; else print_error "Not created."; fi; fi
 
-            local default_docs_subdir_append="link_items"
-            if $GUM_AVAILABLE; then temp_lm_docs_subdir_val=$(gum input --value "$default_docs_subdir_append" --placeholder "Subdirectory for link .qmd files:");
-            else read -r -p "Subdirectory for link .qmd files (default: '$default_docs_subdir_append'): " temp_lm_docs_subdir_val; fi
+            local default_docs_subdir_append="datasets"
+            if $GUM_AVAILABLE; then temp_lm_docs_subdir_val=$(gum input --value "$default_docs_subdir_append" --placeholder "Subdirectory for dataset .qmd files:");
+            else read -r -p "Subdirectory for dataset .qmd files (default: '$default_docs_subdir_append'): " temp_lm_docs_subdir_val; fi
             LINK_DOCS_SUBDIR_NAME=${temp_lm_docs_subdir_val:-$default_docs_subdir_append}
             LINK_DOCS_SUBDIR_NAME=$(echo "$LINK_DOCS_SUBDIR_NAME" | xargs | tr -s ' /' '_' | sed 's/^_*//;s/_*$//')
 
@@ -324,13 +327,13 @@ load_config_and_categories() {
     fi
 
     LINK_DOCS_SUBDIR_NAME=$(echo "$LINK_DOCS_SUBDIR_NAME" | tr -s ' /' '_' | sed 's/^_*//;s/_*$//') # Final sanitize
-    if [[ -z "$LINK_DOCS_SUBDIR_NAME" ]]; then LINK_DOCS_SUBDIR_NAME="link_docs"; fi # Ensure not empty
+    if [[ -z "$LINK_DOCS_SUBDIR_NAME" ]]; then LINK_DOCS_SUBDIR_NAME="datasets"; fi # Ensure not empty
 
     LINK_DOCS_DIR_ABSOLUTE="$LINK_MANAGER_BASE_DIR_ABSOLUTE/$LINK_DOCS_SUBDIR_NAME"
     QUARTO_PROJECT_DIR_ABSOLUTE="$LINK_MANAGER_BASE_DIR_ABSOLUTE"
 
-    print_info "Link System Base Dir: $LINK_MANAGER_BASE_DIR_ABSOLUTE"
-    print_info "Link Documents Subdir: $LINK_DOCS_SUBDIR_NAME (-> $LINK_DOCS_DIR_ABSOLUTE)"
+    print_info "Dataset System Base Dir: $LINK_MANAGER_BASE_DIR_ABSOLUTE"
+    print_info "Dataset Documents Subdir: $LINK_DOCS_SUBDIR_NAME (-> $LINK_DOCS_DIR_ABSOLUTE)"
     print_info "${#CURRENT_CATEGORIES[@]} categories loaded."
     print_info "Quarto Project Dir for rendering: $QUARTO_PROJECT_DIR_ABSOLUTE"
 }
@@ -429,28 +432,24 @@ save_new_category_to_dav_config() {
 }
 
 create_or_update_main_listing_qmd() {
-    print_info "Attempting to create/update main listing file (all-links.qmd)..."
-    local main_listing_filename="all-links.qmd"
+    print_info "Attempting to create/update main listing file (all-datasets.qmd)..."
+    local main_listing_filename="all-datasets.qmd"
     local main_listing_filepath="$QUARTO_PROJECT_DIR_ABSOLUTE/$main_listing_filename"
     
-    # Ensure LINK_DOCS_SUBDIR_NAME is not empty and QUARTO_PROJECT_DIR_ABSOLUTE is set
     if [[ -z "$QUARTO_PROJECT_DIR_ABSOLUTE" ]]; then
         print_warning "Quarto project directory is not set. Cannot create main listing file."
         return 1
     fi
     if [[ -z "$LINK_DOCS_SUBDIR_NAME" ]]; then
-        print_warning "Link documents subdirectory name is not set. Cannot create main listing file."
+        print_warning "Dataset documents subdirectory name is not set. Cannot create main listing file."
         return 1
     fi
 
-    # Contents path relative to the main_listing_filepath
     local listing_contents_path="$LINK_DOCS_SUBDIR_NAME/*.qmd"
 
-    # Create/overwrite the main listing file
-    # Using echo for all lines to avoid printf issues
     {
         echo "---"
-        echo "title: \"Links Collection\""
+        echo "title: \"Datasets Collection\""
         echo "listing:"
         echo "  contents: $LINK_DOCS_SUBDIR_NAME"
         echo "  type: default"
@@ -462,7 +461,7 @@ create_or_update_main_listing_qmd() {
         echo "---" 
         echo ""
         echo "<!--"
-        echo "This page lists all link documents from the '$LINK_DOCS_SUBDIR_NAME' directory."
+        echo "This page lists all dataset documents from the '$LINK_DOCS_SUBDIR_NAME' directory."
         echo "It is automatically generated/updated by the $SCRIPT_NAME script."
         echo "-->"
     } > "$main_listing_filepath"
@@ -499,23 +498,27 @@ shift $((OPTIND-1)) # Remove processed options
 # --- Main Script Logic ---
 main() {
     print_header "$SCRIPT_NAME Initializing" "Quarto Document Listing Mode"
+    
+    # Check for config file existence first
+    check_dav_config || exit 1
+    
     load_config_and_categories
 
     # Create link docs directory if it doesn't exist
     if [[ ! -d "$LINK_DOCS_DIR_ABSOLUTE" ]]; then
-        print_info "Link documents directory '$LINK_DOCS_DIR_ABSOLUTE' does not exist. Creating it..."
-        mkdir -p "$LINK_DOCS_DIR_ABSOLUTE" || print_error "Failed to create link documents directory: $LINK_DOCS_DIR_ABSOLUTE"
+        print_info "Dataset documents directory '$LINK_DOCS_DIR_ABSOLUTE' does not exist. Creating it..."
+        mkdir -p "$LINK_DOCS_DIR_ABSOLUTE" || print_error "Failed to create dataset documents directory: $LINK_DOCS_DIR_ABSOLUTE"
     fi
 
 
-    print_header "Step 1: Link Details"
-    local LINK_URL_RAW LINK_URL
-    print_plain "URL of the link:"
-    if $GUM_AVAILABLE; then LINK_URL_RAW=$(gum input --placeholder="https://example.com" --width=80)
-    else read -r -p "> " LINK_URL_RAW; fi
-    LINK_URL=$(echo "$LINK_URL_RAW" | xargs)
-    if [[ -z "$LINK_URL" ]]; then print_error "URL cannot be empty."; fi
-    if ! [[ "$LINK_URL" =~ ^https?:// ]]; then 
+    print_header "Step 1: Dataset Details"
+    local DATASET_URL_RAW DATASET_URL
+    print_plain "URL of the dataset:"
+    if $GUM_AVAILABLE; then DATASET_URL_RAW=$(gum input --placeholder="https://example.com" --width=80)
+    else read -r -p "> " DATASET_URL_RAW; fi
+    DATASET_URL=$(echo "$DATASET_URL_RAW" | xargs)
+    if [[ -z "$DATASET_URL" ]]; then print_error "URL cannot be empty."; fi
+    if ! [[ "$DATASET_URL" =~ ^https?:// ]]; then 
         print_warning "URL does not start with http(s)://."
         local continue_anyway=false
         if $GUM_AVAILABLE; then gum confirm "Continue with this URL?" && continue_anyway=true
@@ -523,27 +526,27 @@ main() {
         if ! $continue_anyway; then print_error "Operation cancelled by user."; fi
     fi
 
-    local TEMP_URL_FOR_TITLE SUGGESTED_TITLE LINK_TITLE_RAW LINK_TITLE
-    TEMP_URL_FOR_TITLE=$(echo "$LINK_URL" | sed -e 's|https\?://||' -e 's|www\.||' -e 's|/$||')
+    local TEMP_URL_FOR_TITLE SUGGESTED_TITLE DATASET_TITLE_RAW DATASET_TITLE
+    TEMP_URL_FOR_TITLE=$(echo "$DATASET_URL" | sed -e 's|https\?://||' -e 's|www\.||' -e 's|/$||')
     local LAST_PART; LAST_PART=$(echo "$TEMP_URL_FOR_TITLE" | sed -e 's|.*/||' -e 's|[?#].*||')
     if [[ -z "$LAST_PART" || "$LAST_PART" == "$TEMP_URL_FOR_TITLE" ]]; then 
         LAST_PART=$(echo "$TEMP_URL_FOR_TITLE" | cut -d'/' -f1 | cut -d'?' -f1 | cut -d'#' -f1)
     fi
     SUGGESTED_TITLE=$(echo "$LAST_PART" | sed -e 's/[._-]/ /g' -e 's/\+/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print $0}')
-    if [[ -z "$SUGGESTED_TITLE" ]]; then SUGGESTED_TITLE="New Link"; fi
+    if [[ -z "$SUGGESTED_TITLE" ]]; then SUGGESTED_TITLE="New Dataset"; fi
     
-    print_plain "Title for this link document (default: '$SUGGESTED_TITLE'):"
-    if $GUM_AVAILABLE; then LINK_TITLE_RAW=$(gum input --value="$SUGGESTED_TITLE" --placeholder="Enter title..." --width=80)
-    else read -r -p "> " r_t; LINK_TITLE_RAW="$r_t"; fi # No direct default in read, user hits enter
-    LINK_TITLE=${LINK_TITLE_RAW:-$SUGGESTED_TITLE} # Apply default if input was empty
-    LINK_TITLE=$(echo "$LINK_TITLE" | xargs)
-    if [[ -z "$LINK_TITLE" ]]; then print_error "Title cannot be empty."; fi
+    print_plain "Title for this dataset document (default: '$SUGGESTED_TITLE'):"
+    if $GUM_AVAILABLE; then DATASET_TITLE_RAW=$(gum input --value="$SUGGESTED_TITLE" --placeholder="Enter title..." --width=80)
+    else read -r -p "> " r_t; DATASET_TITLE_RAW="$r_t"; fi # No direct default in read, user hits enter
+    DATASET_TITLE=${DATASET_TITLE_RAW:-$SUGGESTED_TITLE} # Apply default if input was empty
+    DATASET_TITLE=$(echo "$DATASET_TITLE" | xargs)
+    if [[ -z "$DATASET_TITLE" ]]; then print_error "Title cannot be empty."; fi
 
-    local LINK_DESCRIPTION_RAW LINK_DESCRIPTION
+    local DATASET_DESCRIPTION_RAW DATASET_DESCRIPTION
     print_plain "Brief description (optional, Ctrl+D or empty line then Enter to finish for plain input):"
-    if $GUM_AVAILABLE; then LINK_DESCRIPTION_RAW=$(gum write --placeholder="Enter description...")
-    else LINK_DESCRIPTION_RAW=$(cat); fi # Read multiple lines until EOF (Ctrl+D)
-    LINK_DESCRIPTION=$(echo "$LINK_DESCRIPTION_RAW" | xargs) # Trim leading/trailing whitespace, squashes internal newlines
+    if $GUM_AVAILABLE; then DATASET_DESCRIPTION_RAW=$(gum write --placeholder="Enter description...")
+    else DATASET_DESCRIPTION_RAW=$(cat); fi # Read multiple lines until EOF (Ctrl+D)
+    DATASET_DESCRIPTION=$(echo "$DATASET_DESCRIPTION_RAW" | xargs) # Trim leading/trailing whitespace, squashes internal newlines
 
     print_header "Step 2: Select Categories"
     local CATEGORIES_WITH_OTHER=("${CURRENT_CATEGORIES[@]}" "Other...")
@@ -619,12 +622,12 @@ main() {
         print_info "The new category entered already exists or was not saved."
     fi
     
-    if [ ${#FINAL_CATEGORIES_ARRAY[@]} -eq 0 ]; then print_warning "No categories will be assigned to this link."; fi
+    if [ ${#FINAL_CATEGORIES_ARRAY[@]} -eq 0 ]; then print_warning "No categories will be assigned to this dataset."; fi
 
-    print_header "Step 3: Create Link Document"
+    print_header "Step 3: Create Dataset Document"
     local SANITIZED_TITLE NEW_QMD_FILENAME NEW_QMD_FILE_PATH
-    SANITIZED_TITLE=$(echo "$LINK_TITLE" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9]\+/-/g' -e 's/^-*//' -e 's/-*$//')
-    if [[ -z "$SANITIZED_TITLE" ]]; then SANITIZED_TITLE="untitled-link"; fi
+    SANITIZED_TITLE=$(echo "$DATASET_TITLE" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9]\+/-/g' -e 's/^-*//' -e 's/-*$//')
+    if [[ -z "$SANITIZED_TITLE" ]]; then SANITIZED_TITLE="untitled-dataset"; fi
     NEW_QMD_FILENAME="${SANITIZED_TITLE}.qmd"
     NEW_QMD_FILE_PATH="$LINK_DOCS_DIR_ABSOLUTE/$NEW_QMD_FILENAME"
 
@@ -646,33 +649,33 @@ main() {
 
     # Prepare description for YAML: escape double quotes, handle multi-line if needed (though xargs squashed it)
     # For simple YAML, just escaping quotes is often enough for a single-line description.
-    local ESCAPED_DESCRIPTION; ESCAPED_DESCRIPTION=$(echo "$LINK_DESCRIPTION" | sed 's/"/\\"/g')
+    local ESCAPED_DESCRIPTION; ESCAPED_DESCRIPTION=$(echo "$DATASET_DESCRIPTION" | sed 's/"/\\"/g')
 
     # Create the .qmd file content
     # Using a mix of echo for separators and printf for content lines
     echo "---" > "$NEW_QMD_FILE_PATH"
-    printf "title: \"%s\"\n" "$LINK_TITLE" >> "$NEW_QMD_FILE_PATH"
+    printf "title: \"%s\"\n" "$DATASET_TITLE" >> "$NEW_QMD_FILE_PATH"
     printf "date: \"%s\"\n" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$NEW_QMD_FILE_PATH"
-    if [[ -n "$LINK_DESCRIPTION" ]]; then printf "description: \"%s\"\n" "$ESCAPED_DESCRIPTION" >> "$NEW_QMD_FILE_PATH"; fi
+    if [[ -n "$DATASET_DESCRIPTION" ]]; then printf "description: \"%s\"\n" "$ESCAPED_DESCRIPTION" >> "$NEW_QMD_FILE_PATH"; fi
     if [[ -n "$YAML_CATEGORIES" ]]; then printf "categories: %s\n" "$YAML_CATEGORIES" >> "$NEW_QMD_FILE_PATH"; fi
-    printf "link-url: \"%s\"\n" "$LINK_URL" >> "$NEW_QMD_FILE_PATH"
+    printf "dataset-url: \"%s\"\n" "$DATASET_URL" >> "$NEW_QMD_FILE_PATH"
     printf "format: html\n" >> "$NEW_QMD_FILE_PATH" # Assuming default format
     echo "---" >> "$NEW_QMD_FILE_PATH" # End YAML frontmatter
     echo "" >> "$NEW_QMD_FILE_PATH" # Extra newline after frontmatter
-    printf "## [%s](%s)\n\n" "$LINK_TITLE" "$LINK_URL" >> "$NEW_QMD_FILE_PATH"
-    if [[ -n "$LINK_DESCRIPTION" ]]; then printf "%s\n\n" "$LINK_DESCRIPTION" >> "$NEW_QMD_FILE_PATH"; fi
+    printf "## [%s](%s)\n\n" "$DATASET_TITLE" "$DATASET_URL" >> "$NEW_QMD_FILE_PATH"
+    if [[ -n "$DATASET_DESCRIPTION" ]]; then printf "%s\n\n" "$DATASET_DESCRIPTION" >> "$NEW_QMD_FILE_PATH"; fi
     echo "---" >> "$NEW_QMD_FILE_PATH" # Horizontal rule
-    printf "[View External Link](%s)%s\n" "$LINK_URL" '{:target="_blank" rel="noopener noreferrer"}' >> "$NEW_QMD_FILE_PATH"
+    printf "[View External Dataset](%s)%s\n" "$DATASET_URL" '{:target="_blank" rel="noopener noreferrer"}' >> "$NEW_QMD_FILE_PATH"
 
     if [ $? -eq 0 ]; then 
-        print_success "New link document created: $NEW_QMD_FILE_PATH"
+        print_success "New dataset document created: $NEW_QMD_FILE_PATH"
         if [ ${#NEW_CATEGORIES_TO_SAVE[@]} -gt 0 ]; then
              print_info "Note: New categorie(s) '${NEW_CATEGORIES_TO_SAVE[*]}' were processed for the configuration file."
         fi
         # Attempt to create/update the main listing file
         create_or_update_main_listing_qmd
     else 
-        print_error "Failed to create link document: $NEW_QMD_FILE_PATH"
+        print_error "Failed to create dataset document: $NEW_QMD_FILE_PATH"
     fi
 
     local QUARTO_MISSING=true
@@ -681,7 +684,7 @@ main() {
     if ! $QUARTO_MISSING; then
         print_header "Step 4: Render Quarto Project (Optional)"
         if [[ ! -d "$QUARTO_PROJECT_DIR_ABSOLUTE" ]]; then 
-            print_warning "Quarto Project Directory '$QUARTO_PROJECT_DIR_ABSOLUTE' (derived from Link System Base Dir) not found. Skipping render option."
+            print_warning "Quarto Project Directory '$QUARTO_PROJECT_DIR_ABSOLUTE' (derived from Dataset System Base Dir) not found. Skipping render option."
         else
             local do_render=false
             if $GUM_AVAILABLE; then 

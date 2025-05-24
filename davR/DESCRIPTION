@@ -23,7 +23,8 @@ Imports:
     utils,
     xml2,      
     gdalUtilities,
-    terra
+    terra,
+    acled.api
 Suggests:
     knitr,
     rmarkdown,

@@ -1,5 +1,113 @@
-.Rproj.user
+# --- General ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# --- macOS Resource Forks and Extended Attributes ---
+._*
+.AppleDouble
+.LSOverride
+Icon
+.Spotlight-V100
+.Trashes
+._.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# --- Common Data and Output Folders ---
+# data_output/
+# graphic_output/
+# temp/
+# cache/
+
+# --- R ---
 .Rhistory
+.Rapp.history
 .RData
 .Ruserdata
+.Rproj.user/
+R/.Rhistory
+R/.RData
+R/*_cache/
+R/cache/
+.Renviron
+.httr-oauth
+rsconnect/
+
+# --- QGIS ---
+*.qgs~
+*.qgz~
+
+# --- Python ---
+.venv/
+venv/
+.pyc
+__pycache__/
+.env
+.python-version
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# --- Quarto ---
+_site/
+_freeze/
+.quarto/
+
+# --- Large Files (Git LFS) ---
+# *.tif
+# *.gpkg
+# *.shp
+# *.parquet
+# *.feather
+# *.rds
+# *.pdf
+# *.pptx
+# *.docx
+# *.zip
+# *.tar.gz
+
+# --- Secrets ---
+*.cred
+*.secret
+credentials.*
+secret.*
+*key*
+*token*
+*.pem
+*.key
+
+# --- OS Specific ---
+desktop.ini
+
+# --- IDEs ---
+.vscode/
+.idea/
+.swp
+*.swo
+nbproject/
+.sublime-project
+*.sublime-workspace
+
+# --- Node.js ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Compiled output ---
+build/
+dist/
+out/
+target/
+
+# --- Log files ---
+*.log
+logs/
+
 data_raw/
