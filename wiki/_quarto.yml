@@ -34,7 +34,7 @@ editor: source
 
 # Execution options applied to all R/Python/etc. chunks in the project
 execute:
+  freeze: false
   echo: true
   warning: false
   message: false
-  freeze: auto        # Freeze means code output is cached - speeds up render after first build

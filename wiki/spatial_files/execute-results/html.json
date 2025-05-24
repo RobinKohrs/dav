@@ -3,9 +3,7 @@
   "result": {
     "engine": "knitr",
     "markdown": "# Spatial \n\n## Raster\n\n\n\n\n\n\n\n### Reprojecting\n\n\n## Load data\n\n:::{.callout-note collapse=\"true\"}\n\n## `ncdump -h` on the large file\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n```\n:::\n\n\n\n:::\n\n\n:::{.callout-note collapse=\"true\"}\n\n## Read in the data\n\n- Here all have the same dimensions!\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# the  austrian shape\naustria = read_sf(austria_4326_path)\n```\n:::\n",
-    "supporting": [
-      "spatial_files"
-    ],
+    "supporting": [],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],
