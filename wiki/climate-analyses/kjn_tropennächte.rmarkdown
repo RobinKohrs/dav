@@ -21,12 +21,11 @@ execute:
 
 ```{r setup, include=FALSE}
 # Essential setup chunk - load packages, etc.
-knitr::opts_chunk$set(
-  echo = TRUE, # Override global echo=false for this chunk if needed
-  warning = FALSE,
-  message = FALSE,
-  dpi = 300
-)
+knitr::opts_chunk$set(echo = TRUE, # Override global echo=false for this chunk if needed
+                      warning = FALSE,
+                      message = FALSE,
+                      dpi = 300
+                      )
 
 library(devtools)
 
@@ -39,8 +38,9 @@ library(here)
 library(sf)
 library(ggtext)
 
-data_raw_path_hourly_data <- sys_make_path("data_raw/2025-05-tropennächte/stationenStundenDaten")
-data_raw_path_daily_data <- sys_make_path("data_raw/2025-05-tropennächte/stationenTagesDaten")
+data_raw_path_hourly_data = sys_make_path("data_raw/2025-05-tropennächte/stationenStundenDaten")
+data_raw_path_daily_data = sys_make_path("data_raw/2025-05-tropennächte/stationenTagesDaten")
+
 ```
 
 
@@ -52,61 +52,61 @@ data_raw_path_daily_data <- sys_make_path("data_raw/2025-05-tropennächte/statio
 ```{r download_data}
 #| echo: false
 #| cache: true
-resource_id <- "klima-v2-1h"
-start_year <- 1900
-end_year <- 2025
-month <- 7
-id <- 105
+sys_get_script_dir()
+resource_id = "klima-v2-1h"
+start_year = 1900
+end_year = 2025
+month = 7
+id = 105
 
-ex <- geosphere_explore_resource("klima-v2-1h")
+ex = geosphere_explore_resource("klima-v2-1h")
 
-data_list <- map(start_year:end_year, function(year) {
-  start <- glue("{year}-{month}-01")
-  last_day_in_month <- lubridate::days_in_month(glue("{year}-{month}-01"))
-  end <- glue("{year}-{month}-{last_day_in_month}")
+data_list = map(start_year:end_year, function(year){
+  start = glue("{year}-{month}-01")
+  last_day_in_month = lubridate::days_in_month(glue("{year}-{month}-01"))
+  end = glue("{year}-{month}-{last_day_in_month}")
 
-  fn <- glue("id{id}_{year}_{month}.csv")
-  op <- sys_make_path(file.path("~/LIXO", fn))
+  fn = glue("id{id}_{year}_{month}.csv")
+  op = sys_make_path(file.path(data_raw_path_hourly_data, fn))
   if (file.exists(op)) {
-    result <- data.table::fread(op)
-  } else {
-    result <- tryCatch(
-      {
-        data <- geosphere_get_data(
-          resource_id = resource_id,
-          parameters = c("tl"),
-          start = start,
-          end = end,
-          station_ids = id,
-          type = "station",
-          mode = "historical",
-          output_file = op,
-          timeout_seconds = 4
-        ) %>% data.table::fread()
-      },
-      error = function(e) {
-        cli::cli_warn("Failed processing {year}-{month}: {conditionMessage(e)}")
-        return(NULL) # Return NULL on error
-      }
-    )
+    result = data.table::fread(op)
+  } else{
+    result = tryCatch({
+      data = geosphere_get_data(
+        resource_id = resource_id,
+        parameters = c("tl"),
+        start = start,
+        end = end,
+        station_ids = id,
+        type = "station",
+        mode = "historical",
+        output_file = op
+      ) %>% data.table::fread()
+    }, error = function(e) {
+      cli::cli_warn("Failed processing {year}-{month}: {conditionMessage(e)}")
+      return(NULL) # Return NULL on error
+    })
+    
   }
-
+  
   return(result)
 })
 
-data_hourly <- keep(data_list, ~ !is.null(.x)) %>% bind_rows()
+data_hourly = keep(data_list, ~!is.null(.x)) %>% bind_rows()
 
 # find the temperature at night
 data_hourly %>%
   # 1. Filter for the month of July
   filter(month(time) == 7) %>%
+  
   # 2. Filter for night hours (22:00 to 06:59)
   # Hour 22, 23, 0, 1, 2, 3, 4, 5, 6
   filter(hour(time) >= 22 | hour(time) <= 6) %>%
+  
   # 3. Group by the desired variables: year, station, substation
   group_by(year = year(time)) %>%
   # 4. Calculate the mean temperature, removing NA values
-  summarise(mean_night_temp_july = mean(tl, na.rm = TRUE)) %>%
+  summarise(mean_night_temp_july = mean(tl, na.rm = TRUE)) %>% 
   mutate(smoothed_5yr_mean = zoo::rollmean(
     x = mean_night_temp_july,
     # The column to smooth
@@ -114,25 +114,24 @@ data_hourly %>%
     # The window size (5 years)
     fill = NA,
     # Put NA where the window is incomplete (start of series)
-    align = "right" # Align window to the right (uses current year and previous 4)
+    align = "right"           # Align window to the right (uses current year and previous 4)
   )) -> data_per_year
 
 
-# Define the colors here to use them consistently
+#Define the colors here to use them consistently
 color_yearly <- "tomato"
 color_smoothed <- "#343434" # A dark grey
 
 smoothed_means_long <- data_per_year %>%
   pivot_longer(
     cols = c(mean_night_temp_july, smoothed_5yr_mean), # Columns to lengthen
-    names_to = "average_type", # New column for names of original cols
-    values_to = "temperature" # New column for the values
+    names_to = "average_type",                         # New column for names of original cols
+    values_to = "temperature"                          # New column for the values
   ) %>%
   # *** Use German labels for the factor levels ***
   mutate(average_type = factor(average_type,
-    levels = c("mean_night_temp_july", "smoothed_5yr_mean"),
-    labels = c("Jährlich", "5-Jahres Glättung")
-  )) # German labels
+                               levels = c("mean_night_temp_july", "smoothed_5yr_mean"),
+                               labels = c("Jährlich", "5-Jahres Glättung"))) # German labels
 
 # --- Step 2: Find the first year where smoothed data exists ---
 min_start_year <- smoothed_means_long %>%
@@ -151,51 +150,41 @@ if (!is.finite(min_start_year)) {
 ggplot(smoothed_means_long, aes(x = year, y = temperature, color = average_type)) +
 
   # Draw POINTS only for "Jährlich" (Yearly)
-  geom_point(
-    data = . %>% filter(average_type == "Jährlich"),
-    size = 2,
-    alpha = 0.7
-  ) +
+  geom_point(data = . %>% filter(average_type == "Jährlich"),
+             size = 2,
+             alpha = 0.7) +
 
   # Draw a LINE only for "5-Jahres Glättung" (Smoothed)
-  geom_line(
-    data = . %>% filter(average_type == "5-Jahres Glättung"),
-    linewidth = 1.2
-  ) +
+  geom_line(data = . %>% filter(average_type == "5-Jahres Glättung"),
+            linewidth = 1.2) +
 
   # Add Horizontal Line and GERMAN Label for "Tropennacht"
-  geom_hline(yintercept = 20, linetype = "dashed", color = "darkgrey", linewidth = 0.8) +
-  annotate(
-    geom = "text",
-    x = Inf,
-    y = 20.1,
-    # *** German label ***
-    label = "Tropennacht (>= 20°C)",
-    hjust = 1.05,
-    vjust = 0,
-    color = "darkgrey",
-    size = 3.5
-  ) +
+  geom_hline(yintercept = 20, linetype = "dashed", color = "darkgrey", linewidth=0.8) +
+  annotate(geom = "text",
+           x = Inf,
+           y = 20.1,
+           # *** German label ***
+           label = "Tropennacht (>= 20°C)",
+           hjust = 1.05,
+           vjust = 0,
+           color = "darkgrey",
+           size = 3.5) +
 
 
   # *** Use scale_color_manual to assign specific colors ***
   scale_color_manual(
-    # *** Legend title in German ***
-    name = "Mittelwerttyp",
-    # *** Values map German factor levels to desired colors ***
-    values = c(
-      "Jährlich" = color_yearly,
-      "5-Jahres Glättung" = color_smoothed
-    )
+     # *** Legend title in German ***
+     name = "Mittelwerttyp",
+     # *** Values map German factor levels to desired colors ***
+     values = c("Jährlich" = color_yearly,
+                "5-Jahres Glättung" = color_smoothed)
   ) +
 
   # Adjust X-axis limits using coord_cartesian
-  coord_cartesian(
-    xlim = c(min_start_year - 0.5, NA),
-    # Optional: Ensure y-axis includes the annotation comfortably
-    ylim = c(NA, NA), # Let ggplot decide y limits mostly
-    clip = "off"
-  ) + # Allow annotation to potentially go outside plot panel slightly if needed
+  coord_cartesian(xlim = c(min_start_year - 0.5, NA),
+                  # Optional: Ensure y-axis includes the annotation comfortably
+                  ylim = c(NA, NA), # Let ggplot decide y limits mostly
+                  clip = "off") +   # Allow annotation to potentially go outside plot panel slightly if needed
 
   # Add labels (in German) and the ggtext title
   labs(
@@ -204,9 +193,9 @@ ggplot(smoothed_means_long, aes(x = year, y = temperature, color = average_type)
       "Juli Nachttemperatur: <span style='color:", color_yearly,
       ";'>Jährlich</span> vs <span style='color:", color_smoothed,
       ";'>5-Jahres Glättung</span>"
-    ),
+      ),
     # *** German subtitle ***
-    subtitle = "Nacht definiert als 22:00 - 05:59 | Station Wien Hohe Warte",
+    subtitle = "Nacht definiert als 18:00 - 05:59 | Station Wien Hohe Warte",
     # *** German axis labels ***
     x = "Jahr",
     y = "Mittlere Temperatur (°C)"
@@ -221,19 +210,19 @@ ggplot(smoothed_means_long, aes(x = year, y = temperature, color = average_type)
     plot.subtitle = element_text(hjust = 0.5),
     strip.background = element_rect(fill = "grey90", color = NA),
     strip.text = element_text(face = "bold"),
-    plot.background = element_rect(fill = "#e1edf7", colour = "transparent"),
+    plot.background = element_rect(fill="#e1edf7", colour = "transparent"),
     # Optional: Add margin above plot title for annotation space if needed
     plot.margin = margin(t = 15, r = 5.5, b = 5.5, l = 5.5, unit = "pt"),
-    panel.grid = element_line(color = "#35353599", linewidth = 0.05)
+    panel.grid = element_line(color="#35353599",linewidth = 0.05)
   )
 
-file_dir <- ifelse(
-  rstudioapi::isAvailable(),
+file_dir = ifelse(
+  rstudioapi::isAvailable(), 
   rstudioapi::getActiveDocumentContext()$path,
   knitr::current_input(dir = TRUE)
 ) |> dirname()
 
-op <- sys_make_path(file.path(file_dir, "images", "jährliche_nachttemperatur.png"))
+op = sys_make_path(file.path(file_dir, "images", "jährliche_nachttemperatur.png"))
 print(op)
 ggsave(op)
 ```
@@ -245,73 +234,70 @@ ggsave(op)
 ```{r all_stations}
 #| column: page
 
-resource_id <- "klima-v2-1h"
-end_year <- 2025
-month <- 7
+resource_id = "klima-v2-1h"
+end_year = 2025
+month = 7
 
 # download data
-walk(min_start_year:2025, function(year) {
-  start <- glue("{year}-{month}-01")
-  last_day_in_month <- lubridate::days_in_month(glue("{year}-{month}-01"))
-  end <- glue("{year}-{month}-{last_day_in_month}")
+walk(min_start_year:2025, function(year){
+  start = glue("{year}-{month}-01")
+  last_day_in_month = lubridate::days_in_month(glue("{year}-{month}-01"))
+  end = glue("{year}-{month}-{last_day_in_month}")
 
-  fn <- glue("capitals_{year}_{month}.csv")
-  op <- sys_make_path(file.path(data_raw_path_hourly_data, fn))
+  fn = glue("capitals_{year}_{month}.csv")
+  op = sys_make_path(file.path(data_raw_path_hourly_data, fn))
   if (file.exists(op)) {
-    result <- data.table::fread(op)
-  } else {
-    result <- tryCatch(
-      {
-        data <- geosphere_get_data(
-          resource_id = resource_id,
-          parameters = c("tl"),
-          start = start,
-          end = end,
-          station_ids = davR::geosphere_stations_in_capitals$id,
-          type = "station",
-          mode = "historical",
-          output_file = op
-        ) %>% data.table::fread()
-      },
-      error = function(e) {
-        cli::cli_warn("Failed processing {year}-{month}: {conditionMessage(e)}")
-        return(NULL) # Return NULL on error
-      }
-    )
+    result = data.table::fread(op)
+  } else{
+    result = tryCatch({
+      data = geosphere_get_data(
+        resource_id = resource_id,
+        parameters = c("tl"),
+        start = start,
+        end = end,
+        station_ids = davR::geosphere_stations_in_capitals$id,
+        type = "station",
+        mode = "historical",
+        output_file = op) %>% data.table::fread()
+    }, error = function(e) {
+      cli::cli_warn("Failed processing {year}-{month}: {conditionMessage(e)}")
+      return(NULL) # Return NULL on error
+    })
   }
 })
 
 # read in all data
-paths <- paths <- dir(data_raw_path_hourly_data, "^capitals", full.names = T)
-data_per_year <- map(paths, data.table::fread)
-data_all_years <- data_per_year %>% map(function(dpy) {
-  year <- dpy$time[[1]] %>% lubridate::year()
+paths = paths = dir(data_raw_path_hourly_data, "^capitals", full.names = T)
+data_per_year = map(paths, data.table::fread) 
+data_all_years = data_per_year %>% map(function(dpy) {
+  year = dpy$time[[1]] %>% lubridate::year()
   dpy %>%
     group_by(station) %>%
     filter(hour(time) >= 22 | hour(time) <= 6) %>%
     summarise(mean_night_temp_july = mean(tl, na.rm = TRUE)) %>%
     mutate(year = year) -> data_one_year_summarised
+  
 })
 
 
 # put all stations together
-bind_rows(data_all_years) %>%
-  group_by(station) %>%
-  arrange(year, .by_group = T) %>%
+bind_rows(data_all_years) %>% 
+  group_by(station) %>% 
+  arrange(year, .by_group = T) %>% 
   mutate(smoothed_5yr_mean = zoo::rollmean(
     x = mean_night_temp_july,
     k = 5,
     fill = NA,
-    align = "right" # Align window to the right (uses current year and previous 4)
+    align = "right"           # Align window to the right (uses current year and previous 4)
   )) -> data_per_year
 
 
-data_per_year <- data_per_year %>%
-  left_join(davR::geosphere_stations_in_capitals %>% select(id, name) %>% st_drop_geometry(), join_by(station == id)) %>%
-  ungroup() %>%
+data_per_year = data_per_year %>%
+  left_join(davR::geosphere_stations_in_capitals %>% select(id, name) %>% st_drop_geometry(), join_by(station == id)) %>% 
+  ungroup() %>% 
   select(-station)
-
-
+  
+  
 
 
 
@@ -321,14 +307,13 @@ color_smoothed <- "#343434" # A dark grey
 smoothed_means_long <- data_per_year %>%
   pivot_longer(
     cols = c(mean_night_temp_july, smoothed_5yr_mean), # Columns to lengthen
-    names_to = "average_type", # New column for names of original cols
-    values_to = "temperature" # New column for the values
+    names_to = "average_type",                         # New column for names of original cols
+    values_to = "temperature"                          # New column for the values
   ) %>%
   # *** Use German labels for the factor levels ***
   mutate(average_type = factor(average_type,
-    levels = c("mean_night_temp_july", "smoothed_5yr_mean"),
-    labels = c("Jährlich", "5-Jahres Glättung")
-  )) # German labels
+                               levels = c("mean_night_temp_july", "smoothed_5yr_mean"),
+                               labels = c("Jährlich", "5-Jahres Glättung"))) # German labels
 
 # --- Step 2: Find the first year where smoothed data exists ---
 min_start_year <- smoothed_means_long %>%
@@ -343,13 +328,12 @@ if (!is.finite(min_start_year)) {
 
 ggplot(smoothed_means_long, aes(x = year, y = temperature)) +
   # Draw POINTS only for "Jährlich" (Yearly)
-  geom_point(
-    data = . %>% filter(average_type == "Jährlich"),
-    size = 1,
-    alpha = 0.7,
-    aes(color = average_type),
-    key_glyph = "point"
-  ) +
+  geom_point(data = . %>% filter(average_type == "Jährlich"),
+             size = 1,
+             alpha = 0.7,
+             aes(color = average_type),
+            key_glyph="point" 
+             ) +
 
   # Draw a LINE only for "5-Jahres Glättung" (Smoothed)
   # geom_line(data = . %>% filter(average_type == "5-Jahres Glättung"),
@@ -369,42 +353,41 @@ ggplot(smoothed_means_long, aes(x = year, y = temperature)) +
     values = c("Loess Glättung" = "solid"),
     labels = c("Loess Glättung" = "Loess Glättung", "b")
   ) +
-
+  
   # Add Horizontal Line and GERMAN Label for "Tropennacht"
-  geom_hline(yintercept = 20, linetype = "dashed", color = "darkgrey", linewidth = 0.5) +
-  annotate(
-    geom = "text",
-    x = 1950,
-    y = 20.1,
-    label = "Tropennacht (>= 20°C)",
-    hjust = 0,
-    vjust = -1,
-    color = "#353535",
-    size = 1.5
-  ) +
+  geom_hline(yintercept = 20, linetype = "dashed", color = "darkgrey", linewidth=0.5) +
+  annotate(geom = "text",
+           x = 1950,
+           y = 20.1,
+           label = "Tropennacht (>= 20°C)",
+           hjust = 0,
+           vjust = -1,
+           color = "#353535",
+           size = 1.5) +
+
+
   scale_color_manual(
-    name = NULL,
-    values = c("Jährlich" = color_yearly),
-    guide = guide_legend(override.aes = list(shape = 16, linetype = 0))
+     name = NULL,
+     values = c("Jährlich" = color_yearly),
+     guide = guide_legend(override.aes = list(shape = 16, linetype = 0)) 
   ) +
-  coord_cartesian(
-    xlim = c(min_start_year - 0.5, NA),
-    # Optional: Ensure y-axis includes the annotation comfortably
-    ylim = c(NA, NA), # Let ggplot decide y limits mostly
-    clip = "off"
-  ) + # Allow annotation to potentially go outside plot panel slightly if needed
+
+  coord_cartesian(xlim = c(min_start_year - 0.5, NA),
+                  # Optional: Ensure y-axis includes the annotation comfortably
+                  ylim = c(NA, NA), # Let ggplot decide y limits mostly
+                  clip = "off") +   # Allow annotation to potentially go outside plot panel slightly if needed
 
   labs(
     title = paste0(
       "Juli Nachttemperatur: <span style='color:", color_yearly,
       ";'>Jährlich</span> vs <span style='color:", color_smoothed,
       ";'>5-Jahres Glättung</span>"
-    ),
+      ),
     subtitle = "Nacht definiert als 18:00 - 05:59 | Station Wien Hohe Warte",
     x = "Jahr",
     y = "Mittlere Temperatur (°C)"
   ) +
-  facet_wrap(~name) +
+  facet_wrap(~name) + 
   theme_minimal(base_size = 7) +
   theme(
     legend.position = "bottom",
@@ -413,13 +396,16 @@ ggplot(smoothed_means_long, aes(x = year, y = temperature)) +
     plot.subtitle = element_text(hjust = 0.5),
     strip.background = element_rect(fill = "transparent", color = NA),
     strip.text = element_text(face = "bold"),
-    panel.grid = element_line(color = "#35353599", linewidth = 0.05),
-    panel.border = element_rect(fill = "transparent", colour = "#353535"),
+    panel.grid = element_line(color="#35353599",linewidth = 0.05),
+    panel.border = element_rect(fill = "transparent",colour = "#353535"),
     # Optional: Add margin above plot title for annotation space if needed
     plot.margin = margin(t = 15, r = 5.5, b = 5.5, l = 5.5, unit = "pt"),
-    plot.background = element_rect(fill = "#ffffff", colour = "transparent")
+    plot.background = element_rect(fill="#ffffff", colour = "transparent")
   )
+
+
 ```
+
 
 
 

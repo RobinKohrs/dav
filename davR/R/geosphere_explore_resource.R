@@ -89,7 +89,8 @@ geosphere_explore_resource = function(resource_id,
                                       api_url = "https://dataset.api.hub.geosphere.at",
                                       version = "v1",
                                       user_agent = "davR",
-                                      print_summary = TRUE) {
+                                      print_summary = TRUE,
+                                      timeout_seconds = 2) {
 
   # --- 1. Input Validation ---
   if (missing(resource_id) || !is.character(resource_id) || length(resource_id) != 1 || nchar(trimws(resource_id)) == 0) {
@@ -237,7 +238,7 @@ geosphere_explore_resource = function(resource_id,
     required_params_found = NULL # Initialize
 
     probe_response = tryCatch(
-      httr::GET(data_url, ua), # No query parameters intentionally
+      httr::GET(data_url, ua, httr::timeout(timeout_seconds)), # No query parameters intentionally
       error = function(e) {
         cli::cli_alert_danger("HTTP request failed when probing data URL {.url {data_url}}")
         cli::cli_alert_danger("Error: {e$message}")
