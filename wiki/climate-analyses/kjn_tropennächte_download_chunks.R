@@ -285,7 +285,7 @@ walk(seq_along(stations$id), function(i) {
 
   #  prepare for datawrapper format  ------------------------------------------------------
   data_dw <- mean_data %>%
-    select(year, month, mean_nightly_tl) %>%
+    select(year, month, mean_nightly_tl, share_no_data = share_invalid) %>%
     mutate(
       month = lubridate::month(month, label = T)
     ) %>%
@@ -351,98 +351,118 @@ plot_data_jul <- d_whw %>%
   ) %>%
   filter(!is.na(temperature))
 
-# Define colors (similar to your old plot, adjust as needed)
-color_yearly_jul <- "#FB8861FF" # Example color for yearly July temps
-color_smoothed_jul <- "#51127CFF" # Example color for smoothed July temps
-color_loess <- "black"
+# --- Define Colors and other plot parameters ---
+color_yearly_jul <- "#E69F00" # A distinct orange
+color_smoothed_jul <- "#56B4E9" # A distinct blue
+color_loess <- "grey30" # Dark grey for Loess
 min_start_year <- min(plot_data_jul$year, na.rm = TRUE)
+max_end_year <- max(plot_data_jul$year, na.rm = TRUE)
 
-ggplot(plot_data_jul, aes(x = year, y = temperature)) +
-  # Draw POINTS only for "Jährlich (Juli)"
+# --- Define base font sizes (in points for theme_minimal, pixels for markdown) ---
+# These are examples, adjust as needed
+base_font_size_pt_for_theme_minimal <- 9 # For non-markdown elements scaled by theme_minimal
+title_size_px <- 16
+subtitle_size_px <- 12
+axis_title_size_px <- 11
+axis_text_size_px <- 10
+caption_size_px <- 9
+legend_text_size_px <- 10
+annotate_text_size_ggtext <- 3.5 # ggtext geom_richtext size is different scale
+
+
+# --- Build the Plot ---
+plot <- ggplot(plot_data_jul, aes(x = year, y = temperature)) +
   geom_point(
     data = . %>% filter(average_type == "Jährlich (Juli)"),
-    size = 1.5, # Slightly larger for visibility
-    alpha = 0.7,
-    aes(color = average_type),
-    key_glyph = "point"
+    size = 1.5, alpha = 0.7, aes(color = average_type), key_glyph = "point"
   ) +
-
-  # Draw a LINE for "5-Jahres Glättung (Juli)"
   geom_line(
     data = . %>% filter(average_type == "5-Jahres Glättung (Juli)"),
-    linewidth = 0.8,
-    aes(color = average_type), # Color the line itself
-    key_glyph = "timeseries"
-  ) + # Use timeseries glyph for the line in legend
-
-  # LOESS smooth for the yearly data (if desired on top of the 5yr avg)
-  geom_smooth(
-    data = . %>% filter(average_type == "Jährlich (Juli)"), # Smooth the yearly points
-    method = "loess",
-    se = FALSE, # Turn off confidence interval
-    linewidth = 0.6,
-    colour = color_loess, # Use a distinct color for Loess
-    aes(linetype = "Loess Glättung"), # Map to linetype for legend
-    key_glyph = "timeseries"
+    linewidth = 0.8, aes(color = average_type), key_glyph = "timeseries"
   ) +
-
-  # Define scales for color and linetype
+  geom_smooth(
+    data = . %>% filter(average_type == "Jährlich (Juli)"),
+    method = "loess", se = FALSE, linewidth = 0.6,
+    colour = color_loess, aes(linetype = "Loess Glättung"), key_glyph = "timeseries"
+  ) +
   scale_color_manual(
-    name = NULL, # Legend title for colors
-    values = c(
-      "Jährlich (Juli)" = color_yearly_jul,
-      "5-Jahres Glättung (Juli)" = color_smoothed_jul
-    ),
-    labels = c( # Ensure labels match the factor levels
-      "Jährlich (Juli)" = "Jährliche Juli-Mittel",
-      "5-Jahres Glättung (Juli)" = "5-Jahres Juli-Mittel (gleitend)"
-    )
-    # guide = guide_legend(override.aes = list(shape = c(16, NA), linetype = c(0, 1))) # Customize legend appearance
+    name = NULL,
+    values = c("Jährlich (Juli)" = color_yearly_jul, "5-Jahres Glättung (Juli)" = color_smoothed_jul),
+    labels = c("Jährlich (Juli)" = "Jährliche Juli-Mittel", "5-Jahres Glättung (Juli)" = "5-Jahres Juli-Mittel (gl.)")
   ) +
   scale_linetype_manual(
-    name = NULL, # Legend title for linetypes
-    values = c("Loess Glättung" = "dashed"), # e.g., dashed or dotted
-    labels = c("Loess Glättung" = "Loess Trend (jährlich)")
+    name = NULL,
+    values = c("Loess Glättung" = "dashed"),
+    labels = c("Loess Glättung" = "Loess Trend (jährl.)")
   ) +
-
-  # Add Horizontal Line and GERMAN Label for "Tropennacht"
-  geom_hline(yintercept = 20, linetype = "dotted", color = "grey40", linewidth = 0.5) +
+  geom_hline(yintercept = 20, linetype = "dotted", color = "grey50", linewidth = 0.5) +
   annotate(
-    geom = "richtext", # Using richtext for better control, needs ggtext
-    x = min_start_year + 1, # Position relative to data
-    y = 20.2,
+    geom = "richtext",
+    x = min_start_year + 1, y = 20.25,
     label = "Tropennacht Grenze (≥ 20°C)",
-    hjust = 0,
-    vjust = 0, # Adjust vjust if it overlaps with hline
-    color = "grey20",
-    size = 3, # ggtext sizes are different from base ggplot sizes
-    label.color = NA, fill = NA
-  ) + # No box for richtext
-
+    hjust = 0, vjust = 0, color = "grey20",
+    size = annotate_text_size_ggtext, # Use ggtext specific size
+    label.color = NA, fill = NA, family = "Roboto" # Specify family for annotate too
+  ) +
   coord_cartesian(
-    xlim = c(min_start_year - 1, max(plot_data_jul$year, na.rm = TRUE) + 1),
-    ylim = c(min(plot_data_jul$temperature, na.rm = TRUE) - 1, max(plot_data_jul$temperature, 20.5, na.rm = TRUE) + 1), # Ensure Tropennacht label fits
+    xlim = c(min_start_year - 1, max_end_year + 1),
+    ylim = c(min(plot_data_jul$temperature, na.rm = TRUE) - 1, max(plot_data_jul$temperature, 20.5, na.rm = TRUE) + 1.5), # Extra space for annotation
     clip = "off"
   ) +
   labs(
     title = glue::glue(
-      "Juli Nachttemperatur in {unique(plot_data_jul$station_name)}: <span style='color:{color_yearly_jul};'>Jährlich</span> vs <span style='color:{color_smoothed_jul};'>5-Jahres Glättung</span>"
+      "<span style='font-size:{title_size_px}px;'>Juli Nachttemperatur in {unique(plot_data_jul$station_name)}</span><br>", # Title on its own line
+      "<span style='font-size:{subtitle_size_px}px;'>",
+      "<span style='color:{color_yearly_jul};'>Jährlich</span> vs <span style='color:{color_smoothed_jul};'>5-Jahres Glättung</span>",
+      "</span>"
     ),
-    subtitle = "Nacht definiert als 22:00 - 05:59 Uhr", # Update definition if needed
-    x = "Jahr",
-    y = "Mittlere Nachttemperatur im Juli (°C)",
-    caption = "Datenquelle: Ihre Daten | Grafik: KJN" # Update caption
+    subtitle = glue::glue("<span style='font-size:{subtitle_size_px * 0.9}px;'>Nacht definiert als 22:00 - 05:59 Uhr</span>"), # Slightly smaller subtitle
+    x = glue::glue("<span style='font-size:{axis_title_size_px}px;'>Jahr</span>"),
+    y = glue::glue("<span style='font-size:{axis_title_size_px}px;'>Mittlere Nachttemperatur im Juli (°C)</span>"),
+    caption = glue::glue("<span style='font-size:{caption_size_px}px; color:grey50;'>Datenquelle: Ihre Daten | Grafik: KJN</span>"),
+    color = NULL, # Remove default "color" legend title if combined
+    linetype = NULL # Remove default "linetype" legend title if combined
   ) +
-  # facet_wrap(~station_name) + # If you have multiple stations in plot_data_jul
-  theme( # Additional theme tweaks specific to this plot
+  theme_minimal(base_size = base_font_size_pt_for_theme_minimal, base_family = "Roboto") + # Base theme
+  theme(
+    # --- TRANSPARENT BACKGROUNDS ---
+    plot.background = element_rect(fill = "transparent", colour = NA),
+    panel.background = element_rect(fill = "transparent", colour = NA),
+    legend.background = element_rect(fill = "transparent", colour = NA),
+    legend.key = element_rect(fill = "transparent", colour = NA),
+
+    # --- TEXT ELEMENTS using element_markdown and Roboto ---
+    plot.title = element_markdown(hjust = 0.0, margin = ggplot2::margin(b = 8), family = "Roboto"), # Corrected
+    plot.subtitle = element_markdown(hjust = 0.0, margin = ggplot2::margin(b = 15), family = "Roboto"), # Corrected
+    axis.title.x = element_markdown(margin = ggplot2::margin(t = 8), family = "Roboto"), # Corrected
+    axis.title.y = element_markdown(margin = ggplot2::margin(r = 8), family = "Roboto"), # Corrected
+    axis.text = element_text(size = rel(0.95), family = "Roboto", color = "grey10"),
+    plot.caption = element_markdown(hjust = 1, margin = ggplot2::margin(t = 10), family = "Roboto"), # Corrected
+
     legend.position = "bottom",
     legend.box = "horizontal",
-    legend.margin = margin(t = 0, r = 0, b = 5, l = 0),
-    plot.subtitle = element_markdown(hjust = 0.5, margin = margin(b = 10)), # Assuming theme_to_use has element_markdown setup
-    strip.background = element_rect(fill = "transparent", color = NA), # If using facets
-    strip.text = element_markdown(face = "bold"), # If using facets
-    panel.grid.minor = element_blank(), # Cleaner grid
-    panel.grid.major.x = element_blank(), # Only horizontal major grid lines
-    # panel.border = element_rect(fill = "transparent", colour = "grey70"),
-    plot.margin = margin(t = 15, r = 10, b = 10, l = 10) # More balanced margins
+    legend.text = element_text(size = rel(0.9), family = "Roboto", color = "grey10"),
+    legend.margin = ggplot2::margin(t = 5, r = 0, b = 0, l = 0), # Corrected
+    legend.spacing.x = unit(0.2, "cm"),
+    legend.title = element_blank(),
+
+    # --- GRIDS AND BORDERS ---
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_line(colour = "grey80", linewidth = 0.3),
+
+    # --- MARGINS ---
+    plot.margin = ggplot2::margin(t = 15, r = 15, b = 10, l = 10)
   )
+
+#-------------------------------------
+# save
+#-------------------------------------
+op_1 <- file.path(output_images_path, "test.png")
+
+ggsave(op_2, plot,
+  width = 10, height = 6.5, dpi = 600, bg = "transparent", device = png
+)
+# Option 2: Using ragg for potentially better font rendering in PNG
+# ggsave("july_temp_transparent_ragg.png", july_plot_transparent, device = ragg::agg_png,
+#        width = 10, height = 6.5, units = "in", dpi = 300, bg = "transparent")
