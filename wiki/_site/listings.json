@@ -2,6 +2,11 @@
   {
     "listing": "/datasets.html",
     "items": [
+      "/datasets/food-malnutrition-data-on-gaza.html",
+      "/datasets/humanitarian-funding-data.html",
+      "/datasets/palestine-nutrition-dashboard.html",
+      "/datasets/who-health-gaza-data.html",
+      "/datasets/gaza-acled-monitor-shapefiles.html",
       "/datasets/un-ocha-data.html",
       "/datasets/reliefweb-latest-reports.html",
       "/datasets/timeline-damage-gaza-corey-scher.html",
@@ -22,6 +27,11 @@
   {
     "listing": "/all-datasets.html",
     "items": [
+      "/datasets/food-malnutrition-data-on-gaza.html",
+      "/datasets/humanitarian-funding-data.html",
+      "/datasets/palestine-nutrition-dashboard.html",
+      "/datasets/who-health-gaza-data.html",
+      "/datasets/gaza-acled-monitor-shapefiles.html",
       "/datasets/un-ocha-data.html",
       "/datasets/reliefweb-latest-reports.html",
       "/datasets/timeline-damage-gaza-corey-scher.html",

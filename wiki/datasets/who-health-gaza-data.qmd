@@ -1,0 +1,16 @@
+---
+title: "WHO Health Gaza data"
+date: "2025-05-26T13:39:26Z"
+description: "WHO Data Dashboard on various health related indicators"
+dataset-url: "https://app.powerbi.com/view?r=eyJrIjoiODAxNTYzMDYtMjQ3YS00OTMzLTkxMWQtOTU1NWEwMzE5NTMwIiwidCI6ImY2MTBjMGI3LWJkMjQtNGIzOS04MTBiLTNkYzI4MGFmYjU5MCIsImMiOjh9"
+format: html
+---
+
+## [WHO Health Gaza data](https://app.powerbi.com/view?r=eyJrIjoiODAxNTYzMDYtMjQ3YS00OTMzLTkxMWQtOTU1NWEwMzE5NTMwIiwidCI6ImY2MTBjMGI3LWJkMjQtNGIzOS04MTBiLTNkYzI4MGFmYjU5MCIsImMiOjh9)
+
+## Description
+
+WHO Data Dashboard on various health related indicators
+
+## Getting Data
+

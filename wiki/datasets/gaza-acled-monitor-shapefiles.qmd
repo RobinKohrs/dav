@@ -1,0 +1,16 @@
+---
+title: "Gaza Acled Monitor Shapefiles"
+date: "2025-05-26T07:54:31Z"
+description: "Geodata on the evacuation zones in gaza in approx. the IDF data"
+dataset-url: "https://drive.google.com/drive/folders/1ZiEjbYR2EYm0Cp7iO3fm_riwQBaKssap"
+format: html
+---
+
+## [Gaza Acled Monitor Shapefiles](https://drive.google.com/drive/folders/1ZiEjbYR2EYm0Cp7iO3fm_riwQBaKssap)
+
+## Description
+
+Geodata on the evacuation zones in gaza in approx. the IDF data
+
+## Getting Data
+

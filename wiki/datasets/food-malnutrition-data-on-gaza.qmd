@@ -1,0 +1,17 @@
+---
+title: "Food/Malnutrition Data on Gaza"
+date: "2025-05-26T14:40:32Z"
+description: "Current reports of FAO and IPC data on malnutrition classification"
+categories: ["dataset"]
+dataset-url: "https://www.ipcinfo.org/ipcinfo-website/countries-in-focus-archive/issue-124/en/"
+format: html
+---
+
+## [Food/Malnutrition Data on Gaza](https://www.ipcinfo.org/ipcinfo-website/countries-in-focus-archive/issue-124/en/)
+
+## Description
+
+Current reports of FAO and IPC data on malnutrition classification
+
+## Getting Data
+
