@@ -2,6 +2,7 @@
   {
     "listing": "/datasets.html",
     "items": [
+      "/datasets/un-ocha-data.html",
       "/datasets/reliefweb-latest-reports.html",
       "/datasets/timeline-damage-gaza-corey-scher.html",
       "/datasets/planet-images-of-gaza.html",
@@ -21,6 +22,7 @@
   {
     "listing": "/all-datasets.html",
     "items": [
+      "/datasets/un-ocha-data.html",
       "/datasets/reliefweb-latest-reports.html",
       "/datasets/timeline-damage-gaza-corey-scher.html",
       "/datasets/planet-images-of-gaza.html",
