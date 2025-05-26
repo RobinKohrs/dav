@@ -14,11 +14,67 @@
     "text": "from here\ncollect_geometries(\n    array_foreach(\n        overlay_intersects (@layer, boundary($geometry)),\n        shared_paths (@element, boundary($geometry))\n    )\n)"
   },
   {
-    "objectID": "data_raw/austria_4326.html",
-    "href": "data_raw/austria_4326.html",
-    "title": "DAV",
+    "objectID": "datasets.html",
+    "href": "datasets.html",
+    "title": "Datasets",
     "section": "",
-    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     \n\n\n         0 0     false"
+    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nReliefweb Latest Reports\n\n\n\narticle\n\ndataset\n\nreference\n\n\n\nReliefWeb is a leading humanitarian information service provided by the United Nations Office for the Coordination of Humanitarian Affairs (OCHA). Established in 1996, it serves as a central hub for reliable and timely information on global crises and disasters, supporting humanitarian workers, decision-makers, and researchers worldwide\n\n\n\n\n\nMay 26, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nTimeline Damage Gaza Corey Scher\n\n\n\ndataset\n\n\n\nHistoric data on destruction in gaza strip\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nPlanet Images of Gaza\n\n\nA collection of images of the gaza strip by the planet satellites\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nGaza Unosat Hub\n\n\n\ndataset\n\nreference\n\n\n\nData from Unosat on Gaza\n\n\n\n\n\nMay 19, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\narticle\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nState of Palestine Humdata\n\n\n\ndataset\n\nreference\n\n\n\nHumdata datasets for the state of palestine\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\narticle\n\nreference\n\ntechnical\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "datasets/overture maps.html",
+    "href": "datasets/overture maps.html",
+    "title": "Overture Maps",
+    "section": "",
+    "text": "Some fancy derivate of osm data\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "datasets/overture maps.html#overture-maps",
+    "href": "datasets/overture maps.html#overture-maps",
+    "title": "Overture Maps",
+    "section": "",
+    "text": "Some fancy derivate of osm data\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "datasets/gaza-unosat-hub.html",
+    "href": "datasets/gaza-unosat-hub.html",
+    "title": "Gaza Unosat Hub",
+    "section": "",
+    "text": "Data from Unosat on Gaza\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "datasets/gaza-unosat-hub.html#gaza-unosat-hub",
+    "href": "datasets/gaza-unosat-hub.html#gaza-unosat-hub",
+    "title": "Gaza Unosat Hub",
+    "section": "",
+    "text": "Data from Unosat on Gaza\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "datasets/fonts for data visualization.html",
+    "href": "datasets/fonts for data visualization.html",
+    "title": "Fonts For Data Visualization",
+    "section": "",
+    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "datasets/fonts for data visualization.html#fonts-for-data-visualization",
+    "href": "datasets/fonts for data visualization.html#fonts-for-data-visualization",
+    "title": "Fonts For Data Visualization",
+    "section": "",
+    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "datasets/state of palestine humdata.html",
+    "href": "datasets/state of palestine humdata.html",
+    "title": "State of Palestine Humdata",
+    "section": "",
+    "text": "Humdata datasets for the state of palestine\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "datasets/state of palestine humdata.html#state-of-palestine-humdata",
+    "href": "datasets/state of palestine humdata.html#state-of-palestine-humdata",
+    "title": "State of Palestine Humdata",
+    "section": "",
+    "text": "Humdata datasets for the state of palestine\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
     "objectID": "climate-analyses/kjn_tropennächte.html",
@@ -42,53 +98,53 @@
     "text": "Desktop\n\n\n\ndesktop"
   },
   {
-    "objectID": "datasets.html",
-    "href": "datasets.html",
-    "title": "Datasets",
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "DAV",
     "section": "",
-    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nTimeline Damage Gaza Corey Scher\n\n\n\ndataset\n\n\n\nHistoric data on destruction in gaza strip\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nPlanet Images of Gaza\n\n\nA collection of images of the gaza strip by the planet satellites\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nGaza Unosat Hub\n\n\n\ndataset\n\nreference\n\n\n\nData from Unosat on Gaza\n\n\n\n\n\nMay 19, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\narticle\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nState of Palestine Humdata\n\n\n\ndataset\n\nreference\n\n\n\nHumdata datasets for the state of palestine\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\narticle\n\nreference\n\ntechnical\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\nNo matching items"
+    "text": "DAV"
   },
   {
-    "objectID": "datasets/fonts for data visualization.html",
-    "href": "datasets/fonts for data visualization.html",
-    "title": "Fonts For Data Visualization",
+    "objectID": "spatial.html",
+    "href": "spatial.html",
+    "title": "Spatial",
     "section": "",
-    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "ncdump -h on the large file\n\n\n\n\n\n\n\nShow Code\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n\n\n\n\n\n\n\n\n\n\n\nRead in the data\n\n\n\n\n\n\nHere all have the same dimensions!\n\n\n\nShow Code\n# the  austrian shape\naustria = read_sf(austria_4326_path)"
   },
   {
-    "objectID": "datasets/fonts for data visualization.html#fonts-for-data-visualization",
-    "href": "datasets/fonts for data visualization.html#fonts-for-data-visualization",
-    "title": "Fonts For Data Visualization",
+    "objectID": "spatial.html#load-data",
+    "href": "spatial.html#load-data",
+    "title": "Spatial",
     "section": "",
-    "text": "How to choose the right fonts for data viz\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "ncdump -h on the large file\n\n\n\n\n\n\n\nShow Code\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n\n\n\n\n\n\n\n\n\n\n\nRead in the data\n\n\n\n\n\n\nHere all have the same dimensions!\n\n\n\nShow Code\n# the  austrian shape\naustria = read_sf(austria_4326_path)"
   },
   {
-    "objectID": "datasets/gaza-unosat-hub.html",
-    "href": "datasets/gaza-unosat-hub.html",
-    "title": "Gaza Unosat Hub",
+    "objectID": "misc.html",
+    "href": "misc.html",
+    "title": "Tips and Tricks for this and that",
     "section": "",
-    "text": "Data from Unosat on Gaza\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
   },
   {
-    "objectID": "datasets/gaza-unosat-hub.html#gaza-unosat-hub",
-    "href": "datasets/gaza-unosat-hub.html#gaza-unosat-hub",
-    "title": "Gaza Unosat Hub",
+    "objectID": "misc.html#mac",
+    "href": "misc.html#mac",
+    "title": "Tips and Tricks for this and that",
     "section": "",
-    "text": "Data from Unosat on Gaza\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
   },
   {
-    "objectID": "datasets/overture maps.html",
-    "href": "datasets/overture maps.html",
-    "title": "Overture Maps",
-    "section": "",
-    "text": "Some fancy derivate of osm data\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "objectID": "datasets/reliefweb-latest-reports.html#description",
+    "href": "datasets/reliefweb-latest-reports.html#description",
+    "title": "Reliefweb Latest Reports",
+    "section": "Description",
+    "text": "Description\nReliefWeb is a leading humanitarian information service provided by the United Nations Office for the Coordination of Humanitarian Affairs (OCHA). Established in 1996, it serves as a central hub for reliable and timely information on global crises and disasters, supporting humanitarian workers, decision-makers, and researchers worldwide"
   },
   {
-    "objectID": "datasets/overture maps.html#overture-maps",
-    "href": "datasets/overture maps.html#overture-maps",
-    "title": "Overture Maps",
-    "section": "",
-    "text": "Some fancy derivate of osm data\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+    "objectID": "datasets/reliefweb-latest-reports.html#getting-data",
+    "href": "datasets/reliefweb-latest-reports.html#getting-data",
+    "title": "Reliefweb Latest Reports",
+    "section": "Getting Data",
+    "text": "Getting Data"
   },
   {
     "objectID": "datasets/deepl account page.html",
@@ -119,20 +175,6 @@
     "text": "Historic data on destruction in gaza strip\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
-    "objectID": "datasets/state of palestine humdata.html",
-    "href": "datasets/state of palestine humdata.html",
-    "title": "State of Palestine Humdata",
-    "section": "",
-    "text": "Humdata datasets for the state of palestine\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
-  },
-  {
-    "objectID": "datasets/state of palestine humdata.html#state-of-palestine-humdata",
-    "href": "datasets/state of palestine humdata.html#state-of-palestine-humdata",
-    "title": "State of Palestine Humdata",
-    "section": "",
-    "text": "Humdata datasets for the state of palestine\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
-  },
-  {
     "objectID": "datasets/planet-images-of-gaza.html",
     "href": "datasets/planet-images-of-gaza.html",
     "title": "Planet Images of Gaza",
@@ -147,27 +189,6 @@
     "text": "A collection of images of the gaza strip by the planet satellites\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "DAV",
-    "section": "",
-    "text": "DAV"
-  },
-  {
-    "objectID": "spatial.html",
-    "href": "spatial.html",
-    "title": "Spatial",
-    "section": "",
-    "text": "ncdump -h on the large file\n\n\n\n\n\n\n\nShow Code\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n\n\n\n\n\n\n\n\n\n\n\nRead in the data\n\n\n\n\n\n\nHere all have the same dimensions!\n\n\n\nShow Code\n# the  austrian shape\naustria = read_sf(austria_4326_path)"
-  },
-  {
-    "objectID": "spatial.html#load-data",
-    "href": "spatial.html#load-data",
-    "title": "Spatial",
-    "section": "",
-    "text": "ncdump -h on the large file\n\n\n\n\n\n\n\nShow Code\n# Use intern = TRUE to capture the output\n#ncdump = system(glue(\"ncdump -h {raster_file_path}\"), intern = TRUE)\n#cat(ncdump, sep=\"\\n\")\n\n\n\n\n\n\n\n\n\n\n\nRead in the data\n\n\n\n\n\n\nHere all have the same dimensions!\n\n\n\nShow Code\n# the  austrian shape\naustria = read_sf(austria_4326_path)"
-  },
-  {
     "objectID": "climate_analyses.html",
     "href": "climate_analyses.html",
     "title": "Climate Analyses",
@@ -175,24 +196,10 @@
     "text": "SOME DESRIPTION TO FOLLOW\n\n\n\n\n\n\n    \n      \n      \n    \n\n\n\n\n\n\n\nTemperaturen in der Nacht\n\n\n\nRobin Kohrs / Netzwerk Klimajournalismus\n\n\nApr 27, 2025\n\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "misc.html",
-    "href": "misc.html",
-    "title": "Tips and Tricks for this and that",
-    "section": "",
-    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
-  },
-  {
-    "objectID": "misc.html#mac",
-    "href": "misc.html#mac",
-    "title": "Tips and Tricks for this and that",
-    "section": "",
-    "text": "It sucks to open finder with a shortcut configured via apple script because it alwas brings up all the windows of Finder on the current workspace while what you actually want is to only bring the newly created one on top. E.g. this script works, but does exactly that…\non run {input, parameters}\n\n    tell application \"Finder\"\n        -- Check if there are NO Finder windows open\n        if (count of Finder windows) is 0 then\n            -- If no windows are open, make exactly one new window.\n            -- This will open in the current Space.\n            make new Finder window\n        end if\n        \n        -- Whether a window was just opened or already existed,\n        -- bring Finder to the front (activating it in the current Space).\n        activate\n    end tell\n    \n    return input\nend run\n-&gt; Better look here and just use opt+cmd-space to open finder!\n\n\n\n\ncheck here and use this command for enabling smooth scrolling in VS Code (or any other codium editor)\n\ndefaults write -g ApplePressAndHoldEnabled -bool false\n\nor use this command to check if it is enabled\n\ndefaults read -g ApplePressAndHoldEnabled"
-  },
-  {
     "objectID": "all-datasets.html",
     "href": "all-datasets.html",
     "title": "Datasets Collection",
     "section": "",
-    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nTimeline Damage Gaza Corey Scher\n\n\n\ndataset\n\n\n\nHistoric data on destruction in gaza strip\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nPlanet Images of Gaza\n\n\nA collection of images of the gaza strip by the planet satellites\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nGaza Unosat Hub\n\n\n\ndataset\n\nreference\n\n\n\nData from Unosat on Gaza\n\n\n\n\n\nMay 19, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\narticle\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nState of Palestine Humdata\n\n\n\ndataset\n\nreference\n\n\n\nHumdata datasets for the state of palestine\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\narticle\n\nreference\n\ntechnical\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\nNo matching items"
+    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nReliefweb Latest Reports\n\n\n\narticle\n\ndataset\n\nreference\n\n\n\nReliefWeb is a leading humanitarian information service provided by the United Nations Office for the Coordination of Humanitarian Affairs (OCHA). Established in 1996, it serves as a central hub for reliable and timely information on global crises and disasters, supporting humanitarian workers, decision-makers, and researchers worldwide\n\n\n\n\n\nMay 26, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nTimeline Damage Gaza Corey Scher\n\n\n\ndataset\n\n\n\nHistoric data on destruction in gaza strip\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nPlanet Images of Gaza\n\n\nA collection of images of the gaza strip by the planet satellites\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nGaza Unosat Hub\n\n\n\ndataset\n\nreference\n\n\n\nData from Unosat on Gaza\n\n\n\n\n\nMay 19, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\narticle\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nState of Palestine Humdata\n\n\n\ndataset\n\nreference\n\n\n\nHumdata datasets for the state of palestine\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\narticle\n\nreference\n\ntechnical\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\nNo matching items"
   }
 ]

@@ -13,14 +13,14 @@ DAV_CONFIG_FILE_NAME="settings.ini"
 DAV_CONFIG_FILE_ABSOLUTE="" # Will be set by load_config_and_categories
 
 # Keys used within DAV_CONFIG_FILE_NAME
-KEY_LINK_MANAGER_BASE_DIR="LINK_MANAGER_BASE_DIRECTORY_PATH"
-KEY_LINK_DOCS_SUBDIR="LINK_DOCUMENTS_SUBDIRECTORY"
+KEY_DATASET_MANAGER_BASE_DIR="DATASET_MANAGER_BASE_DIRECTORY_PATH"
+KEY_DATASET_DOCS_SUBDIR="DATASET_DOCUMENTS_SUBDIRECTORY"
 KEY_DATA_PROJECT_BASE_DIR="DATA_PROJECT_BASE_DIR" # Used as delimiter for category parsing
 
 # --- Global Variables for Resolved Paths ---
-LINK_MANAGER_BASE_DIR_ABSOLUTE=""
-LINK_DOCS_DIR_ABSOLUTE=""
-LINK_DOCS_SUBDIR_NAME="datasets" # Default value, can be overridden from config
+DATASET_MANAGER_BASE_DIR_ABSOLUTE=""
+DATASET_DOCS_DIR_ABSOLUTE=""
+DATASET_DOCS_SUBDIR_NAME="datasets" # Default value, can be overridden from config
 QUARTO_PROJECT_DIR_ABSOLUTE=""
 
 # --- Default Initial Categories ---
@@ -85,26 +85,51 @@ show_help() {
 # $SCRIPT_NAME Help
 **Usage:** \`$SCRIPT_NAME [-h]\`
 Creates individual Quarto document files for each dataset, suitable for a Quarto listing page.
-Configuration is stored in: \`$DAV_CONFIG_DIR/$DAV_CONFIG_FILE_NAME\`
----
-## Relevant Configuration in \`$DAV_CONFIG_FILE_NAME\`
-- **Base Directory for Dataset System:**
-  \`$KEY_LINK_MANAGER_BASE_DIR=/path/to/your/dataset_project_root\`
-- **Subdirectory for Dataset Documents (Optional):**
-  \`$KEY_LINK_DOCS_SUBDIR=dataset_items\` (Defaults to '$LINK_DOCS_SUBDIR_NAME' if not set)
-- **Categories (Suggested):**
-  Categories are listed as separate lines **after** \`$KEY_LINK_MANAGER_BASE_DIR\` (and \`$KEY_LINK_DOCS_SUBDIR\` if present)
-  and **before** any other script's settings or the end-of-section marker for $SCRIPT_NAME.
----
-## Output
-- A new \`.qmd\` file is created in \`<Base Directory>/<Dataset Docs Subdir>/\` for each dataset.
-- This \`.qmd\` file contains front matter (title, description, categories, date, dataset-url).
----
+
+## Directory Structure
+This script manages dataset documentation in a Quarto website structure:
+
+1. **Configuration File:**
+   - Location: \`$DAV_CONFIG_DIR/$DAV_CONFIG_FILE_NAME\`
+   - This is where the script stores its settings
+
+2. **Dataset Documentation Website:**
+   - You choose a directory to be your Quarto website root
+   - This is stored in config as: \`$KEY_DATASET_MANAGER_BASE_DIR\`
+   - Example: \`/home/username/MyDatasetWebsite\`
+   - Inside this directory, the script will create:
+     - \`all-datasets.qmd\` (main listing page)
+     - A subdirectory (default: 'datasets') containing all dataset .qmd files
+
+## Configuration Settings
+In \`$DAV_CONFIG_FILE_NAME\`:
+- **Website Root Directory:**
+  \`$KEY_DATASET_MANAGER_BASE_DIR=/path/to/your/website/root\`
+  This is where your Quarto website will live. All dataset documentation will be stored here.
+
+- **Dataset Files Subdirectory:**
+  \`$KEY_DATASET_DOCS_SUBDIR=datasets\` (default if not set)
+  This is the subdirectory where individual dataset .qmd files will be stored.
+
+- **Categories:**
+  Categories are listed as separate lines after the directory settings.
+
+## Example Directory Structure
+If you set \`$KEY_DATASET_MANAGER_BASE_DIR=/home/username/MyDatasetWebsite\`:
+\`\`\`
+/home/username/MyDatasetWebsite/          # Your Quarto website root
+├── all-datasets.qmd                     # Main listing page
+└── datasets/                            # Subdirectory for dataset files
+    ├── climate-data-2023.qmd
+    ├── population-stats.qmd
+    └── ...
+\`\`\`
+
 ## Options
   \`-h\`         Show this help message and exit.
 EOF
     help_text="$help_text_content" # Assign to the variable
-    if $GUM_AVAILABLE; then gum format --theme pretty "$help_text"; else echo -e "$help_text"; fi # Use -e for echo to interpret backslashes if any
+    if $GUM_AVAILABLE; then gum format --theme pretty "$help_text"; else echo -e "$help_text"; fi
     exit 0;
 }
 
@@ -190,32 +215,116 @@ load_config_and_categories() {
     local config_dir_abs; config_dir_abs=$(normalize_path_absolute "$DAV_CONFIG_DIR")
     DAV_CONFIG_FILE_ABSOLUTE="$config_dir_abs/$DAV_CONFIG_FILE_NAME"
 
-    LINK_DOCS_SUBDIR_NAME="datasets" # Initialize with default
+    DATASET_DOCS_SUBDIR_NAME="datasets" # Initialize with default
 
     if [[ ! -f "$DAV_CONFIG_FILE_ABSOLUTE" ]]; then
         print_header "Welcome! Initial $SCRIPT_NAME Setup"
-        print_warning "Shared DAV configuration file not found: $DAV_CONFIG_FILE_ABSOLUTE"
+        print_warning "Configuration file not found: $DAV_CONFIG_FILE_ABSOLUTE"
+        print_info "This script will help you set up a Quarto website for documenting datasets."
+        print_info "You'll need to specify where this website should live on your system."
         
-        LINK_MANAGER_BASE_DIR_ABSOLUTE=$(prompt_for_dir_interactive "Enter Base Directory for this Dataset System (e.g., Quarto project root):" "MyDatasetWebsite")
-        [[ -z "$LINK_MANAGER_BASE_DIR_ABSOLUTE" ]] && print_error "Base Directory setup failed. Exiting."
+        DATASET_MANAGER_BASE_DIR_ABSOLUTE=$(prompt_for_dir_interactive "Enter the directory where your dataset documentation website should live (this will be your Quarto website root directory):" "MyDatasetWebsite")
+        [[ -z "$DATASET_MANAGER_BASE_DIR_ABSOLUTE" ]] && print_error "Website root directory setup failed. Exiting."
         
-        if [[ ! -d "$LINK_MANAGER_BASE_DIR_ABSOLUTE" ]]; then
+        # Verify the base directory
+        if [[ ! -d "$DATASET_MANAGER_BASE_DIR_ABSOLUTE" ]]; then
             local create_dir=false
-            if $GUM_AVAILABLE; then gum confirm "Directory '$LINK_MANAGER_BASE_DIR_ABSOLUTE' does not exist. Create it?" && create_dir=true
-            else read -r -p "Directory '$LINK_MANAGER_BASE_DIR_ABSOLUTE' does not exist. Create it? [Y/n]: " c; if [[ ! "$c" =~ ^[Nn]$ ]]; then create_dir=true; fi; fi
-            if $create_dir; then mkdir -p "$LINK_MANAGER_BASE_DIR_ABSOLUTE" || print_error "Failed to create directory '$LINK_MANAGER_BASE_DIR_ABSOLUTE'. Exiting.";
-            else print_error "Base directory not created. Exiting."; fi
+            if $GUM_AVAILABLE; then 
+                print_info "The website root directory '$DATASET_MANAGER_BASE_DIR_ABSOLUTE' doesn't exist yet."
+                gum confirm "Create this directory now?" && create_dir=true
+            else 
+                print_info "The website root directory '$DATASET_MANAGER_BASE_DIR_ABSOLUTE' doesn't exist yet."
+                read -r -p "Create this directory now? [Y/n]: " c
+                if [[ ! "$c" =~ ^[Nn]$ ]]; then create_dir=true; fi
+            fi
+            if $create_dir; then 
+                mkdir -p "$DATASET_MANAGER_BASE_DIR_ABSOLUTE" || print_error "Failed to create website root directory '$DATASET_MANAGER_BASE_DIR_ABSOLUTE'. Exiting."
+                print_success "Created website root directory: $DATASET_MANAGER_BASE_DIR_ABSOLUTE"
+            else 
+                print_error "Website root directory not created. Exiting."
+            fi
+        else
+            # Directory exists, let's check its contents
+            print_info "Checking existing directory structure..."
+            
+            # Check if it's a Quarto project
+            if [[ -f "$DATASET_MANAGER_BASE_DIR_ABSOLUTE/_quarto.yml" ]]; then
+                print_success "Found Quarto project configuration in this directory."
+            else
+                print_warning "No Quarto project configuration (_quarto.yml) found in this directory."
+                if $GUM_AVAILABLE; then
+                    if ! gum confirm "This directory doesn't appear to be a Quarto project. Continue anyway?"; then
+                        print_error "Operation cancelled by user."
+                        exit 1
+                    fi
+                else
+                    read -r -p "This directory doesn't appear to be a Quarto project. Continue anyway? [y/N]: " c
+                    if [[ ! "$c" =~ ^[Yy]$ ]]; then
+                        print_error "Operation cancelled by user."
+                        exit 1
+                    fi
+                fi
+            fi
+
+            # Check for existing datasets directory
+            local default_docs_subdir_init="datasets"
+            if [[ -d "$DATASET_MANAGER_BASE_DIR_ABSOLUTE/$default_docs_subdir_init" ]]; then
+                print_warning "Found existing '$default_docs_subdir_init' directory in '$DATASET_MANAGER_BASE_DIR_ABSOLUTE'"
+                print_info "This directory already contains:"
+                ls -1 "$DATASET_MANAGER_BASE_DIR_ABSOLUTE/$default_docs_subdir_init" | while read -r item; do
+                    print_info "  - $item"
+                done
+                
+                if $GUM_AVAILABLE; then
+                    if ! gum confirm "Use this existing '$default_docs_subdir_init' directory?"; then
+                        print_info "You'll be prompted to choose a different subdirectory name."
+                        default_docs_subdir_init="dataset_files"  # Change default to something else
+                    fi
+                else
+                    read -r -p "Use this existing '$default_docs_subdir_init' directory? [Y/n]: " c
+                    if [[ "$c" =~ ^[Nn]$ ]]; then
+                        print_info "You'll be prompted to choose a different subdirectory name."
+                        default_docs_subdir_init="dataset_files"  # Change default to something else
+                    fi
+                fi
+            fi
+
+            # Check for existing all-datasets.qmd
+            if [[ -f "$DATASET_MANAGER_BASE_DIR_ABSOLUTE/all-datasets.qmd" ]]; then
+                print_warning "Found existing 'all-datasets.qmd' in '$DATASET_MANAGER_BASE_DIR_ABSOLUTE'"
+                if $GUM_AVAILABLE; then
+                    if ! gum confirm "This file will be overwritten. Continue?"; then
+                        print_error "Operation cancelled by user."
+                        exit 1
+                    fi
+                else
+                    read -r -p "This file will be overwritten. Continue? [y/N]: " c
+                    if [[ ! "$c" =~ ^[Yy]$ ]]; then
+                        print_error "Operation cancelled by user."
+                        exit 1
+                    fi
+                fi
+            fi
         fi
 
-        local default_docs_subdir_init="datasets"
-        print_plain "Subdirectory for dataset .qmd files (default: '$default_docs_subdir_init'):"
+        print_info "Now, let's set up where the individual dataset files will be stored."
+        print_info "These will be stored in a subdirectory of your website root."
+        print_plain "Enter the name for the dataset files subdirectory (default: '$default_docs_subdir_init'):"
         local temp_subdir_input
-        if $GUM_AVAILABLE; then temp_subdir_input=$(gum input --value "$default_docs_subdir_init" --placeholder="e.g., posts, articles, dataset_items")
-        else read -r -p "> " temp_subdir_input; fi
-        LINK_DOCS_SUBDIR_NAME=${temp_subdir_input:-$default_docs_subdir_init}
-        LINK_DOCS_SUBDIR_NAME=$(echo "$LINK_DOCS_SUBDIR_NAME" | xargs | tr -s ' /' '_' | sed 's/^_*//;s/_*$//') # Sanitize
+        if $GUM_AVAILABLE; then 
+            temp_subdir_input=$(gum input --value "$default_docs_subdir_init" --placeholder="e.g., datasets, data-docs, dataset-files")
+        else 
+            read -r -p "> " temp_subdir_input
+        fi
+        DATASET_DOCS_SUBDIR_NAME=${temp_subdir_input:-$default_docs_subdir_init}
+        DATASET_DOCS_SUBDIR_NAME=$(echo "$DATASET_DOCS_SUBDIR_NAME" | xargs | tr -s ' /' '_' | sed 's/^_*//;s/_*$//') # Sanitize
 
-        mkdir -p "$config_dir_abs" || print_error "Could not create DAV config directory: $config_dir_abs"
+        print_info "Your dataset documentation will be organized as follows:"
+        print_info "Website Root: $DATASET_MANAGER_BASE_DIR_ABSOLUTE"
+        print_info "Dataset Files: $DATASET_MANAGER_BASE_DIR_ABSOLUTE/$DATASET_DOCS_SUBDIR_NAME/"
+        print_info "Main Listing: $DATASET_MANAGER_BASE_DIR_ABSOLUTE/all-datasets.qmd"
+
+        mkdir -p "$config_dir_abs" || print_error "Could not create config directory: $config_dir_abs"
         
         local initial_dav_header="# Main DAV Configuration - $DAV_CONFIG_FILE_NAME\n\n"
         # Append if file exists but this section is new, otherwise create.
@@ -225,8 +334,8 @@ load_config_and_categories() {
             echo -n "$initial_dav_header" # Only if new file
             echo ""
             echo "# --- For $SCRIPT_NAME ---"
-            echo "$KEY_LINK_MANAGER_BASE_DIR=$LINK_MANAGER_BASE_DIR_ABSOLUTE"
-            echo "$KEY_LINK_DOCS_SUBDIR=$LINK_DOCS_SUBDIR_NAME"
+            echo "$KEY_DATASET_MANAGER_BASE_DIR=$DATASET_MANAGER_BASE_DIR_ABSOLUTE"
+            echo "$KEY_DATASET_DOCS_SUBDIR=$DATASET_DOCS_SUBDIR_NAME"
             echo "# Categories for $SCRIPT_NAME (add one per line below):"
             printf "%s\n" "${INITIAL_CATEGORIES[@]}"
             echo "# --- End $SCRIPT_NAME Section ---"
@@ -257,18 +366,18 @@ load_config_and_categories() {
                 continue
             fi
 
-            if ! $found_lm_base_dir_key && [[ "$trimmed_line" == ${KEY_LINK_MANAGER_BASE_DIR}=* ]]; then
+            if ! $found_lm_base_dir_key && [[ "$trimmed_line" == ${KEY_DATASET_MANAGER_BASE_DIR}=* ]]; then
                 temp_lm_base_dir_val=$(echo "$trimmed_line" | cut -d'=' -f2- | xargs)
-                LINK_MANAGER_BASE_DIR_ABSOLUTE=$(normalize_path_absolute "$temp_lm_base_dir_val")
+                DATASET_MANAGER_BASE_DIR_ABSOLUTE=$(normalize_path_absolute "$temp_lm_base_dir_val")
                 found_lm_base_dir_key=true
                 # If docs subdir key hasn't been found, we assume categories might follow directly or after subdir key
                 if ! $found_lm_docs_subdir_key; then reading_categories_now=true; fi 
                 continue
             fi
 
-            if $found_lm_base_dir_key && ! $found_lm_docs_subdir_key && [[ "$trimmed_line" == ${KEY_LINK_DOCS_SUBDIR}=* ]]; then
+            if $found_lm_base_dir_key && ! $found_lm_docs_subdir_key && [[ "$trimmed_line" == ${KEY_DATASET_DOCS_SUBDIR}=* ]]; then
                 temp_lm_docs_subdir_val=$(echo "$trimmed_line" | cut -d'=' -f2- | xargs)
-                LINK_DOCS_SUBDIR_NAME="$temp_lm_docs_subdir_val" # This might override default
+                DATASET_DOCS_SUBDIR_NAME="$temp_lm_docs_subdir_val" # This might override default
                 found_lm_docs_subdir_key=true
                 reading_categories_now=true # Definitely start reading categories now
                 continue
@@ -288,20 +397,40 @@ load_config_and_categories() {
         done < "$DAV_CONFIG_FILE_ABSOLUTE"
 
         if ! $found_lm_base_dir_key; then
-            print_warning "$KEY_LINK_MANAGER_BASE_DIR not found in $DAV_CONFIG_FILE_ABSOLUTE."
-            print_info "Setting it up now (will append to existing config)."
-            # This will re-run parts of the initial setup logic but append to file
-            LINK_MANAGER_BASE_DIR_ABSOLUTE=$(prompt_for_dir_interactive "Enter Base Directory for $SCRIPT_NAME:" "MyDatasetWebsite")
-            [[ -z "$LINK_MANAGER_BASE_DIR_ABSOLUTE" ]] && print_error "Base Directory setup failed."
-            if [[ ! -d "$LINK_MANAGER_BASE_DIR_ABSOLUTE" ]]; then if gum confirm "Create '$LINK_MANAGER_BASE_DIR_ABSOLUTE'?"; then mkdir -p "$LINK_MANAGER_BASE_DIR_ABSOLUTE" || print_error "Failed create"; else print_error "Not created."; fi; fi
+            print_warning "$KEY_DATASET_MANAGER_BASE_DIR not found in $DAV_CONFIG_FILE_ABSOLUTE."
+            print_info "Let's set up your dataset documentation website location."
+            print_info "This will be the root directory for your Quarto website where all dataset documentation will live."
+            
+            DATASET_MANAGER_BASE_DIR_ABSOLUTE=$(prompt_for_dir_interactive "Enter the directory where your dataset documentation website should live (this will be your Quarto website root directory):" "MyDatasetWebsite")
+            [[ -z "$DATASET_MANAGER_BASE_DIR_ABSOLUTE" ]] && print_error "Website root directory setup failed."
+            
+            if [[ ! -d "$DATASET_MANAGER_BASE_DIR_ABSOLUTE" ]]; then 
+                print_info "The website root directory '$DATASET_MANAGER_BASE_DIR_ABSOLUTE' doesn't exist yet."
+                if gum confirm "Create this directory now?"; then 
+                    mkdir -p "$DATASET_MANAGER_BASE_DIR_ABSOLUTE" || print_error "Failed to create website root directory"
+                    print_success "Created website root directory: $DATASET_MANAGER_BASE_DIR_ABSOLUTE"
+                else 
+                    print_error "Website root directory not created."
+                fi
+            fi
 
+            print_info "Now, let's set up where the individual dataset files will be stored."
+            print_info "These will be stored in a subdirectory of your website root."
             local default_docs_subdir_append="datasets"
-            if $GUM_AVAILABLE; then temp_lm_docs_subdir_val=$(gum input --value "$default_docs_subdir_append" --placeholder "Subdirectory for dataset .qmd files:");
-            else read -r -p "Subdirectory for dataset .qmd files (default: '$default_docs_subdir_append'): " temp_lm_docs_subdir_val; fi
-            LINK_DOCS_SUBDIR_NAME=${temp_lm_docs_subdir_val:-$default_docs_subdir_append}
-            LINK_DOCS_SUBDIR_NAME=$(echo "$LINK_DOCS_SUBDIR_NAME" | xargs | tr -s ' /' '_' | sed 's/^_*//;s/_*$//')
+            if $GUM_AVAILABLE; then 
+                temp_lm_docs_subdir_val=$(gum input --value "$default_docs_subdir_append" --placeholder "Enter name for dataset files subdirectory:")
+            else 
+                read -r -p "Enter name for dataset files subdirectory (default: '$default_docs_subdir_append'): " temp_lm_docs_subdir_val
+            fi
+            DATASET_DOCS_SUBDIR_NAME=${temp_lm_docs_subdir_val:-$default_docs_subdir_append}
+            DATASET_DOCS_SUBDIR_NAME=$(echo "$DATASET_DOCS_SUBDIR_NAME" | xargs | tr -s ' /' '_' | sed 's/^_*//;s/_*$//')
 
-            { echo ""; echo "# --- For $SCRIPT_NAME ---"; echo "$KEY_LINK_MANAGER_BASE_DIR=$LINK_MANAGER_BASE_DIR_ABSOLUTE"; echo "$KEY_LINK_DOCS_SUBDIR=$LINK_DOCS_SUBDIR_NAME";
+            print_info "Your dataset documentation will be organized as follows:"
+            print_info "Website Root: $DATASET_MANAGER_BASE_DIR_ABSOLUTE"
+            print_info "Dataset Files: $DATASET_MANAGER_BASE_DIR_ABSOLUTE/$DATASET_DOCS_SUBDIR_NAME/"
+            print_info "Main Listing: $DATASET_MANAGER_BASE_DIR_ABSOLUTE/all-datasets.qmd"
+
+            { echo ""; echo "# --- For $SCRIPT_NAME ---"; echo "$KEY_DATASET_MANAGER_BASE_DIR=$DATASET_MANAGER_BASE_DIR_ABSOLUTE"; echo "$KEY_DATASET_DOCS_SUBDIR=$DATASET_DOCS_SUBDIR_NAME";
               echo "# Categories for $SCRIPT_NAME (add one per line below):"; printf "%s\n" "${INITIAL_CATEGORIES[@]}"; echo "# --- End $SCRIPT_NAME Section ---"; echo ""; 
             } >> "$DAV_CONFIG_FILE_ABSOLUTE"
             CURRENT_CATEGORIES=("${INITIAL_CATEGORIES[@]}")
@@ -309,11 +438,11 @@ load_config_and_categories() {
             found_lm_base_dir_key=true; found_lm_docs_subdir_key=true # Assume these are now set
         fi
 
-        if [[ ! -d "$LINK_MANAGER_BASE_DIR_ABSOLUTE" ]]; then print_error "Base Directory '$LINK_MANAGER_BASE_DIR_ABSOLUTE' (from config or prompt) is invalid or not found."; fi
+        if [[ ! -d "$DATASET_MANAGER_BASE_DIR_ABSOLUTE" ]]; then print_error "Base Directory '$DATASET_MANAGER_BASE_DIR_ABSOLUTE' (from config or prompt) is invalid or not found."; fi
         
         if ! $found_lm_docs_subdir_key && $found_lm_base_dir_key; then # Base dir was found, but not subdir key explicitly
-            # LINK_DOCS_SUBDIR_NAME retains its initialized default "link_docs"
-            print_warning "$KEY_LINK_DOCS_SUBDIR key not found. Using default subdir '$LINK_DOCS_SUBDIR_NAME'."
+            # DATASET_DOCS_SUBDIR_NAME retains its initialized default "link_docs"
+            print_warning "$KEY_DATASET_DOCS_SUBDIR key not found. Using default subdir '$DATASET_DOCS_SUBDIR_NAME'."
             # We don't set found_lm_docs_subdir_key to true here, as it wasn't *found*, just defaulted.
         fi
         
@@ -326,14 +455,14 @@ load_config_and_categories() {
         fi
     fi
 
-    LINK_DOCS_SUBDIR_NAME=$(echo "$LINK_DOCS_SUBDIR_NAME" | tr -s ' /' '_' | sed 's/^_*//;s/_*$//') # Final sanitize
-    if [[ -z "$LINK_DOCS_SUBDIR_NAME" ]]; then LINK_DOCS_SUBDIR_NAME="datasets"; fi # Ensure not empty
+    DATASET_DOCS_SUBDIR_NAME=$(echo "$DATASET_DOCS_SUBDIR_NAME" | tr -s ' /' '_' | sed 's/^_*//;s/_*$//') # Final sanitize
+    if [[ -z "$DATASET_DOCS_SUBDIR_NAME" ]]; then DATASET_DOCS_SUBDIR_NAME="datasets"; fi # Ensure not empty
 
-    LINK_DOCS_DIR_ABSOLUTE="$LINK_MANAGER_BASE_DIR_ABSOLUTE/$LINK_DOCS_SUBDIR_NAME"
-    QUARTO_PROJECT_DIR_ABSOLUTE="$LINK_MANAGER_BASE_DIR_ABSOLUTE"
+    DATASET_DOCS_DIR_ABSOLUTE="$DATASET_MANAGER_BASE_DIR_ABSOLUTE/$DATASET_DOCS_SUBDIR_NAME"
+    QUARTO_PROJECT_DIR_ABSOLUTE="$DATASET_MANAGER_BASE_DIR_ABSOLUTE"
 
-    print_info "Dataset System Base Dir: $LINK_MANAGER_BASE_DIR_ABSOLUTE"
-    print_info "Dataset Documents Subdir: $LINK_DOCS_SUBDIR_NAME (-> $LINK_DOCS_DIR_ABSOLUTE)"
+    print_info "Dataset System Base Dir: $DATASET_MANAGER_BASE_DIR_ABSOLUTE"
+    print_info "Dataset Documents Subdir: $DATASET_DOCS_SUBDIR_NAME (-> $DATASET_DOCS_DIR_ABSOLUTE)"
     print_info "${#CURRENT_CATEGORIES[@]} categories loaded."
     print_info "Quarto Project Dir for rendering: $QUARTO_PROJECT_DIR_ABSOLUTE"
 }
@@ -440,18 +569,18 @@ create_or_update_main_listing_qmd() {
         print_warning "Quarto project directory is not set. Cannot create main listing file."
         return 1
     fi
-    if [[ -z "$LINK_DOCS_SUBDIR_NAME" ]]; then
+    if [[ -z "$DATASET_DOCS_SUBDIR_NAME" ]]; then
         print_warning "Dataset documents subdirectory name is not set. Cannot create main listing file."
         return 1
     fi
 
-    local listing_contents_path="$LINK_DOCS_SUBDIR_NAME/*.qmd"
+    local listing_contents_path="$DATASET_DOCS_SUBDIR_NAME/*.qmd"
 
     {
         echo "---"
         echo "title: \"Datasets Collection\""
         echo "listing:"
-        echo "  contents: $LINK_DOCS_SUBDIR_NAME"
+        echo "  contents: $DATASET_DOCS_SUBDIR_NAME"
         echo "  type: default"
         echo "  sort: \"date desc\""
         echo "  sort-ui: [title, date, author]"
@@ -461,7 +590,7 @@ create_or_update_main_listing_qmd() {
         echo "---" 
         echo ""
         echo "<!--"
-        echo "This page lists all dataset documents from the '$LINK_DOCS_SUBDIR_NAME' directory."
+        echo "This page lists all dataset documents from the '$DATASET_DOCS_SUBDIR_NAME' directory."
         echo "It is automatically generated/updated by the $SCRIPT_NAME script."
         echo "-->"
     } > "$main_listing_filepath"
@@ -504,10 +633,10 @@ main() {
     
     load_config_and_categories
 
-    # Create link docs directory if it doesn't exist
-    if [[ ! -d "$LINK_DOCS_DIR_ABSOLUTE" ]]; then
-        print_info "Dataset documents directory '$LINK_DOCS_DIR_ABSOLUTE' does not exist. Creating it..."
-        mkdir -p "$LINK_DOCS_DIR_ABSOLUTE" || print_error "Failed to create dataset documents directory: $LINK_DOCS_DIR_ABSOLUTE"
+    # Create dataset docs directory if it doesn't exist
+    if [[ ! -d "$DATASET_DOCS_DIR_ABSOLUTE" ]]; then
+        print_info "Dataset documents directory '$DATASET_DOCS_DIR_ABSOLUTE' does not exist. Creating it..."
+        mkdir -p "$DATASET_DOCS_DIR_ABSOLUTE" || print_error "Failed to create dataset documents directory: $DATASET_DOCS_DIR_ABSOLUTE"
     fi
 
 
@@ -629,7 +758,7 @@ main() {
     SANITIZED_TITLE=$(echo "$DATASET_TITLE" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9]\+/-/g' -e 's/^-*//' -e 's/-*$//')
     if [[ -z "$SANITIZED_TITLE" ]]; then SANITIZED_TITLE="untitled-dataset"; fi
     NEW_QMD_FILENAME="${SANITIZED_TITLE}.qmd"
-    NEW_QMD_FILE_PATH="$LINK_DOCS_DIR_ABSOLUTE/$NEW_QMD_FILENAME"
+    NEW_QMD_FILE_PATH="$DATASET_DOCS_DIR_ABSOLUTE/$NEW_QMD_FILENAME"
 
     if [[ -f "$NEW_QMD_FILE_PATH" ]]; then 
         print_warning "File '$NEW_QMD_FILE_PATH' already exists. It will be overwritten."
