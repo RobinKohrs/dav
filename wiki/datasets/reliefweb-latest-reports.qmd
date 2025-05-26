@@ -11,6 +11,8 @@ format: html
 
 ## Description
 
+- Most of the important data is gathered [here](https://reliefweb.int/updates). Apply filters to find data on specific regions or times
+
 ### Reports on ocupied Palestinian Territory (oPt)
 
 - [schools and education](https://reliefweb.int/report/occupied-palestinian-territory/verification-damages-schools-based-proximity-damaged-sites-gaza-occupied-palestinian-territory-update-9-may-2025)
