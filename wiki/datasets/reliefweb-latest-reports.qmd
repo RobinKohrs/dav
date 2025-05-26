@@ -11,7 +11,9 @@ format: html
 
 ## Description
 
-Latest reports from ReliefWeb.
+### Reports on ocupied Palestinian Territory (oPt)
+
+- [schools and education](https://reliefweb.int/report/occupied-palestinian-territory/verification-damages-schools-based-proximity-damaged-sites-gaza-occupied-palestinian-territory-update-9-may-2025)
 
 ## Getting Data
 
