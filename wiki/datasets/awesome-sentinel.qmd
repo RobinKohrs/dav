@@ -1,0 +1,17 @@
+---
+title: "Awesome Sentinel"
+date: "2025-05-28T20:39:18Z"
+description: "Sentinel Ressources"
+categories: ["article", "dataset", "reference"]
+dataset-url: "https://github.com/kr-stn/awesome-sentinel?tab=readme-ov-file"
+format: html
+---
+
+## [Awesome Sentinel](https://github.com/kr-stn/awesome-sentinel?tab=readme-ov-file)
+
+## Description
+
+Sentinel Ressources
+
+## Getting Data
+

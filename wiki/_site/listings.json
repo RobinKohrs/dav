@@ -2,6 +2,7 @@
   {
     "listing": "/datasets.html",
     "items": [
+      "/datasets/awesome-sentinel.html",
       "/datasets/food-malnutrition-data-on-gaza.html",
       "/datasets/humanitarian-funding-data.html",
       "/datasets/palestine-nutrition-dashboard.html",
@@ -27,6 +28,7 @@
   {
     "listing": "/all-datasets.html",
     "items": [
+      "/datasets/awesome-sentinel.html",
       "/datasets/food-malnutrition-data-on-gaza.html",
       "/datasets/humanitarian-funding-data.html",
       "/datasets/palestine-nutrition-dashboard.html",
