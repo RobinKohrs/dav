@@ -4,7 +4,7 @@
 \alias{sys_get_script_dir}
 \title{Get Directory of the Currently Executing R Script}
 \usage{
-sys_get_script_dir(script_path_override = NULL)
+sys_get_script_dir(script_path_override = NULL, verbose = TRUE)
 }
 \arguments{
 \item{script_path_override}{(Optional) A character string. If provided, this
@@ -12,6 +12,9 @@ path will be used directly instead of attempting auto-detection. If it's
 a file path, its directory will be returned. If it's a directory path,
 it will be returned as is. This is useful for testing or when the script's
 location is known through other means.}
+
+\item{verbose}{Logical. If \code{TRUE} (default), prints a message indicating how
+the script directory was determined or if it failed.}
 }
 \value{
 A character string representing the absolute path to the directory
@@ -22,6 +25,7 @@ This function attempts to robustly determine and return the absolute path
 to the directory containing the currently executing R script. It tries
 various methods to accommodate different execution contexts such as
 RStudio, \code{knitr} (R Markdown/Quarto), \code{source()}, and \code{Rscript}.
+It prints an informative message indicating the method used.
 }
 \details{
 The function employs the following strategies in order to find the script's path:
@@ -29,70 +33,47 @@ The function employs the following strategies in order to find the script's path
 \item \strong{RStudio API:} If run within RStudio and a document is active, it uses
 \code{rstudioapi::getActiveDocumentContext()$path}.
 \item \strong{\code{knitr} Environment:} If the script is processed by \code{knitr} (e.g., within
-an R Markdown or Quarto document), it uses \code{knitr::current_input(dir = TRUE)}.
-If \code{knitr::current_input()} returns the path to the input file, its directory is taken.
+an R Markdown or Quarto document), it uses \code{knitr::current_input(dir = FALSE)} to get the
+source file, then its directory.
 \item \strong{\code{source()} Context:} If the script is being \code{source()}d, it checks
-\code{sys.frame(1)$ofile}.
+parent frames for an \code{ofile} component.
 \item \strong{\code{Rscript} Execution:} If the script is run via \code{Rscript} from the command
 line, it parses \code{commandArgs()} for the \verb{--file=} argument.
-\item \strong{\code{this.path} Package Heuristic (Optional):} If the \code{this.path} package is installed,
-it can be used as another heuristic, though it's not a direct dependency here.
-(This is not included in the core logic below to keep dependencies minimal,
-but could be an additional fallback).
 }
 
 If all methods fail to determine the script's path, the function will
-stop with an error message, indicating that the script's location could not
-be identified. It does \emph{not} fall back to the working directory (\code{getwd()})
-to avoid ambiguity.
+stop with an error message. It does \emph{not} fall back to the working
+directory (\code{getwd()}) to avoid ambiguity.
 
 The returned path is normalized to an absolute path.
 }
 \examples{
 \dontrun{
 # --- Assuming this code is saved in a file named "my_script.R" ---
-# --- and then executed in various ways:
 
 # 1. When run directly in RStudio (after saving the script):
-#    script_dir <- get_script_directory()
-#    print(script_dir) # Should print the directory of my_script.R
-
-# 2. When sourced: source("path/to/my_script.R")
-#    script_dir <- get_script_directory()
-#    print(script_dir) # Should print the directory of my_script.R
-
-# 3. When run with Rscript: Rscript path/to/my_script.R
-#    script_dir <- get_script_directory()
-#    print(script_dir) # Should print the directory of my_script.R
-
-# 4. Inside an R Markdown or Quarto document's code chunk:
-#    ```{r}
-#    script_dir <- get_script_directory()
-#    print(script_dir) # Should print the directory of the .Rmd or .qmd file
-#    ```
+#    script_dir <- sys_get_script_dir()
+#    # Expected output:
+#    # ✓ Script directory determined via User Override (File Path): /path/to/temp_dir_for_file
+#    # or for auto-detection:
+#    # ℹ Script directory determined via RStudio API: /path/to/your/script
+#    print(script_dir)
 
 # 5. Using the override (e.g., for testing or known path):
 temp_file <- tempfile(fileext = ".R")
 writeLines("print('hello')", temp_file)
-known_dir <- get_script_directory(script_path_override = temp_file)
-print(paste("Known dir:", known_dir))
-print(paste("Expected dir:", dirname(temp_file)))
+known_dir <- sys_get_script_dir(script_path_override = temp_file) # verbose=TRUE by default
 unlink(temp_file)
 
 temp_dir <- tempfile("my_dir_")
 dir.create(temp_dir)
-known_dir_from_dir <- get_script_directory(script_path_override = temp_dir)
-print(paste("Known dir from dir:", known_dir_from_dir))
-print(paste("Expected dir:", tools::file_path_as_absolute(temp_dir)))
+known_dir_from_dir <- sys_get_script_dir(script_path_override = temp_dir)
 unlink(temp_dir, recursive = TRUE)
 
-# Example of how it might fail if context is truly unknown:
-# (This is hard to simulate directly without specific environments)
+# Example of failure:
 tryCatch({
-  # In a very bare R console session with no script context:
-  get_script_directory()
-}, error = function(e) {
-  message("Failed as expected in ambiguous context: ", e$message)
-})
+  # In a context where it can't be found (e.g. bare R console with no script)
+  sys_get_script_dir(verbose = TRUE)
+}, error = function(e) { message(e$message) })
 }
 }

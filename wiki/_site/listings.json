@@ -2,6 +2,7 @@
   {
     "listing": "/datasets.html",
     "items": [
+      "/datasets/unosat-latest-products.html",
       "/datasets/awesome-sentinel.html",
       "/datasets/food-malnutrition-data-on-gaza.html",
       "/datasets/humanitarian-funding-data.html",
@@ -28,6 +29,7 @@
   {
     "listing": "/all-datasets.html",
     "items": [
+      "/datasets/unosat-latest-products.html",
       "/datasets/awesome-sentinel.html",
       "/datasets/food-malnutrition-data-on-gaza.html",
       "/datasets/humanitarian-funding-data.html",

@@ -2,61 +2,41 @@
 % Please edit documentation in R/sys_make_path.R
 \name{sys_make_path}
 \alias{sys_make_path}
-\title{Ensure Directory Structure for a Path Exists}
+\title{Ensure Directory Structure Exists (Custom Heuristic for File/Directory)}
 \usage{
 sys_make_path(path, showWarnings = FALSE, mode = "0777")
 }
 \arguments{
-\item{path}{A character string specifying the full path (intended for a file
-or directory). The function will ensure the \emph{parent} directory of this
-path exists.}
+\item{path}{A character string specifying the full path.}
 
-\item{showWarnings}{Logical. Should low-level warnings from \code{dir.create()}
-(e.g., if the directory already exists but with different permissions)
-be shown? Defaults to \code{FALSE}. Note that informational messages from this
-function itself are controlled separately (they always show).}
+\item{showWarnings}{Logical. Passed to \code{dir.create()}. Defaults to \code{FALSE}.}
 
-\item{mode}{The mode to create the directory with, passed to \code{dir.create()}.
-Defaults to \code{"0777"} (read/write/execute for all). See \code{?dir.create}.}
+\item{mode}{Character. The mode for \code{dir.create()}. Defaults to \code{"0777"}.}
 }
 \value{
-The original input \code{path}, returned invisibly. This is useful for
-piping, e.g., \code{write.csv(my_data, makePath("/path/to/file.csv"))}.
+The original input \code{path}, returned invisibly.
 }
 \description{
-Checks if the directory containing the specified path exists, and creates
-it recursively if it does not. Provides console feedback using the cli package.
+Creates the necessary directory structure. It uses a custom heuristic to
+determine if the input \code{path} is intended as a file or a directory.
 }
 \details{
-For a file path like \code{"/path/to/my/file.txt"}, this function ensures
-the directory \code{"/path/to/my/"} exists. For a directory path like
-\code{"/path/to/my/newdir/"} or \code{"/path/to/my/newdir"}, it ensures
-\code{"/path/to/my/"} exists. It does \emph{not} create the final component (\code{file.txt}
-or \code{newdir}) itself, only its parent structure. Console messages indicate
-actions taken.
+The function's heuristic is as follows:
+\enumerate{
+\item If \code{path} already exists:
+\itemize{
+\item If it's a directory (per \code{file.info()}), no creation action is taken for it.
+\item If it's a file (per \code{file.info()}), its parent directory is targeted for creation.
 }
-\examples{
-\dontrun{
-# --- Example 1: Path to a potential file ---
-temp_file_path = file.path(tempdir(), "makePath_demo", "subdir", "my_data.csv")
-cat("Demonstrating makePath for:", temp_file_path, "\n")
-makePath(temp_file_path) # Should create makePath_demo/subdir/
-makePath(temp_file_path) # Should report directory already exists
-
-# --- Example 2: Path to a directory ---
-temp_dir_path = file.path(tempdir(), "makePath_demo", "another_dir")
-cat("\nDemonstrating makePath for:", temp_dir_path, "\n")
-makePath(temp_dir_path) # Should NOT create 'another_dir', but ensure 'makePath_demo' exists
-
-# --- Example 3: Path in current directory ---
-cat("\nDemonstrating makePath for:", "local_file.txt", "\n")
-makePath("local_file.txt") # Should give warning about not creating "."
-
-# --- Example 4: Root directory ---
-cat("\nDemonstrating makePath for:", "/", "\n")
-makePath("/") # Should give warning about not creating "/"
-
-# --- Clean up example directories ---
-unlink(file.path(tempdir(), "makePath_demo"), recursive = TRUE)
+\item If \code{path} does not exist:
+\itemize{
+\item If the original \code{path} string ends with one or more path separators ('/' or '\'),
+the full \code{path} is treated as a directory to be created.
+\item Else, if the last component (basename) of the \code{path} does \emph{not} contain a
+dot ('.'), the full \code{path} is treated as a directory to be created.
+\item Otherwise (does not end with a separator AND basename contains a dot),
+it's treated as a file path, and its parent directory is targeted for creation.
+Provides console feedback using the cli package.
+}
 }
 }

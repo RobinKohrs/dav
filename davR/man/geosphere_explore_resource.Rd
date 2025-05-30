@@ -9,7 +9,8 @@ geosphere_explore_resource(
   api_url = "https://dataset.api.hub.geosphere.at",
   version = "v1",
   user_agent = "davR",
-  print_summary = TRUE
+  print_summary = TRUE,
+  timeout_seconds = 2
 )
 }
 \arguments{
