@@ -29,15 +29,15 @@ max_end_year <- max(plot_data_jul$year, na.rm = TRUE)
 #-------------------------------------
 # --- 5. Define "Responsive-Enough" Font Sizes (in Pixels) and Other Parameters ---
 # These sizes are chosen to be quite readable on mobile, and will appear large on desktop.
-base_font_size_pt_for_theme_minimal <- 11 # Reference for theme_minimal non-text elements
+base_font_size_pt_for_theme_minimal <- 14 # Reference for theme_minimal non-text elements
 
-title_size_px <- 22
-subtitle_part_size_px <- 15 # For the "Jährlich vs..." part of the title
-main_subtitle_size_px <- 13 # For "Nacht definiert als..."
-axis_title_size_px <- 14
-axis_text_px_size <- 12 # Larger axis text
-caption_size_px <- 11
-legend_text_px_size <- 12 # Larger legend text
+title_size_px <- 25
+subtitle_part_size_px <- 17 # For the "Jährlich vs..." part of the title
+main_subtitle_size_px <- 15 # For "Nacht definiert als..."
+axis_title_size_px <- 16
+axis_text_px_size <- 14 # Larger axis text
+caption_size_px <- 13
+legend_text_px_size <- 14 # Larger legend text
 annotate_text_size_ggtext <- 4.2 # ggtext scale, larger for readability
 
 point_size <- 1.6
