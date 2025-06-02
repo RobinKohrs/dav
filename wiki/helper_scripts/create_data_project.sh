@@ -294,7 +294,7 @@ cat << EOF_GITIGNORE > ".gitignore"
 # --- General ---
 .DS_Store;.DS_Store?;._*;.Spotlight-V100;.Trashes;ehthumbs.db;Thumbs.db;*~
 # --- Common Data and Output Folders ---
-# data_output/;.graphic_output/;.temp/;.cache/
+data_raw/;# data_output/;.graphic_output/;.temp/;.cache/
 # --- R ---
 .Rhistory;.Rapp.history;.RData;.Ruserdata;.Rproj.user/;R/.Rhistory;R/.RData;R/*_cache/;R/cache/;.Renviron;.httr-oauth;rsconnect/
 # --- QGIS ---
