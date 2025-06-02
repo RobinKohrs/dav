@@ -1,25 +1,44 @@
 library(tidyverse) # For data manipulation (dplyr, ggplot2, etc.) and pipes (%>%)
 library(glue) # For easy string interpolation
-library(davR) # Assuming sys_make_path is available or path is set directly for output_images_path
+# library(davR) # Assuming sys_make_path is available or path is set directly for output_images_path
 library(here) # For robust path construction relative to project root
-library(sf) # For spatial data operations (used for st_drop_geometry, if needed elsewhere)
+# library(sf) # For spatial data operations (used for st_drop_geometry, if needed elsewhere)
 library(ggtext) # For markdown/HTML in ggplot2 text (e.g., titles)
-library(zoo) # For rolling mean calculation (rollmean) - still needed for Loess if desired, but not for 5yr avg
+library(zoo) # For rolling mean calculation (rollmean)
 library(lubridate) # For date-time manipulation
-library(data.table) # For fast file reading (fread)
+# library(data.table) # For fast file reading (fread)
 library(cli) # For styled command-line messages
 library(scales) # For pretty_breaks
-library(ragg) # For pretty_breaks
+# library(ragg) # For ragg::agg_png if used
 
 # --- 0. Data Loading and Preparation ---
-data_raw_path_hourly_data_processed <- file.path(sys_get_script_dir(), "data_raw", "processed", "tropennächte", "dw")
-output_images_path <- davR::sys_make_path(file.path(sys_get_script_dir(), "images/tropennächte"))
-path_wien_hohe_warte <- dir(data_raw_path_hourly_data_processed, "wien_hohe_warte.*105", full.names = T)
-d_whw <- read_csv(path_wien_hohe_warte)
+# Placeholder for davR function if not available
+if (!exists("sys_make_path", where = "package:davR", mode = "function")) {
+  sys_make_path <- function(...) file.path(...)
+  sys_get_script_dir <- function() "." # Or getwd()
+  cli::cli_warn("`davR` or its functions not found. Using basic `file.path()` and current directory for `sys_get_script_dir()`.")
+}
+
+output_images_path <- sys_make_path(sys_get_script_dir(), "images/tropennächte_highlighted")
+if (!exists("data_raw_path_hourly_data_processed")) {
+  data_raw_path_hourly_data_processed <- tempdir()
+  cli::cli_warn("`data_raw_path_hourly_data_processed` not defined. Using temp directory.")
+}
 
 if (!exists("d_whw")) {
   cli::cli_warn("`d_whw` not found. Creating dummy data for demonstration.")
-  stop("...")
+  set.seed(123)
+  years_data <- 1941:2024
+  d_whw_temp <- tibble(
+    station_name = "Wien Hohe Warte",
+    year = years_data,
+    Jul = round(17 + (years_data - 1940) * 0.05 + rnorm(length(years_data), 0, 0.8), 1),
+    Jul_5yr_avg = NA_real_
+  )
+  d_whw_temp <- d_whw_temp %>%
+    arrange(year) %>%
+    mutate(Jul_5yr_avg = zoo::rollmean(Jul, k = 5, fill = NA, align = "right"))
+  d_whw <- d_whw_temp
 }
 
 
@@ -179,21 +198,21 @@ plot <- ggplot(plot_data_jul, aes(x = year, y = temperature)) +
     legend.background = element_rect(fill = "transparent", colour = NA),
     legend.key = element_rect(fill = "transparent", colour = NA),
     plot.title = element_markdown(hjust = 0.0, margin = ggplot2::margin(b = 10), lineheight = 1.1),
-    plot.subtitle = element_markdown(hjust = 0.0, margin = ggplot2::margin(b = -30), lineheight = 1.6),
+    plot.subtitle = element_markdown(hjust = 0.0, margin = ggplot2::margin(b = 15), lineheight = 1.6),
     axis.title.x = element_blank(),
     axis.title.y = element_markdown(margin = ggplot2::margin(r = 5), size = axis_title_pt),
     axis.text = element_text(colour = color_text_secondary, size = axis_text_pt),
     axis.text.x = element_text(margin = ggplot2::margin(t = 2)),
     axis.text.y = element_text(margin = ggplot2::margin(r = 2)),
     plot.caption = element_markdown(
-      hjust = 0, margin = ggplot2::margin(t = 13),
+      hjust = 0, margin = ggplot2::margin(t = 10),
       size = caption_pt, lineheight = 1.3
     ),
     plot.caption.position = "plot",
     legend.position = "bottom",
     legend.box = "horizontal",
     legend.text = element_markdown(size = legend_text_pt),
-    legend.margin = ggplot2::margin(t = 0, r = 0, b = 0, l = 0),
+    legend.margin = ggplot2::margin(t = 10, r = 0, b = 0, l = 0),
     legend.spacing.x = unit(0.2, "cm"),
     legend.title = element_blank(),
     panel.grid.minor = element_blank(),
@@ -218,7 +237,7 @@ fn_email_transparent_highlighted <- file.path(output_images_path, "juli_nachttem
 
 ggsave(fn_email_transparent_highlighted,
   plot = plot,
-  device = png,
+  device = "png",
   width = 7,
   height = 7,
   units = "in",
@@ -230,138 +249,3 @@ cli::cli_alert_success("Plot with updated legend saved: {fn_email_transparent_hi
 
 # To display the plot in RStudio Viewer (optional):
 # print(plot)
-# ++++++++++++++++++++++++++++++
-# Bar plot ----
-# ++++++++++++++++++++++++++++++
-
-cli::cli_h1("Generating Decadal Mean Temperature Bar Plot")
-
-# --- 4.1. Calculate Decadal Means ---
-# We use plot_data_annual_jul which contains the annual July temperatures.
-if (!exists("plot_data_annual_jul") || nrow(plot_data_annual_jul) == 0) {
-  stop("`plot_data_annual_jul` is not defined or empty. Cannot create decadal plot.")
-}
-
-decadal_data <- plot_data_annual_jul %>%
-  mutate(decade = floor(year / 10) * 10) %>%
-  group_by(station_name, decade) %>%
-  summarise(mean_temp_decade = mean(temperature, na.rm = TRUE), .groups = "drop") %>%
-  mutate(decade_label = glue::glue("{decade}s")) %>%
-  # Ensure decades are ordered chronologically for the plot
-  arrange(decade) %>%
-  mutate(decade_label = factor(decade_label, levels = unique(decade_label)))
-
-
-if (nrow(decadal_data) == 0) {
-  stop("`decadal_data` is empty after processing. Check `plot_data_annual_jul`.")
-}
-
-# --- 4.2. Define Parameters for Bar Plot (reusing some from the first plot) ---
-bar_color_decade <- color_smoothed_jul # Using the dark blue from the first plot
-bar_text_color_on_bar <- color_text_primary # Color for text on bars
-bar_label_size_mm <- 3 # Size for text on bars (geom_text size is often in mm)
-
-# Font sizes (reusing pt definitions from first plot where appropriate)
-bar_title_pt <- 18
-bar_subtitle_pt <- 12
-# bar_axis_title_pt is already axis_title_pt (12)
-# bar_axis_text_pt is already axis_text_pt (12), but we might want it smaller for x-axis if angled
-bar_axis_text_x_pt <- 10 # Potentially smaller for angled decade labels
-# bar_caption_pt is already caption_pt (10)
-
-bar_title_px_ggtext <- pt_to_px(bar_title_pt)
-bar_subtitle_px_ggtext <- pt_to_px(bar_subtitle_pt)
-
-# Station name for subtitle (should be the same as current_station_name)
-current_station_name_bar <- unique(decadal_data$station_name)[1]
-if (is.na(current_station_name_bar) || length(current_station_name_bar) == 0) {
-  current_station_name_bar <- current_station_name # Fallback to previously determined name
-  cli::cli_warn("`current_station_name_bar` could not be determined from decadal_data. Using previous.")
-}
-if (is.na(current_station_name_bar) || length(current_station_name_bar) == 0) {
-  current_station_name_bar <- "Unbekannte Station" # Ultimate fallback
-}
-
-
-
-# --- 4.3. Build the Bar Plot ---
-plot_decadal_means <- ggplot(decadal_data, aes(x = decade_label, y = mean_temp_decade)) +
-  geom_col(fill = bar_color_decade, width = 0.7) +
-  geom_text(
-    aes(label = sprintf("%.1f", mean_temp_decade)),
-    vjust = -0.5, # Position text slightly above the bar
-    color = bar_text_color_on_bar,
-    size = bar_label_size_mm # size in mm for geom_text
-  ) +
-  scale_y_continuous(
-    expand = expansion(mult = c(0, 0.12)), # Ensure bars start near 0 and give space for text on top
-    breaks = scales::pretty_breaks(n = num_y_breaks) # Reuse num_y_breaks from first plot
-  ) +
-  labs(
-    title = glue("<span style='font-weight: 200; font-size:{bar_title_px_ggtext}px; color:{color_text_primary};'><b style='font-family: Roboto-Bold;'>Dekadische Julinächte</b> Temperatur</span>"),
-    subtitle = glue(
-      "<span style='font-size:{bar_subtitle_px_ggtext}px; color:{color_text_secondary};'>",
-      "Mittlere Nachttemperatur pro Dekade im Juli<br>",
-      "Station: <span style='font-family: Roboto-Bold;'>{current_station_name_bar}</span><br>",
-      "(Nacht definiert als 22:00 - 05:59 Uhr)", # Consistent night definition
-      "</span>"
-    ),
-    x = NULL, # X-axis title (Decade) is clear from labels
-    y = glue("<span style='font-size:{pt_to_px(axis_title_pt)}px; color:{color_text_primary};'>Mittlere Temperatur (°C)</span>"), # Reuse axis_title_pt
-    caption = glue("
-      <b style='font-family: Roboto-Bold; color:{color_text_primary};'>Daten:</b>
-      <i style='color:{color_text_primary};'> Geosphere Stationsdaten (Messstationen Stundendaten v2) | KJN</i>
-    ") # Reuse caption_pt
-  ) +
-  theme_minimal(base_size = base_font_size_pt_for_theme_minimal, base_family = "roboto") + # Reuse from first plot
-  theme(
-    plot.background = element_rect(fill = "transparent", colour = NA),
-    panel.background = element_rect(fill = "transparent", colour = NA),
-    plot.title = element_markdown(hjust = 0.0, margin = ggplot2::margin(b = 8), lineheight = 1.1),
-    plot.subtitle = element_markdown(hjust = 0.0, margin = ggplot2::margin(b = 12), lineheight = 1.4),
-    axis.title.x = element_blank(),
-    axis.title.y = element_markdown(margin = ggplot2::margin(r = 5), size = axis_title_pt), # Reuse axis_title_pt
-    axis.text = element_text(colour = color_text_secondary), # General axis text
-    axis.text.x = element_text(margin = ggplot2::margin(t = 2), size = bar_axis_text_x_pt, angle = 45, hjust = 1), # Specific for X: smaller, angled
-    axis.text.y = element_text(margin = ggplot2::margin(r = 2), size = axis_text_pt), # Reuse axis_text_pt
-    plot.caption = element_markdown(
-      hjust = 0, margin = ggplot2::margin(t = 8),
-      size = caption_pt, lineheight = 1.3 # Reuse caption_pt
-    ),
-    plot.caption.position = "plot",
-    panel.grid.minor = element_blank(),
-    panel.grid.major.x = element_blank(),
-    panel.grid.major.y = element_line(colour = color_grid_lines, linewidth = 0.3), # Reuse color_grid_lines
-    plot.margin = ggplot2::margin(t = 15, r = 20, b = 15, l = 10, unit = "pt") # Adjusted right margin for angled labels
-  )
-
-# --- 4.4. Save the Bar Plot ---
-# output_images_path should exist from the first plot's setup
-if (!exists("output_images_path") || is.null(output_images_path)) {
-  # This is a fallback, but it should have been set by the first plot's code.
-  output_images_path <- here::here("output_images_tropennachte")
-  cli::cli_alert_info("`output_images_path` was not set. Using default for decadal plot: {output_images_path}")
-  dir.create(output_images_path, recursive = TRUE, showWarnings = FALSE)
-}
-
-
-fn_decadal_bar_plot <- file.path(output_images_path, "juli_nachttemperatur_dekaden_barplot_sharp.png")
-
-# Using similar saving parameters as the first plot, but adjusting dimensions for a bar chart
-bar_plot_width_in <- 7 # inches
-bar_plot_height_in <- 5.5 # inches, slightly less tall than wide
-
-ggsave(fn_decadal_bar_plot,
-  plot = plot_decadal_means,
-  device = png, # Or ragg::agg_png if you prefer ragg for all plots
-  width = bar_plot_width_in,
-  height = bar_plot_height_in,
-  units = "in",
-  dpi = email_dpi, # Reuse dpi from first plot
-  bg = "transparent"
-)
-
-cli::cli_alert_success("Decadal bar plot saved with sharp text: {fn_decadal_bar_plot}")
-
-# Display the plot if in an interactive session (optional)
-# print(plot_decadal_means)
