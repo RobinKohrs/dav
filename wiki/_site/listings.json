@@ -2,21 +2,9 @@
   {
     "listing": "/datasets.html",
     "items": [
-      "/datasets/unosat-latest-products.html",
       "/datasets/awesome-sentinel.html",
-      "/datasets/food-malnutrition-data-on-gaza.html",
-      "/datasets/humanitarian-funding-data.html",
-      "/datasets/palestine-nutrition-dashboard.html",
-      "/datasets/who-health-gaza-data.html",
-      "/datasets/gaza-acled-monitor-shapefiles.html",
-      "/datasets/un-ocha-data.html",
-      "/datasets/reliefweb-latest-reports.html",
-      "/datasets/timeline-damage-gaza-corey-scher.html",
       "/datasets/middleeast.html",
-      "/datasets/planet-images-of-gaza.html",
-      "/datasets/gaza-unosat-hub.html",
       "/datasets/overture maps.html",
-      "/datasets/state of palestine humdata.html",
       "/datasets/deepl account page.html",
       "/datasets/fonts for data visualization.html"
     ]
@@ -30,21 +18,9 @@
   {
     "listing": "/all-datasets.html",
     "items": [
-      "/datasets/unosat-latest-products.html",
       "/datasets/awesome-sentinel.html",
-      "/datasets/food-malnutrition-data-on-gaza.html",
-      "/datasets/humanitarian-funding-data.html",
-      "/datasets/palestine-nutrition-dashboard.html",
-      "/datasets/who-health-gaza-data.html",
-      "/datasets/gaza-acled-monitor-shapefiles.html",
-      "/datasets/un-ocha-data.html",
-      "/datasets/reliefweb-latest-reports.html",
-      "/datasets/timeline-damage-gaza-corey-scher.html",
       "/datasets/middleeast.html",
-      "/datasets/planet-images-of-gaza.html",
-      "/datasets/gaza-unosat-hub.html",
       "/datasets/overture maps.html",
-      "/datasets/state of palestine humdata.html",
       "/datasets/deepl account page.html",
       "/datasets/fonts for data visualization.html"
     ]
