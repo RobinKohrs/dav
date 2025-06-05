@@ -346,3 +346,4 @@ input_dir <- file.path(sys_get_script_dir(), "data_raw", "processed", "tropennä
 output_dir <- davR::sys_make_path(file.path(sys_get_script_dir(), "images/tropennächte"))
 
 plots <- create_temperature_plots("105", input_dir = input_dir, output_dir = output_dir)
+plots_innere_stadt <- create_temperature_plots("5925", input_dir = input_dir, output_dir = output_dir)

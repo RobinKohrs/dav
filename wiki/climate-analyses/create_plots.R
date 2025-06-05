@@ -13,47 +13,47 @@ library(davR)
 }
 
 create_temperature_plots <- function(
-  # Core identifiers and paths
-  id,
-  input_dir,
-  output_dir = "./output_plots",
-  # --- General Plot Parameters ---
-  font_family = "Roboto", # Defaulting to Roboto as in the script
-  color_text_primary = "grey30",
-  color_text_secondary = "grey40",
-  color_caption_text = "grey45",
-  color_grid_lines = "grey80",
-  color_title = "black", # New variable for title color
-  color_subtitle = "black", # New variable for subtitle color
-  year_to_highlight = 2024,
-  # --- Line Chart Specific Parameters ---
-  linechart_width_in = 7,
-  linechart_height_in = 7,
-  linechart_dpi = 300,
-  lc_base_font_size_pt = 12,
-  lc_title_pt = 20,
-  lc_subtitle_pt = 15,
-  lc_axis_title_pt = 15,
-  lc_axis_text_pt = 15,
-  lc_caption_pt = 12,
-  lc_legend_text_pt = 12,
-  lc_color_yearly_jul = "#fa6847",
-  lc_color_smoothed_jul = "black",
-  lc_point_size = 1.5,
-  lc_line_width = 1.4,
-  lc_plot_margin_t = 5,
-  lc_plot_margin_r = 5,
-  lc_plot_margin_b = 5,
-  lc_plot_margin_l = 5,
-  lc_y_axis_padding_lower = 1.0,
-  lc_y_axis_padding_upper = 1.8,
-  lc_num_y_breaks = 4,
-  lc_num_x_breaks = 3,
-  lc_highlight_point_size_factor = 3.5,
-  lc_highlight_point_stroke = 1.2,
-  lc_highlight_label_text_size_mm = 5.5,
-  lc_x_breaks = c(1950, 1975, 2000, 2025) # New parameter for custom x-axis breaks
-) {
+    # Core identifiers and paths
+    id,
+    input_dir,
+    output_dir = "./output_plots",
+    # --- General Plot Parameters ---
+    font_family = "Roboto", # Defaulting to Roboto as in the script
+    color_text_primary = "grey30",
+    color_text_secondary = "grey40",
+    color_caption_text = "grey45",
+    color_grid_lines = "grey80",
+    color_title = "black", # New variable for title color
+    color_subtitle = "black", # New variable for subtitle color
+    year_to_highlight = 2024,
+    # --- Line Chart Specific Parameters ---
+    linechart_width_in = 7,
+    linechart_height_in = 7,
+    linechart_dpi = 300,
+    lc_base_font_size_pt = 12,
+    lc_title_pt = 20,
+    lc_subtitle_pt = 15,
+    lc_axis_title_pt = 15,
+    lc_axis_text_pt = 15,
+    lc_caption_pt = 12,
+    lc_legend_text_pt = 12,
+    lc_color_yearly_jul = "#fa6847",
+    lc_color_smoothed_jul = "black",
+    lc_point_size = 1.5,
+    lc_line_width = 1.4,
+    lc_plot_margin_t = 5,
+    lc_plot_margin_r = 5,
+    lc_plot_margin_b = 5,
+    lc_plot_margin_l = 5,
+    lc_y_axis_padding_lower = 1.0,
+    lc_y_axis_padding_upper = 1.8,
+    lc_num_y_breaks = 4,
+    lc_num_x_breaks = 3,
+    lc_highlight_point_size_factor = 3.5,
+    lc_highlight_point_stroke = 1.2,
+    lc_highlight_label_text_size_mm = 5.5,
+    lc_x_breaks = c(1950, 1975, 2000, 2025) # New parameter for custom x-axis breaks
+    ) {
   # --- 0. Setup and Data Loading ---
   cli::cli_h1(paste0("Generating plots for ID: ", id))
 
@@ -277,8 +277,8 @@ create_temperature_plots <- function(
       caption = glue::glue(
         # Caption updated to remove Loess trend
         "<b style='font-family:{font_family}; color:{color_text_primary};'>5-Jahres-Schnitt:</b> <i style='color:{color_text_secondary};'>Gleitender Durchschnitt über 5 Jahre.</i><br>",
-        "<b style='font-family:{font_family}; color:{color_text_primary};'>Daten:</b> <i style='color:{color_text_secondary};'>Geosphere Stationsdaten  (Nacht: 22:00-05:59 Uhr)</i><br>",
-        "<span style='color:{color_text_primary};'>rk</span><i style='color:{color_text_secondary};'> für das Netzwerk Klimajournalismus, Juni 2025</i>"
+        "<b style='font-family:{font_family}; color:{color_text_primary};'>Daten:</b> <i style='color:{color_text_secondary};'>Geosphere Stationsdaten  (Nacht: 18:00-05:59 Uhr MESZ)</i><br>",
+        "<span style='color:{color_text_primary};'>Robin Kohrs</span><i style='color:{color_text_secondary};'> für das Netzwerk Klimajournalismus, Juni 2025</i>"
       )
     ) +
     ggplot2::guides(
@@ -424,3 +424,19 @@ plot_innere_stadt <- create_temperature_plots(
 
 # To see the plot if run interactively (and it was generated successfully)
 # if (!is.null(plot)) print(plot)
+input_dir <- "~/Desktop"
+output_dir <- "~/Desktop"
+
+plot_test <- create_temperature_plots(
+  "105",
+  input_dir = input_dir,
+  output_dir = output_dir,
+  lc_color_yearly_jul = color_caption_text,
+  lc_color_smoothed_jul = "#A40f15",
+  lc_x_breaks = c(1940, 1960, 1980, 2000, 2020),
+  lc_axis_text_pt = 22,
+  lc_axis_title_pt = 17,
+  lc_legend_text_pt = 17,
+  color_title = color_title,
+  color_subtitle = color_subtitle
+)
