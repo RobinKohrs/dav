@@ -209,7 +209,7 @@ if [[ "$PROJECT_CATEGORY" == "Personal" || "$PROJECT_CATEGORY" == "NDR" || "$PRO
   gum format -- "- Core project name (for files & dir part) set to: **$PROJECT_NAME_FOR_FILES**"
   PROJECT_CATEGORY_LOWER=$(echo "$PROJECT_CATEGORY" | tr '[:upper:]' '[:lower:]')
   PROJECT_DIR_LEAF_NAME="$PROJECT_YEAR-$PROJECT_MONTH-$PROJECT_NAME_FOR_FILES"
-  TARGET_PROJECT_ROOT_DIR="$BASE_PROJECT_DIR_RESOLVED/$PROJECT_CATEGORY_LOWER/$PROJECT_DIR_LEAF_NAME"
+  TARGET_PROJECT_ROOT_DIR="$BASE_PROJECT_DIR_RESOLVED/$PROJECT_CATEGORY_LOWER/$PROJECT_YEAR/$PROJECT_DIR_LEAF_NAME"
 elif [[ "$PROJECT_CATEGORY" == "Custom (select parent directory anywhere)" ]]; then
   gum format -- "- Selected category: **Custom**"
   CORE_PROJECT_NAME_DISPLAY=$(gum input --placeholder "Enter a name for your new project folder (e.g., 'Ad Hoc Report')" --header "Project Folder Name:")
