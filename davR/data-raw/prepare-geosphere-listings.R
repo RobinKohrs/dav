@@ -34,11 +34,9 @@ GEOSPHERE_DATA_SCHEMAS = list(
         description = "Climate variable: TM (Mean Temp), RR (Precip), SA (Sunshine Duration). Verify exact codes!",
         allowed_values = c("TM", "RR", "SA") # Based on general descriptions
       )
-      # month = list(type = "integer") # Add if files are per month, and update template
     ),
-    # ASSUMPTION: One file per year, variable. Example: SPARTACUS2-MONTHLY_TM_2020.nc
     filename_template = "SPARTACUS2-MONTHLY_{toupper(variable_type)}_{year}.nc",
-    resource_subpath_parts_template = NULL # Assuming no subpath
+    resource_subpath_parts_template = c("filelisting", "{toupper(variable_type)}") # Added subpath structure
   ),
 
   # --- SPARTACUS v2 Seasonal (Quarterly) Data ---
