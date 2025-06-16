@@ -248,7 +248,7 @@ for script_full_path in "${selected_scripts[@]}"; do
             resolved_existing_target=$(get_absolute_path "$existing_target_raw")
         fi
 
-        if [ "$resolved_existing_target" == "$script_full_path" ]; then
+        if [[ "$resolved_existing_target" == "$script_full_path" ]]; then
             gum_success "✓ Symlink for '$script_name' already exists and points correctly."
             continue
         else
@@ -277,7 +277,7 @@ for script_full_path in "${selected_scripts[@]}"; do
 done
 
 echo
-gum_success "\nSetup complete! You can now:"
+gum_success "Setup complete! You can now:"
 gum_info "1. Use 'dav' to navigate to the DAV directory"
 gum_info "2. Use 'dav-helpers' to go to the helper scripts directory"
 gum_info "3. Run any of the symlinked scripts from anywhere (they're in $LINK_DIR)"

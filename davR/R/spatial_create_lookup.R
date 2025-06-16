@@ -24,19 +24,22 @@
 #'   the standard for web maps.
 #' @param seed An integer to set the random seed for k-means clustering,
 #'   ensuring reproducible results. Defaults to 123.
+#' @param resampling_method The resampling method for reprojection. Defaults to
+#'  "bilinear". Use "near" for categorical data. See `terra::project`.
 #'
 #' @return Invisibly returns a list containing the paths to the generated
-#'   `main.csv` file and the directory of group CSVs. This is primarily for
-#'   programmatic use; the main effect is writing files to disk.
+#'   `main.csv` file, the directory of group CSVs, the path to the grid vector file,
+#'   and the path to the reprojected raster file.
 #'
-#' @importFrom terra rast project as.polygons centroids crds ext geom
+#' @importFrom terra rast project as.polygons centroids crds ext geom writeRaster
 #' @importFrom dplyr group_by summarise rename mutate select left_join bind_cols
 #' @importFrom tidyr pivot_wider
 #' @importFrom purrr walk
 #' @importFrom readr write_csv
 #' @importFrom stats kmeans
 #' @importFrom rlang .data
-#' @importFrom sf st_as_sf st_buffer
+#' @importFrom sf st_as_sf st_write
+#' @importFrom cli cli_h1 cli_alert_info cli_alert_success cli_warn
 #'
 #' @export
 #'
@@ -63,11 +66,12 @@
 #' list.files(file.path(temp_output_dir, "lookups"))
 #' list.files(file.path(temp_output_dir, "lookups", "grid_cells"))
 #' }
-create_spatial_lookup = function(input_raster_file,
+spatial_create_lookup = function(input_raster_file,
                                  output_base_dir,
                                  n_groups = 500,
                                  crs_output = "EPSG:4326",
-                                 seed = 123) {
+                                 seed = 123,
+                                 resampling_method = "bilinear") {
 
   # 1. --- Input Validation ---
   if (!file.exists(input_raster_file)) {
@@ -77,7 +81,7 @@ create_spatial_lookup = function(input_raster_file,
     stop("`n_groups` must be a positive integer.")
   }
   if (!dir.exists(output_base_dir)) {
-    message("Output directory does not exist. Creating it at: ", output_base_dir)
+    cli::cli_alert_info("Output directory does not exist. Creating it at: {.path {output_base_dir}}")
     dir.create(output_base_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
@@ -89,62 +93,45 @@ create_spatial_lookup = function(input_raster_file,
   dir.create(grid_cells_dir, recursive = TRUE, showWarnings = FALSE)
 
   # 3. --- Load and Process Raster Data ---
-  message("--> Loading raster and converting to polygons...")
+  cli::cli_h1("Processing Raster")
+  cli::cli_alert_info("Loading raster and converting to polygons...")
   initial_raster = terra::rast(input_raster_file)
-  
+
   # Print raster information for debugging
-  message("    Raster dimensions: ", terra::nrow(initial_raster), " rows x ", 
-          terra::ncol(initial_raster), " columns")
-  message("    Number of layers: ", terra::nlyr(initial_raster))
-  
+  cli::cli_alert_info(c(
+    "    Raster dimensions: {terra::nrow(initial_raster)} rows x {terra::ncol(initial_raster)} columns",
+    "    Number of layers: {terra::nlyr(initial_raster)}"
+  ))
+
   # Check for NA values in the first layer
   first_layer = initial_raster[[1]]
   na_count = sum(is.na(terra::values(first_layer)))
   total_cells = terra::ncell(first_layer)
-  message("    NA values in first layer: ", na_count, " out of ", total_cells, 
-          " cells (", round(na_count/total_cells * 100, 1), "%)")
-  
+  cli::cli_alert_info("    NA values in first layer: {na_count} out of {total_cells} cells ({round(na_count/total_cells * 100, 1)}%)")
+
   # Project to target CRS
-  projected_raster = terra::project(initial_raster, crs_output)
+  cli::cli_alert_info("Reprojecting raster to {crs_output} using '{resampling_method}' method...")
+  projected_raster = terra::project(initial_raster, crs_output, method = resampling_method)
   first_layer_proj = projected_raster[[1]]
-  
-  # Create a grid of cell centroids for all non-NA cells
-  message("    Creating cell centroids for valid cells...")
-  valid_cells = !is.na(terra::values(first_layer_proj))
-  cell_numbers = which(valid_cells)
-  
-  # Get coordinates for all valid cells
-  cell_coords = terra::xyFromCell(first_layer_proj, cell_numbers)
-  cell_ids = paste0("c_", cell_numbers)
-  
-  # Create a simple features data frame with points
-  points_df = data.frame(
-    cell_id = cell_ids,
-    x = cell_coords[,1],
-    y = cell_coords[,2]
-  )
-  
-  # Create a simple features object with points
-  points_sf = sf::st_as_sf(points_df, coords = c("x", "y"), crs = crs_output)
-  
-  # Convert points to polygons by creating a buffer
-  message("    Converting points to polygons...")
-  cell_size = terra::res(first_layer_proj)
-  buffer_size = min(cell_size) / 2
-  fine_polygons = sf::st_buffer(points_sf, buffer_size)
-  
-  # Convert back to terra format for consistency
-  fine_polygons = terra::vect(fine_polygons)
-  
-  message("    Total valid cells processed: ", nrow(fine_polygons))
-  
+
+  # Convert valid raster cells to polygons directly
+  cli::cli_alert_info("Converting raster cells to polygons...")
+  fine_polygons = terra::as.polygons(first_layer_proj, dissolve = FALSE, na.rm = TRUE)
+
+  # Assign cell IDs based on their original cell number
+  centroids_of_polys = terra::centroids(fine_polygons)
+  cell_numbers = terra::cellFromXY(first_layer_proj, terra::crds(centroids_of_polys))
+  fine_polygons$cell_id = paste0("c_", cell_numbers)
+
+  cli::cli_alert_info("Total valid cells processed: {nrow(fine_polygons)}")
+
   if (nrow(fine_polygons) < 100) {
-    warning("Very few valid polygons (", nrow(fine_polygons), 
-            "). This might indicate an issue with the data processing.")
+    cli::cli_warn("Very few valid polygons ({nrow(fine_polygons)}). This might indicate an issue with the data processing.")
   }
-  
+
   # 4. --- Group Cells Using K-Means Clustering ---
-  message("--> Clustering ", nrow(fine_polygons), " cells into ", n_groups, " groups...")
+  cli::cli_h1("Clustering")
+  cli::cli_alert_info("Clustering {nrow(fine_polygons)} cells into {n_groups} groups...")
   centroids = terra::centroids(fine_polygons)
   centroid_coords = terra::crds(centroids)
 
@@ -153,8 +140,9 @@ create_spatial_lookup = function(input_raster_file,
   fine_polygons$group_id = kmeans_result$cluster
 
   # 5. --- Extract Coordinates and Create Master Data Frame ---
-  message("--> Extracting coordinates and bounding boxes...")
-  
+  cli::cli_h1("Extracting Geometries")
+  cli::cli_alert_info("Extracting coordinates and bounding boxes...")
+
   # Extract bounding boxes properly
   bboxes = as.data.frame(terra::geom(fine_polygons, df = TRUE)) %>%
     dplyr::group_by(.data$geom) %>%
@@ -192,21 +180,45 @@ create_spatial_lookup = function(input_raster_file,
     dplyr::select(-.data$geom)
 
   # 6. --- Generate and Write Output Files ---
+  cli::cli_h1("Writing Output Files")
+
+  # Write reprojected raster
+  reprojected_raster_path = file.path(lookups_dir, "reprojected_raster.tif")
+  cli::cli_alert_info("Writing reprojected raster to: {.path {reprojected_raster_path}}")
+  terra::writeRaster(first_layer_proj, reprojected_raster_path, overwrite = TRUE)
+
+  # Create a full sf object with all attributes for the vector grid file
+  grid_to_write = fine_polygons %>%
+    sf::st_as_sf() %>%
+    dplyr::left_join(
+      dplyr::select(master_df, -group_id),
+      by = c("cell_id" = "id")
+    )
+
+  # Write full grid vector file
+  grid_vector_path = file.path(lookups_dir, "grid.gpkg")
+  cli::cli_alert_info("Writing full grid vector file to: {.path {grid_vector_path}}")
+  sf::st_write(grid_to_write, grid_vector_path, driver = "GPKG", delete_dsn = TRUE)
 
   # Write individual group files
-  message("--> Writing individual group files to: ", grid_cells_dir)
-  master_df %>%
+  cli::cli_alert_info("Writing individual group files to: {.path {grid_cells_dir}}")
+
+  grouped_data = master_df %>%
     dplyr::group_by(.data$group_id) %>%
-    dplyr::group_split() %>%
-    purrr::walk(function(group_data) {
-      current_group_id = group_data$group_id[1]
-      file_path = file.path(grid_cells_dir, paste0("g_", current_group_id, ".csv"))
-      output_data = dplyr::select(group_data, -.data$group_id)
-      readr::write_csv(output_data, file_path)
-    })
+    dplyr::group_split()
+
+  purrr::walk(grouped_data, function(group_data) {
+    current_group_id = group_data$group_id[1]
+    file_path = file.path(grid_cells_dir, paste0("g_", current_group_id, ".csv"))
+    output_data = dplyr::select(group_data, -.data$group_id)
+    readr::write_csv(output_data, file_path, progress = FALSE)
+  }, .progress = list(
+    name = "Writing group files",
+    clear = FALSE
+  ))
 
   # Write main lookup file
-  message("--> Writing main lookup file to: ", main_lookup_path)
+  cli::cli_alert_info("Writing main lookup file to: {.path {main_lookup_path}}")
   main_lookup_df = master_df %>%
     dplyr::group_by(.data$group_id) %>%
     dplyr::summarise(
@@ -221,11 +233,13 @@ create_spatial_lookup = function(input_raster_file,
   readr::write_csv(main_lookup_df, main_lookup_path)
 
   # 7. --- Finalize and Return ---
-  message("\nProcessing complete!")
-  
+  cli::cli_alert_success("Processing complete!")
+
   # Return file paths invisibly for programmatic use
   invisible(list(
     main_lookup = main_lookup_path,
-    group_dir = grid_cells_dir
+    group_dir = grid_cells_dir,
+    grid_vector = grid_vector_path,
+    reprojected_raster = reprojected_raster_path
   ))
 }
