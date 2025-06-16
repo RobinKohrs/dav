@@ -55,6 +55,8 @@
 #'   Defaults to dark gray. Overridden by `ressort_name` if not explicitly set.
 #' @param border_color Optional. Character string. CSS color for the card's border (e.g., "#cccccc", "blue").
 #'   Defaults to medium gray. Overridden by `ressort_name` (uses accent color) if not explicitly set.
+#' @param border_gradient Optional. Character string. CSS gradient for the card's border.
+#'   Only used if not NULL and not empty.
 #' @param card_width Optional. Character string. CSS width for the card (e.g., "300px", "100%", "auto").
 #'   Defaults to "min(100%, 350px)" which ensures the card is never wider than 350px but can shrink on smaller screens.
 #' @param border_width Optional. Numeric. Width of the card's border in pixels. Defaults to 2.
@@ -96,6 +98,7 @@ html_create_info_card <- function(
   background_color = "#f0f0f0",
   text_color = "#333333",
   border_color = "#cccccc",
+  border_gradient = NULL,
   card_width = "100%",
   border_width = 2,
   font_family = "STMatilda Text Variable, system-ui, serif",
@@ -128,7 +131,8 @@ html_create_info_card <- function(
   # --- Internal Helper Function for Animation Parsing ---
   .parse_value_for_animation <- function(
     value,
-    initial_display_override = NULL
+    initial_display_override = NULL,
+    number_format = NULL
   ) {
     if (is.null(value)) {
       return(list(
@@ -138,7 +142,8 @@ html_create_info_card <- function(
           htmltools::htmlEscape(initial_display_override)
         } else {
           "0"
-        }
+        },
+        suffix = ""
       ))
     }
 
@@ -153,7 +158,8 @@ html_create_info_card <- function(
           htmltools::htmlEscape(initial_display_override)
         } else {
           "0"
-        }
+        },
+        suffix = ""
       ))
     }
 
@@ -166,7 +172,8 @@ html_create_info_card <- function(
           htmltools::htmlEscape(initial_display_override)
         } else {
           "0"
-        }
+        },
+        suffix = ""
       ))
     }
 
@@ -182,45 +189,26 @@ html_create_info_card <- function(
     )
 
     # Try to parse the string as a number
-    s <- value
-    s_numeric_parse <- gsub("€|\\$|¥|£", "", s)
-    s_numeric_parse <- gsub("%|\\+", "", s_numeric_parse)
-    s_numeric_parse <- trimws(s_numeric_parse)
+    cleaned_s <- value
 
-    if (grepl("^[0-9]{1,3}(\\.[0-9]{3})*(,[0-9]+)?$", s_numeric_parse)) {
-      cleaned_s <- gsub("\\.", "", s_numeric_parse)
+    # First, strip common non-numeric symbols that are not separators
+    cleaned_s <- gsub("€|\\$|¥|£|%|\\+|°|C|F", "", cleaned_s)
+    cleaned_s <- trimws(cleaned_s)
+
+    # Use locale to correctly interpret comma and period
+    if (!is.null(number_format) && number_format == "de-DE") {
+      # German format: '.' is for thousands, ',' is for decimal.
+      # Remove thousands separators, then convert decimal comma to dot.
+      cleaned_s <- gsub("\\.", "", cleaned_s)
       cleaned_s <- gsub(",", ".", cleaned_s)
-    } else if (grepl("^[0-9]{1,3}(,[0-9]{3})*(\\.[0-9]+)?$", s_numeric_parse)) {
-      cleaned_s <- gsub(",", "", s_numeric_parse)
-    } else if (
-      grepl("^[0-9]+(\\.[0-9]{3})*$", s_numeric_parse) &&
-        grepl("\\.", s_numeric_parse) &&
-        !grepl(",[0-9]", s_numeric_parse)
-    ) {
-      cleaned_s <- gsub("\\.", "", s_numeric_parse)
     } else {
-      cleaned_s <- s_numeric_parse
+      # Default/English format: ',' is for thousands, '.' is for decimal.
+      # Remove thousands separators. Dot is already correct for decimal.
+      cleaned_s <- gsub(",", "", cleaned_s)
     }
 
+    # Final cleanup to ensure it's a valid number for JS
     cleaned_s <- gsub("[^0-9.-]", "", cleaned_s)
-    if (length(gregexpr("\\.", cleaned_s)[[1]]) > 1) {
-      parts <- strsplit(cleaned_s, "\\.")[[1]]
-      cleaned_s <- paste0(
-        parts[1],
-        if (length(parts) > 1) {
-          paste0(".", paste(parts[-1], collapse = ""))
-        } else {
-          ""
-        }
-      )
-    }
-    if (
-      length(gregexpr("-", cleaned_s)[[1]]) > 1 ||
-        (length(gregexpr("-", cleaned_s)[[1]]) == 1 &&
-          regexpr("-", cleaned_s)[1] > 1)
-    ) {
-      cleaned_s <- gsub("-", "", cleaned_s)
-    }
 
     numeric_target_val <- suppressWarnings(as.numeric(cleaned_s))
     numeric_char_for_data <- if (is.na(numeric_target_val)) {
@@ -229,10 +217,24 @@ html_create_info_card <- function(
       as.character(numeric_target_val)
     }
 
+    suffix <- ""
+    if (is.character(value)) {
+      last_digit_indices <- gregexpr("[0-9]", value)
+      if (
+        length(last_digit_indices[[1]]) > 0 && last_digit_indices[[1]][1] != -1
+      ) {
+        last_digit_pos <- max(last_digit_indices[[1]])
+        if (last_digit_pos < nchar(value)) {
+          suffix <- substr(value, last_digit_pos + 1, nchar(value))
+        }
+      }
+    }
+
     return(list(
       numeric_char = numeric_char_for_data,
       final_value_attr = final_value_for_attr,
-      initial_display_html = initial_display_html_escaped
+      initial_display_html = initial_display_html_escaped,
+      suffix = suffix
     ))
   }
 
@@ -393,25 +395,34 @@ html_create_info_card <- function(
   if (animate_value) {
     parsed_val_info <- .parse_value_for_animation(
       main_value,
-      animation_initial_display
+      animation_initial_display,
+      number_format
     )
     # Add % sign only if explicitly requested
     if (show_percentage_sign) {
-      parsed_val_info$final_value_attr <- paste0(
-        parsed_val_info$final_value_attr,
-        " %"
-      )
-      parsed_val_info$initial_display_html <- paste0(
-        parsed_val_info$initial_display_html,
-        " %"
-      )
+      if (!endsWith(parsed_val_info$suffix, "%")) {
+        parsed_val_info$suffix <- paste0(parsed_val_info$suffix, " %")
+      }
+      if (!endsWith(parsed_val_info$final_value_attr, "%")) {
+        parsed_val_info$final_value_attr <- paste0(
+          parsed_val_info$final_value_attr,
+          " %"
+        )
+      }
     }
+
+    parsed_val_info$initial_display_html <- paste0(
+      parsed_val_info$initial_display_html,
+      parsed_val_info$suffix
+    )
+
     display_content_for_number_span <- parsed_val_info$initial_display_html
     data_attrs_for_animation <- glue::glue(
       'data-numeric-target="{parsed_val_info$numeric_char}" ',
       'data-final-value="{parsed_val_info$final_value_attr}" ',
       'data-animation-duration="{as.integer(animation_duration_ms)}" ',
-      'data-number-format="{if(!is.null(number_format)) number_format else ""}"'
+      'data-number-format="{if(!is.null(number_format)) number_format else ""}"',
+      'data-suffix="{htmltools::htmlEscape(parsed_val_info$suffix)}"'
     )
     number_span_final_attrs <- c(
       number_span_final_attrs,
@@ -445,6 +456,33 @@ html_create_info_card <- function(
     )
   }
 
+  # --- Gradient Border Logic ---
+  use_gradient_border <- !is.null(border_gradient) &&
+    nzchar(trimws(border_gradient))
+  container_extra_styles <- ""
+  pseudo_element_css <- ""
+
+  if (use_gradient_border) {
+    # For a gradient border, the element's own border must be transparent
+    # to let the pseudo-element's gradient background show through.
+    final_border_color <- "transparent"
+    container_extra_styles <- "background-clip: padding-box;"
+
+    pseudo_element_css <- glue::glue(
+      "
+      .{container_class}::before {{
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        z-index: -1;
+        margin: -{border_width}px; /* Make pseudo-element bigger than container */
+        border-radius: inherit; /* Match the parent's border-radius */
+        background: {border_gradient};
+      }}
+      "
+    )
+  }
+
   # --- CSS Styles ---
   css_styles <- glue::glue(
     "
@@ -461,7 +499,9 @@ html_create_info_card <- function(
       {box_shadow_css_property}
       position: relative;
       width: {card_width};
+      {container_extra_styles}
     }}
+    {pseudo_element_css}
     .{sr_only_class} {{
       clip: rect(0 0 0 0);
       clip-path: inset(50%);
@@ -497,6 +537,7 @@ html_create_info_card <- function(
     }}
     .{animated_number_class} {{
       display: inline-block;
+      font-variant-numeric: tabular-nums;
       will-change: transform;
       transform: translateZ(0);
       -webkit-transform: translateZ(0);
@@ -533,17 +574,24 @@ html_create_info_card <- function(
           const prefersReducedMotion = mediaQuery.matches;
 
           function animateNumber(el) {{
-            const target = parseFloat(el.dataset.numericTarget);
+            const targetStr = el.dataset.numericTarget;
+            const target = parseFloat(targetStr);
             const duration = parseInt(el.dataset.animationDuration, 10) || {animation_duration_ms};
             const locale = el.dataset.numberFormat || undefined;
             const finalDisplay = el.dataset.finalValue;
+            const suffix = el.dataset.suffix || "";
 
             if (isNaN(target)) {{
                 el.textContent = finalDisplay;
                 return;
             }}
 
-            const numberFormatter = locale ? new Intl.NumberFormat(locale, {{ minimumFractionDigits: 0, maximumFractionDigits: 2 }}) : null;
+            const decimalPlaces = (targetStr.includes(".")) ? targetStr.split(".")[1].length : 0;
+
+            const numberFormatter = locale ? new Intl.NumberFormat(locale, {{
+              minimumFractionDigits: decimalPlaces,
+              maximumFractionDigits: decimalPlaces
+            }}) : null;
             let startValue = 0; // Always start from 0 for simplicity
             let startTime = null;
 
@@ -551,8 +599,16 @@ html_create_info_card <- function(
               if (!startTime) startTime = currentTime;
               const progress = Math.min((currentTime - startTime) / duration, 1);
               const currentValue = startValue + progress * (target - startValue);
+              let displayedValue;
 
-              el.textContent = numberFormatter ? numberFormatter.format(currentValue) : Math.round(currentValue * 100) / 100;
+              if (numberFormatter) {{
+                displayedValue = numberFormatter.format(currentValue);
+              }} else {{
+                // Fallback for no locale, round to the correct number of decimal places
+                displayedValue = currentValue.toFixed(decimalPlaces);
+              }}
+
+              el.textContent = displayedValue + suffix;
 
               if (progress < 1) {{
                 requestAnimationFrame(animationStep);
