@@ -74,38 +74,42 @@
 #' @importFrom glue glue
 #' @export
 html_create_info_card <- function(
-    # --- Content Parameters ---
-    main_value,
-    main_text,
-    headline = NULL,
-    source_text = NULL,
-    source_link = NULL,
-    sr_only_main_value_label = NULL,
-    show_percentage_sign = FALSE,
-    # --- Animation Parameters ---
-    animation_duration_ms = 1500, # Shared duration for all animations
-    animation_trigger_threshold = 5, # Percentage above bottom to trigger animation
-    animate_value = FALSE,
-    animation_initial_display = "0",
-    # --- Percentage Bar Parameters ---
-    show_percentage_bar = FALSE,
-    animate_percentage_bar = TRUE,
-    percentage_bar_color = "rgba(0, 0, 0, 0.1)",
-    # --- Styling Parameters ---
-    ressort_name = NULL,
-    background_color = "#f0f0f0",
-    text_color = "#333333",
-    border_color = "#cccccc",
-    card_width = "100%",
-    border_width = 2,
-    font_family = "STMatilda Text Variable, system-ui, serif",
-    main_value_font_size = "1.7em",
-    main_text_font_size = "18px",
-    shadow_intensity = "middle",
-    # --- Formatting Parameters ---
-    number_format = NULL) {
+  # --- Content Parameters ---
+  main_value,
+  main_text,
+  headline = NULL,
+  source_text = NULL,
+  source_link = NULL,
+  sr_only_main_value_label = NULL,
+  show_percentage_sign = FALSE,
+  # --- Animation Parameters ---
+  animation_duration_ms = 1500, # Shared duration for all animations
+  animation_trigger_threshold = 5, # Percentage above bottom to trigger animation
+  animate_value = FALSE,
+  animation_initial_display = "0",
+  # --- Percentage Bar Parameters ---
+  show_percentage_bar = FALSE,
+  animate_percentage_bar = TRUE,
+  percentage_bar_color = "rgba(0, 0, 0, 0.1)",
+  # --- Styling Parameters ---
+  ressort_name = NULL,
+  background_color = "#f0f0f0",
+  text_color = "#333333",
+  border_color = "#cccccc",
+  card_width = "100%",
+  border_width = 2,
+  font_family = "STMatilda Text Variable, system-ui, serif",
+  main_value_font_size = "1.7em",
+  main_text_font_size = "18px",
+  shadow_intensity = "middle",
+  # --- Formatting Parameters ---
+  number_format = NULL
+) {
   # Generate a random hash for unique class names
-  card_hash <- paste0("_", paste(sample(c(letters, 0:9), 8, replace = TRUE), collapse = ""))
+  card_hash <- paste0(
+    "_",
+    paste(sample(c(letters, 0:9), 8, replace = TRUE), collapse = "")
+  )
 
   # Define class names with hash
   container_class <- paste0("dj-info-card-container", card_hash)
@@ -115,16 +119,26 @@ html_create_info_card <- function(
   animated_number_class <- paste0("dj-info-card-animated-number", card_hash)
   headline_class <- paste0("info-card-headline", card_hash)
   source_class <- paste0("info-card-source", card_hash)
-  main_value_wrapper_class <- paste0("dj-info-card-main-value-wrapper", card_hash)
+  main_value_wrapper_class <- paste0(
+    "dj-info-card-main-value-wrapper",
+    card_hash
+  )
   main_text_class <- paste0("dj-info-card-main-text", card_hash)
 
   # --- Internal Helper Function for Animation Parsing ---
-  .parse_value_for_animation <- function(value, initial_display_override = NULL) {
+  .parse_value_for_animation <- function(
+    value,
+    initial_display_override = NULL
+  ) {
     if (is.null(value)) {
       return(list(
         numeric_char = "0",
         final_value_attr = "0",
-        initial_display_html = if (!is.null(initial_display_override)) htmltools::htmlEscape(initial_display_override) else "0"
+        initial_display_html = if (!is.null(initial_display_override)) {
+          htmltools::htmlEscape(initial_display_override)
+        } else {
+          "0"
+        }
       ))
     }
 
@@ -132,16 +146,14 @@ html_create_info_card <- function(
     if (is.numeric(value)) {
       # Convert to string with proper decimal point for JavaScript
       numeric_str <- format(value, scientific = FALSE, decimal.mark = ".")
-      # Add % sign for display if the value is between 0 and 100
-      display_str <- if (value >= 0 && value <= 100) {
-        paste0(numeric_str, " %")
-      } else {
-        numeric_str
-      }
       return(list(
         numeric_char = numeric_str,
-        final_value_attr = display_str, # Include % sign in the final display
-        initial_display_html = if (!is.null(initial_display_override)) htmltools::htmlEscape(initial_display_override) else "0 %"
+        final_value_attr = numeric_str, # Final display is just the number
+        initial_display_html = if (!is.null(initial_display_override)) {
+          htmltools::htmlEscape(initial_display_override)
+        } else {
+          "0"
+        }
       ))
     }
 
@@ -149,15 +161,25 @@ html_create_info_card <- function(
     if (!is.character(value) || !nzchar(trimws(value))) {
       return(list(
         numeric_char = "0",
-        final_value_attr = "0 %",
-        initial_display_html = if (!is.null(initial_display_override)) htmltools::htmlEscape(initial_display_override) else "0 %"
+        final_value_attr = "0",
+        initial_display_html = if (!is.null(initial_display_override)) {
+          htmltools::htmlEscape(initial_display_override)
+        } else {
+          "0"
+        }
       ))
     }
 
     # For character values, try to parse as number
     final_value_for_attr <- htmltools::htmlEscape(value)
-    initial_display_content <- if (!is.null(initial_display_override)) initial_display_override else "0 %"
-    initial_display_html_escaped <- htmltools::htmlEscape(initial_display_content)
+    initial_display_content <- if (!is.null(initial_display_override)) {
+      initial_display_override
+    } else {
+      "0"
+    }
+    initial_display_html_escaped <- htmltools::htmlEscape(
+      initial_display_content
+    )
 
     # Try to parse the string as a number
     s <- value
@@ -170,7 +192,11 @@ html_create_info_card <- function(
       cleaned_s <- gsub(",", ".", cleaned_s)
     } else if (grepl("^[0-9]{1,3}(,[0-9]{3})*(\\.[0-9]+)?$", s_numeric_parse)) {
       cleaned_s <- gsub(",", "", s_numeric_parse)
-    } else if (grepl("^[0-9]+(\\.[0-9]{3})*$", s_numeric_parse) && grepl("\\.", s_numeric_parse) && !grepl(",[0-9]", s_numeric_parse)) {
+    } else if (
+      grepl("^[0-9]+(\\.[0-9]{3})*$", s_numeric_parse) &&
+        grepl("\\.", s_numeric_parse) &&
+        !grepl(",[0-9]", s_numeric_parse)
+    ) {
       cleaned_s <- gsub("\\.", "", s_numeric_parse)
     } else {
       cleaned_s <- s_numeric_parse
@@ -179,33 +205,95 @@ html_create_info_card <- function(
     cleaned_s <- gsub("[^0-9.-]", "", cleaned_s)
     if (length(gregexpr("\\.", cleaned_s)[[1]]) > 1) {
       parts <- strsplit(cleaned_s, "\\.")[[1]]
-      cleaned_s <- paste0(parts[1], if (length(parts) > 1) paste0(".", paste(parts[-1], collapse = "")) else "")
+      cleaned_s <- paste0(
+        parts[1],
+        if (length(parts) > 1) {
+          paste0(".", paste(parts[-1], collapse = ""))
+        } else {
+          ""
+        }
+      )
     }
-    if (length(gregexpr("-", cleaned_s)[[1]]) > 1 || (length(gregexpr("-", cleaned_s)[[1]]) == 1 && regexpr("-", cleaned_s)[1] > 1)) {
+    if (
+      length(gregexpr("-", cleaned_s)[[1]]) > 1 ||
+        (length(gregexpr("-", cleaned_s)[[1]]) == 1 &&
+          regexpr("-", cleaned_s)[1] > 1)
+    ) {
       cleaned_s <- gsub("-", "", cleaned_s)
     }
 
     numeric_target_val <- suppressWarnings(as.numeric(cleaned_s))
-    numeric_char_for_data <- if (is.na(numeric_target_val)) "0" else as.character(numeric_target_val)
-
-    # Add % sign for display if the value is between 0 and 100
-    final_display <- if (!is.na(numeric_target_val) && numeric_target_val >= 0 && numeric_target_val <= 100) {
-      paste0(final_value_for_attr, " %")
+    numeric_char_for_data <- if (is.na(numeric_target_val)) {
+      "0"
     } else {
-      final_value_for_attr
+      as.character(numeric_target_val)
     }
 
     return(list(
       numeric_char = numeric_char_for_data,
-      final_value_attr = final_display,
+      final_value_attr = final_value_for_attr,
       initial_display_html = initial_display_html_escaped
     ))
   }
 
   # --- Ressort Palettes, Color Determination, Shadow Style, Validations ---
-  .ressort_palettes <- list(dst_apo = list(bg = "#c1d9d9", txt = "#2c3e50", acc1 = "#005A5B", acc2 = "#D9824A"), dst_chripo = list(bg = "#d7e3e8", txt = "#34495e", acc1 = "#2980b9", acc2 = "#f39c12"), dst_wirtschaft = list(bg = "#d8dec1", txt = "#3A3A3A", acc1 = "#006442", acc2 = "#A85A38"), dst_pano_features = list(bg = "#aed4ae", txt = "#214022", acc1 = "#388E3C", acc2 = "#D4AC0D"), dst_etat = list(bg = "#ffcc66", txt = "#4A3B06", acc1 = "#C0392b", acc2 = "#1A237E"), dst_lifestyle = list(bg = "#ffffff", txt = "#333333", acc1 = "#E91E63", acc2 = "#009688"), dst_karriere = list(bg = "#f8f8f8", txt = "#2c3e50", acc1 = "#3498db", acc2 = "#16a085"), dst_wissenschaft = list(bg = "#bedae3", txt = "#1C3A50", acc1 = "#0D47A1", acc2 = "#FF6F00"))
+  .ressort_palettes <- list(
+    dst_apo = list(
+      bg = "#c1d9d9",
+      txt = "#2c3e50",
+      acc1 = "#005A5B",
+      acc2 = "#D9824A"
+    ),
+    dst_chripo = list(
+      bg = "#d7e3e8",
+      txt = "#34495e",
+      acc1 = "#2980b9",
+      acc2 = "#f39c12"
+    ),
+    dst_wirtschaft = list(
+      bg = "#d8dec1",
+      txt = "#3A3A3A",
+      acc1 = "#006442",
+      acc2 = "#A85A38"
+    ),
+    dst_pano_features = list(
+      bg = "#aed4ae",
+      txt = "#214022",
+      acc1 = "#388E3C",
+      acc2 = "#D4AC0D"
+    ),
+    dst_etat = list(
+      bg = "#ffcc66",
+      txt = "#4A3B06",
+      acc1 = "#C0392b",
+      acc2 = "#1A237E"
+    ),
+    dst_lifestyle = list(
+      bg = "#ffffff",
+      txt = "#333333",
+      acc1 = "#E91E63",
+      acc2 = "#009688"
+    ),
+    dst_karriere = list(
+      bg = "#f8f8f8",
+      txt = "#2c3e50",
+      acc1 = "#3498db",
+      acc2 = "#16a085"
+    ),
+    dst_wissenschaft = list(
+      bg = "#bedae3",
+      txt = "#1C3A50",
+      acc1 = "#0D47A1",
+      acc2 = "#FF6F00"
+    )
+  )
   for (name in names(.ressort_palettes)) {
-    names(.ressort_palettes[[name]]) <- c("background_color", "text_color", "accent_color_1", "accent_color_2")
+    names(.ressort_palettes[[name]]) <- c(
+      "background_color",
+      "text_color",
+      "accent_color_1",
+      "accent_color_2"
+    )
   }
   final_bg_color <- background_color
   final_text_color <- text_color
@@ -214,9 +302,15 @@ html_create_info_card <- function(
     if (ressort_name %in% names(.ressort_palettes)) {
       selected_palette <- .ressort_palettes[[ressort_name]]
       fmls <- formals(html_create_info_card)
-      if (identical(background_color, fmls$background_color)) final_bg_color <- selected_palette$background_color
-      if (identical(text_color, fmls$text_color)) final_text_color <- selected_palette$text_color
-      if (identical(border_color, fmls$border_color)) final_border_color <- selected_palette$accent_color_1
+      if (identical(background_color, fmls$background_color)) {
+        final_bg_color <- selected_palette$background_color
+      }
+      if (identical(text_color, fmls$text_color)) {
+        final_text_color <- selected_palette$text_color
+      }
+      if (identical(border_color, fmls$border_color)) {
+        final_border_color <- selected_palette$accent_color_1
+      }
     } else {
       warning(glue::glue("Ressort name '{ressort_name}' not recognized."))
     }
@@ -235,28 +329,42 @@ html_create_info_card <- function(
       box_shadow_style_value <- "0 8px 16px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.10)"
     }
   } else {
-    warning(glue::glue("Invalid `shadow_intensity`: '{shadow_intensity}'. Using 'none'."))
+    warning(glue::glue(
+      "Invalid `shadow_intensity`: '{shadow_intensity}'. Using 'none'."
+    ))
     box_shadow_style_value <- "none"
   }
   box_shadow_css_property <- paste0("box-shadow: ", box_shadow_style_value, ";")
-  if (!is.numeric(main_value) && (!is.character(main_value) || nzchar(trimws(main_value)) == 0)) {
+  if (
+    !is.numeric(main_value) &&
+      (!is.character(main_value) || nzchar(trimws(main_value)) == 0)
+  ) {
     stop("`main_value` must be either a numeric value or a non-empty string.")
   }
-  if (!is.character(main_text)) stop("`main_text` must be a string.")
-
+  if (!is.character(main_text)) {
+    stop("`main_text` must be a string.")
+  }
 
   # --- Screen Reader Text and Main Value Span Setup ---
   # Format the number immediately if it's numeric
   if (is.numeric(main_value)) {
-    display_content_for_number_span <- .format_number_r(main_value, number_format)
+    display_content_for_number_span <- .format_number_r(
+      main_value,
+      number_format
+    )
     # Add percentage sign if requested
     if (show_percentage_sign) {
-      display_content_for_number_span <- paste0(display_content_for_number_span, " %")
+      display_content_for_number_span <- paste0(
+        display_content_for_number_span,
+        " %"
+      )
     }
     # Set screen reader text
     screen_reader_full_text <- paste0(
       display_content_for_number_span,
-      if (!is.null(sr_only_main_value_label) && nzchar(sr_only_main_value_label)) {
+      if (
+        !is.null(sr_only_main_value_label) && nzchar(sr_only_main_value_label)
+      ) {
         paste(" ", htmltools::htmlEscape(sr_only_main_value_label))
       } else if (!is.null(main_text) && nzchar(main_text)) {
         paste(" ", htmltools::htmlEscape(main_text))
@@ -268,7 +376,9 @@ html_create_info_card <- function(
     display_content_for_number_span <- htmltools::htmlEscape(main_value)
     screen_reader_full_text <- paste0(
       display_content_for_number_span,
-      if (!is.null(sr_only_main_value_label) && nzchar(sr_only_main_value_label)) {
+      if (
+        !is.null(sr_only_main_value_label) && nzchar(sr_only_main_value_label)
+      ) {
         paste(" ", htmltools::htmlEscape(sr_only_main_value_label))
       } else if (!is.null(main_text) && nzchar(main_text)) {
         paste(" ", htmltools::htmlEscape(main_text))
@@ -281,11 +391,20 @@ html_create_info_card <- function(
   number_span_final_attrs <- c('aria-hidden="true"')
 
   if (animate_value) {
-    parsed_val_info <- .parse_value_for_animation(main_value, animation_initial_display)
+    parsed_val_info <- .parse_value_for_animation(
+      main_value,
+      animation_initial_display
+    )
     # Add % sign only if explicitly requested
     if (show_percentage_sign) {
-      parsed_val_info$final_value_attr <- paste0(parsed_val_info$final_value_attr, " %")
-      parsed_val_info$initial_display_html <- paste0(parsed_val_info$initial_display_html, " %")
+      parsed_val_info$final_value_attr <- paste0(
+        parsed_val_info$final_value_attr,
+        " %"
+      )
+      parsed_val_info$initial_display_html <- paste0(
+        parsed_val_info$initial_display_html,
+        " %"
+      )
     }
     display_content_for_number_span <- parsed_val_info$initial_display_html
     data_attrs_for_animation <- glue::glue(
@@ -294,24 +413,41 @@ html_create_info_card <- function(
       'data-animation-duration="{as.integer(animation_duration_ms)}" ',
       'data-number-format="{if(!is.null(number_format)) number_format else ""}"'
     )
-    number_span_final_attrs <- c(number_span_final_attrs, data_attrs_for_animation)
+    number_span_final_attrs <- c(
+      number_span_final_attrs,
+      data_attrs_for_animation
+    )
   }
-  number_span_attributes_as_string <- paste(number_span_final_attrs, collapse = " ")
+  number_span_attributes_as_string <- paste(
+    number_span_final_attrs,
+    collapse = " "
+  )
 
   # --- HTML Elements Construction (headline, source) ---
   headline_html <- ""
   source_html <- ""
   if (!is.null(headline) && nzchar(trimws(headline))) {
-    headline_html <- glue::glue('<div class="{headline_class}" style="font-size: 1.1em; font-weight: 600; margin-bottom: 10px; color: {final_text_color};">{htmltools::htmlEscape(headline)}</div>')
+    headline_html <- glue::glue(
+      '<div class="{headline_class}" style="font-size: 1.1em; font-weight: 600; margin-bottom: 10px; color: {final_text_color};">{htmltools::htmlEscape(headline)}</div>'
+    )
   }
   if (!is.null(source_text) && nzchar(trimws(source_text))) {
     st <- htmltools::htmlEscape(source_text)
-    sc <- if (!is.null(source_link) && nzchar(trimws(source_link))) glue::glue('<a href="{htmltools::htmlEscape(source_link)}" target="_blank" style="color: {final_text_color}; text-decoration: underline;">{st}</a>') else st
-    source_html <- glue::glue('<div class="{source_class}" style="font-size: 0.8em; color: {final_text_color}; margin-top: 15px; opacity: 0.8;">Quelle: {sc}</div>')
+    sc <- if (!is.null(source_link) && nzchar(trimws(source_link))) {
+      glue::glue(
+        '<a href="{htmltools::htmlEscape(source_link)}" target="_blank" style="color: {final_text_color}; text-decoration: underline;">{st}</a>'
+      )
+    } else {
+      st
+    }
+    source_html <- glue::glue(
+      '<div class="{source_class}" style="font-size: 0.8em; color: {final_text_color}; margin-top: 15px; opacity: 0.8;">Quelle: {sc}</div>'
+    )
   }
 
   # --- CSS Styles ---
-  css_styles <- glue::glue("
+  css_styles <- glue::glue(
+    "
     .{container_class} {{
       box-sizing: border-box;
       margin: 15px auto;
@@ -324,7 +460,7 @@ html_create_info_card <- function(
       text-align: center;
       {box_shadow_css_property}
       position: relative;
-      {card_width}
+      width: {card_width};
     }}
     .{sr_only_class} {{
       clip: rect(0 0 0 0);
@@ -367,7 +503,8 @@ html_create_info_card <- function(
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }}
-  ")
+  "
+  )
 
   # --- JavaScript for Animation ---
   script_html <- ""
@@ -375,180 +512,133 @@ html_create_info_card <- function(
   # Only include JavaScript if we need animation or dynamic formatting
   if (animate_value || (show_percentage_bar && animate_percentage_bar)) {
     script_id <- paste0("infoCardAnimatorScript_", card_hash)
-    number_format_js <- if (!is.null(number_format)) {
-      glue::glue('
-        // Cache the number formatter
-        const numberFormat = new Intl.NumberFormat("{number_format}", {{
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-          useGrouping: true,
-          style: "decimal"
-        }});
 
-        // Cache DOM queries
-        let cachedElements = null;
-        function getElements() {{
-          if (!cachedElements) {{
-            cachedElements = document.querySelectorAll(".{animated_number_class}");
-          }}
-          return cachedElements;
-        }}
-
-        // Format both the initial and final values immediately
-        function formatInitialValue() {{
-          const elements = getElements();
-          const len = elements.length;
-          for (let i = 0; i < len; i++) {{
-            const el = elements[i];
-            const value = el.textContent;
-            const numericValue = parseFloat(value);
-            if (!isNaN(numericValue)) {{
-              el.textContent = numberFormat.format(numericValue) + ({tolower(show_percentage_sign)} ? " %" : "");
-            }}
-          }}
-        }}
-
-        // Format all numbers immediately and on page load
-        formatInitialValue();
-        document.addEventListener("DOMContentLoaded", formatInitialValue);
-      ')
-    } else {
-      glue::glue('
-        // Cache DOM queries
-        let cachedElements = null;
-        function getElements() {{
-          if (!cachedElements) {{
-            cachedElements = document.querySelectorAll(".{animated_number_class}");
-          }}
-          return cachedElements;
-        }}
-
-        function formatInitialValue() {{
-          const elements = getElements();
-          const len = elements.length;
-          for (let i = 0; i < len; i++) {{
-            const el = elements[i];
-            const value = el.textContent;
-            const numericValue = parseFloat(value);
-            if (!isNaN(numericValue)) {{
-              el.textContent = numericValue.toLocaleString() + ({tolower(show_percentage_sign)} ? " %" : "");
-            }}
-          }}
-        }}
-
-        // Format all numbers immediately and on page load
-        formatInitialValue();
-        document.addEventListener("DOMContentLoaded", formatInitialValue);
-      ')
-    }
-
-    script_html <- glue::glue("
-      <script id='{script_id}'>
+    # Combined animation and formatting script
+    animation_js <- glue::glue(
+      '
+      <script id="{script_id}">
       (function() {{
-        {number_format_js}
-      }})();
-      </script>
-    ")
+        if (typeof window.initializeInfoCardAnimators === "function") {{
+          // If already defined, re-initialize for any new cards.
+          if (document.readyState === "loading") {{
+            document.addEventListener("DOMContentLoaded", window.initializeInfoCardAnimators);
+          }} else {{
+            window.initializeInfoCardAnimators();
+          }}
+          return; // Avoid redefining the function
+        }}
 
-    # Add animation JavaScript if needed
-    if (show_percentage_bar && animate_percentage_bar) {
-      animation_js <- glue::glue('
-        if (typeof window.initializeInfoCardAnimators !== "function") {{
-          window.initializeInfoCardAnimators = function() {{
-            const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-            const prefersReducedMotion = mediaQuery.matches;
+        window.initializeInfoCardAnimators = function() {{
+          const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+          const prefersReducedMotion = mediaQuery.matches;
 
-            // Get all cards with percentage bars
-            const cards = document.querySelectorAll(".{container_class}:has(.{percentage_bar_class})");
-            if (!cards.length) return;
+          function animateNumber(el) {{
+            const target = parseFloat(el.dataset.numericTarget);
+            const duration = parseInt(el.dataset.animationDuration, 10) || {animation_duration_ms};
+            const locale = el.dataset.numberFormat || undefined;
+            const finalDisplay = el.dataset.finalValue;
 
-            function animateBar(card, value, duration, shouldAnimate) {{
-              const bar = card.querySelector(".{percentage_bar_class}");
-              if (!bar) return;
-
-              if (!shouldAnimate) {{
-                // Set final state immediately without animation
-                bar.style.transition = "none";
-                bar.style.transform = `scaleX(${{Math.min(value, 100) / 100}})`;
-                bar.offsetHeight; // Force reflow
-                bar.style.transition = "";
+            if (isNaN(target)) {{
+                el.textContent = finalDisplay;
                 return;
-              }}
-
-              // Reset the bar
-              bar.style.transition = "none";
-              bar.style.transform = "scaleX(0)";
-              bar.offsetHeight; // Force reflow
-
-              // Start animation
-              requestAnimationFrame(() => {{
-                bar.style.transition = `transform ${{duration}}ms cubic-bezier(0.4, 0, 0.2, 1)`;
-                bar.style.transform = `scaleX(${{Math.min(value, 100) / 100}})`;
-              }});
             }}
 
-            let observer = null;
-            if (!prefersReducedMotion) {{
-              const observerOptions = {{
-                root: null,
-                rootMargin: "-{animation_trigger_threshold}% 0px",
-                threshold: [0.5, 0.75]
-              }};
-              observer = new IntersectionObserver((entries) => {{
-                entries.forEach(entry => {{
-                  if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {{
-                    const card = entry.target;
-                    if (card.dataset.animatedOnce === "true") return;
-                    card.dataset.animatedOnce = "true";
+            const numberFormatter = locale ? new Intl.NumberFormat(locale, {{ minimumFractionDigits: 0, maximumFractionDigits: 2 }}) : null;
+            let startValue = 0; // Always start from 0 for simplicity
+            let startTime = null;
 
-                    const numberEl = card.querySelector(".{animated_number_class}");
-                    const value = numberEl ? parseFloat(numberEl.textContent) || 0 : 0;
+            function animationStep(currentTime) {{
+              if (!startTime) startTime = currentTime;
+              const progress = Math.min((currentTime - startTime) / duration, 1);
+              const currentValue = startValue + progress * (target - startValue);
 
-                    setTimeout(() => {{
-                      animateBar(card, value, {animation_duration_ms}, {tolower(animate_percentage_bar)});
-                    }}, 100);
+              el.textContent = numberFormatter ? numberFormatter.format(currentValue) : Math.round(currentValue * 100) / 100;
 
-                    observer.unobserve(card);
-                  }}
-                }});
-              }}, observerOptions);
-            }}
-
-            const len = cards.length;
-            for (let i = 0; i < len; i++) {{
-              const card = cards[i];
-              if (prefersReducedMotion) {{
-                const numberEl = card.querySelector(".{animated_number_class}");
-                const value = numberEl ? parseFloat(numberEl.textContent) || 0 : 0;
-                animateBar(card, value, 0, {tolower(animate_percentage_bar)});
-                card.dataset.animatedOnce = "true";
-              }} else if (observer) {{
-                observer.observe(card);
+              if (progress < 1) {{
+                requestAnimationFrame(animationStep);
               }} else {{
-                const numberEl = card.querySelector(".{animated_number_class}");
-                const value = numberEl ? parseFloat(numberEl.textContent) || 0 : 0;
-                animateBar(card, value, {animation_duration_ms}, {tolower(animate_percentage_bar)});
-                card.dataset.animatedOnce = "true";
+                el.textContent = finalDisplay;
               }}
             }}
+
+            requestAnimationFrame(animationStep);
+          }}
+
+          function animateBar(card) {{
+            const bar = card.querySelector(".{percentage_bar_class}");
+            if (!bar) return;
+
+            const value = parseFloat(card.querySelector(".{animated_number_class}")?.dataset.numericTarget) || 0;
+            const duration = {animation_duration_ms};
+
+            bar.style.transition = "none";
+            bar.style.transform = "scaleX(0)";
+            bar.offsetHeight; // Force reflow
+
+            requestAnimationFrame(() => {{
+              bar.style.transition = `transform ${{duration}}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+              bar.style.transform = `scaleX(${{min(100, max(0, value)) / 100}})`;
+            }});
+          }}
+
+          const observerOptions = {{
+            root: null,
+            rootMargin: "-{animation_trigger_threshold}% 0px",
+            threshold: 0.1
           }};
 
-          if (document.readyState === "loading") {{
-            document.addEventListener("DOMContentLoaded", window.initializeInfoCardAnimators);
-          }} else {{
-            window.initializeInfoCardAnimators();
-          }}
-        }} else {{
-          if (document.readyState === "loading") {{
-            document.addEventListener("DOMContentLoaded", window.initializeInfoCardAnimators);
-          }} else {{
-            window.initializeInfoCardAnimators();
-          }}
-        }}
-      ')
+          const observer = new IntersectionObserver((entries, obs) => {{
+            entries.forEach(entry => {{
+              if (entry.isIntersecting) {{
+                const card = entry.target;
+                if (card.dataset.animatedOnce === "true") return;
+                card.dataset.animatedOnce = "true";
 
-      script_html <- paste0(script_html, "\n<script>", animation_js, "</script>")
-    }
+                // Animate number if requested
+                const numberEl = card.querySelector(".{animated_number_class}");
+                if ({tolower(animate_value)} && numberEl && numberEl.dataset.numericTarget) {{
+                  animateNumber(numberEl);
+                }}
+
+                // Animate bar if requested
+                if ({tolower(show_percentage_bar && animate_percentage_bar)}) {{
+                  animateBar(card);
+                }}
+
+                obs.unobserve(card);
+              }}
+            }});
+          }}, observerOptions);
+
+          const cards = document.querySelectorAll(".{container_class}");
+          cards.forEach(card => {{
+            if (prefersReducedMotion) {{
+              // If reduced motion is preferred, just show the final state.
+              const numberEl = card.querySelector(".{animated_number_class}");
+              if (numberEl) numberEl.textContent = numberEl.dataset.finalValue;
+
+              const bar = card.querySelector(".{percentage_bar_class}");
+              if (bar) {{
+                const value = parseFloat(numberEl?.dataset.numericTarget) || 0;
+                bar.style.transform = `scaleX(${{min(100, max(0, value)) / 100}})`;
+              }}
+              card.dataset.animatedOnce = "true";
+            }} else {{
+              observer.observe(card);
+            }}
+          }});
+        }};
+
+        if (document.readyState === "loading") {{
+          document.addEventListener("DOMContentLoaded", window.initializeInfoCardAnimators);
+        }} else {{
+          window.initializeInfoCardAnimators();
+        }}
+      }})();
+      </script>
+    '
+    )
+    script_html <- animation_js
   }
 
   # --- Main HTML Output ---
@@ -568,7 +658,8 @@ html_create_info_card <- function(
     ""
   }
 
-  html_output <- glue::glue('
+  html_output <- glue::glue(
+    '
     <style>
       {css_styles}
     </style>
@@ -593,7 +684,8 @@ html_create_info_card <- function(
       </div>
     </div>
     {script_html}
-  ')
+  '
+  )
 
   return(htmltools::HTML(html_output))
 }
@@ -607,9 +699,19 @@ html_create_info_card <- function(
   if (!is.null(locale)) {
     # Use the same formatting as the JavaScript Intl.NumberFormat
     if (locale == "de-DE") {
-      return(format(value, big.mark = ".", decimal.mark = ",", scientific = FALSE))
+      return(format(
+        value,
+        big.mark = ".",
+        decimal.mark = ",",
+        scientific = FALSE
+      ))
     } else {
-      return(format(value, big.mark = ",", decimal.mark = ".", scientific = FALSE))
+      return(format(
+        value,
+        big.mark = ",",
+        decimal.mark = ".",
+        scientific = FALSE
+      ))
     }
   }
 
