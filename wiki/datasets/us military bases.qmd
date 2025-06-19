@@ -1,0 +1,17 @@
+---
+title: "US Military Bases"
+date: "2025-06-19T08:51:46Z"
+description: "US Military Bases around the world"
+categories: ["technical", "article", "dataset"]
+dataset-url: "https://www.congress.gov/crs-product/R48123"
+format: html
+---
+
+## [US Military Bases](https://www.congress.gov/crs-product/R48123)
+
+## Description
+
+US Military Bases around the world
+
+## Getting Data
+

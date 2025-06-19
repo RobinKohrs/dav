@@ -2,6 +2,7 @@
   {
     "listing": "/datasets.html",
     "items": [
+      "/datasets/us military bases.html",
       "/datasets/awesome-sentinel.html",
       "/datasets/middleeast.html",
       "/datasets/overture maps.html",
@@ -18,6 +19,7 @@
   {
     "listing": "/all-datasets.html",
     "items": [
+      "/datasets/us military bases.html",
       "/datasets/awesome-sentinel.html",
       "/datasets/middleeast.html",
       "/datasets/overture maps.html",

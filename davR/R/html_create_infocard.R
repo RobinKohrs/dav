@@ -62,8 +62,10 @@
 #' @param border_width Optional. Numeric. Width of the card's border in pixels. Defaults to 2.
 #' @param font_family Optional. Character string. CSS `font-family` string for the card's text.
 #'   Defaults to "STMatilda Text Variable, system-ui, serif".
-#' @param main_value_font_size Optional. Character string. CSS `font-size` for the `main_value` (e.g., "3em", "48px"). Defaults to "3em".
-#' @param main_text_font_size Optional. Character string. CSS `font-size` for the `main_text` (e.g., "1em", "16px"). Defaults to "1em".
+#' @param headline_css Optional. Character string. A full inline CSS string (e.g. "font-size: 1.1em; font-weight: bold;") for the headline.
+#' @param main_text_css Optional. Character string. A full inline CSS string (e.g. "font-size: 1.1em;") for the main text.
+#' @param main_value_css Optional. Character string. A full inline CSS string (e.g. "font-size: 1.7em; font-weight: bold;") for the main value.
+#' @param source_css Optional. Character string. A full inline CSS string (e.g. "font-size: 0.8em;") for the source text.
 #' @param shadow_intensity Optional. Character string. Controls the box shadow intensity.
 #'   Valid values: "none", "low", "middle" (or "medium"), "intense" (or "high"). Defaults to "middle".
 #'
@@ -102,8 +104,10 @@ html_create_info_card <- function(
   card_width = "100%",
   border_width = 2,
   font_family = "STMatilda Text Variable, system-ui, serif",
-  main_value_font_size = "1.7em",
-  main_text_font_size = "18px",
+  headline_css = "font-size: 1.1em; font-weight: bold;",
+  main_text_css = "font-size: 1.1em;",
+  main_value_css = "font-size: 1.7em; font-weight: bold;",
+  source_css = "font-size: 0.8em;",
   shadow_intensity = "middle",
   # --- Formatting Parameters ---
   number_format = NULL
@@ -439,7 +443,7 @@ html_create_info_card <- function(
   source_html <- ""
   if (!is.null(headline) && nzchar(trimws(headline))) {
     headline_html <- glue::glue(
-      '<div class="{headline_class}" style="font-size: 1.1em; font-weight: 600; margin-bottom: 10px; color: {final_text_color};">{htmltools::htmlEscape(headline)}</div>'
+      '<div class="{headline_class}" style="{headline_css}">{htmltools::htmlEscape(headline)}</div>'
     )
   }
   if (!is.null(source_text) && nzchar(trimws(source_text))) {
@@ -452,7 +456,7 @@ html_create_info_card <- function(
       st
     }
     source_html <- glue::glue(
-      '<div class="{source_class}" style="font-size: 0.8em; color: {final_text_color}; margin-top: 15px; opacity: 0.8;">Quelle: {sc}</div>'
+      '<div class="{source_class}" style="{source_css}">Quelle: {sc}</div>'
     )
   }
 
@@ -534,6 +538,24 @@ html_create_info_card <- function(
       will-change: transform;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }}
+    .{headline_class} {{
+      margin-bottom: 2px;
+    }}
+    .{main_value_wrapper_class} {{
+      margin: 4px 0;
+    }}
+    .{main_text_class} {{
+      margin: 2px 0;
+      line-height: 1.3;
+    }}
+    .{source_class} {{
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
     }}
     .{animated_number_class} {{
       display: inline-block;
@@ -723,17 +745,13 @@ html_create_info_card <- function(
       {percentage_bar_html}
       <div class="{content_class}">
         {headline_html}
-        <div class="{main_value_wrapper_class}" style="font-size: {main_value_font_size}; font-weight: bold; line-height: 1.1; margin-bottom: 5px; color: {final_text_color};">
+        <div class="{main_value_wrapper_class}" style="color: {final_text_color}; {main_value_css}">
           <span class="{sr_only_class}">{screen_reader_full_text}</span>
           <span class="{animated_number_class}" {number_span_attributes_as_string}>
             {display_content_for_number_span}
           </span>
         </div>
-        <div class="{main_text_class}"
-             style="font-size: {main_text_font_size};
-                    line-height: 1.4;
-                    color: {final_text_color};
-                    opacity: 0.9;">
+        <div class="{main_text_class}" style="{main_text_css}">
           {htmltools::htmlEscape(main_text)}
         </div>
         {source_html}
