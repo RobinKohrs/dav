@@ -4,7 +4,7 @@
     "href": "qgis_tips.html",
     "title": "Qgis Tips and Tricks",
     "section": "",
-    "text": "from here\ncollect_geometries(\n    array_foreach(\n        overlay_intersects (@layer, boundary($geometry)),\n        shared_paths (@element, boundary($geometry))\n    )\n)"
+    "text": "from here\ncollect_geometries(\n    array_foreach(\n        overlay_intersects (@layer, boundary($geometry)),\n        shared_paths (@element, boundary($geometry))\n    )\n)\n\n\n\n\nRun gdalwarp with input AND output CRS of 4326 and specify -te -180 -90 180 90 as additional param"
   },
   {
     "objectID": "qgis_tips.html#only-shared-borders",
@@ -12,6 +12,13 @@
     "title": "Qgis Tips and Tricks",
     "section": "",
     "text": "from here\ncollect_geometries(\n    array_foreach(\n        overlay_intersects (@layer, boundary($geometry)),\n        shared_paths (@element, boundary($geometry))\n    )\n)"
+  },
+  {
+    "objectID": "qgis_tips.html#netcdf-shifted-in-longitude-by-90-degrees",
+    "href": "qgis_tips.html#netcdf-shifted-in-longitude-by-90-degrees",
+    "title": "Qgis Tips and Tricks",
+    "section": "",
+    "text": "Run gdalwarp with input AND output CRS of 4326 and specify -te -180 -90 180 90 as additional param"
   },
   {
     "objectID": "datasets.html",
@@ -203,11 +210,25 @@
     "text": "Get the API Key…\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
-    "objectID": "datasets/global-sea-surface-sst-data.html#getting-data",
-    "href": "datasets/global-sea-surface-sst-data.html#getting-data",
-    "title": "Global Sea Surface SST Data",
-    "section": "Getting Data",
-    "text": "Getting Data"
+    "objectID": "datasets/global-sea-surface-sst-data.html",
+    "href": "datasets/global-sea-surface-sst-data.html",
+    "title": "Sea Surface SST Data",
+    "section": "",
+    "text": "https://podaac.github.io/tutorials/quarto_text/DataSubscriberDownloader.html"
+  },
+  {
+    "objectID": "datasets/global-sea-surface-sst-data.html#global-sea-surface-sst-data",
+    "href": "datasets/global-sea-surface-sst-data.html#global-sea-surface-sst-data",
+    "title": "Sea Surface SST Data",
+    "section": "",
+    "text": "https://podaac.github.io/tutorials/quarto_text/DataSubscriberDownloader.html"
+  },
+  {
+    "objectID": "datasets/global-sea-surface-sst-data.html#optimum-interpolation-sea-surface-temperature-oisst---daily-global-sst-and-sst-anomaly-data",
+    "href": "datasets/global-sea-surface-sst-data.html#optimum-interpolation-sea-surface-temperature-oisst---daily-global-sst-and-sst-anomaly-data",
+    "title": "Sea Surface SST Data",
+    "section": "Optimum Interpolation Sea Surface Temperature (OISST) - Daily Global SST and SST anomaly data",
+    "text": "Optimum Interpolation Sea Surface Temperature (OISST) - Daily Global SST and SST anomaly data\n\nhttps://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/"
   },
   {
     "objectID": "datasets/awesome-sentinel.html#description",
@@ -236,19 +257,5 @@
     "title": "Datasets Collection",
     "section": "",
     "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nSea Surface SST Data\n\n\n\n\n\n\n\n\nJun 26, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nUS Military Bases\n\n\n\ntechnical\n\narticle\n\ndataset\n\n\n\nUS Military Bases around the world\n\n\n\n\n\nJun 19, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nAwesome Sentinel\n\n\n\narticle\n\ndataset\n\nreference\n\n\n\nSentinel Ressources\n\n\n\n\n\nMay 28, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nNaher Osten Daten\n\n\nDatensammlung zu Themen im nahen Osten\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\narticle\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\narticle\n\nreference\n\ntechnical\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "datasets/global-sea-surface-sst-data.html",
-    "href": "datasets/global-sea-surface-sst-data.html",
-    "title": "Sea Surface SST Data",
-    "section": "",
-    "text": "https://podaac.github.io/tutorials/quarto_text/DataSubscriberDownloader.html"
-  },
-  {
-    "objectID": "datasets/global-sea-surface-sst-data.html#global-sea-surface-sst-data",
-    "href": "datasets/global-sea-surface-sst-data.html#global-sea-surface-sst-data",
-    "title": "Sea Surface SST Data",
-    "section": "",
-    "text": "https://podaac.github.io/tutorials/quarto_text/DataSubscriberDownloader.html"
   }
 ]

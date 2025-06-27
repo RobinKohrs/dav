@@ -160,6 +160,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#qgis-tips-and-tricks" id="toc-qgis-tips-and-tricks" class="nav-link active" data-scroll-target="#qgis-tips-and-tricks">Qgis Tips and Tricks</a>
   <ul class="collapse">
   <li><a href="#only-shared-borders" id="toc-only-shared-borders" class="nav-link" data-scroll-target="#only-shared-borders">Only Shared Borders</a></li>
+  <li><a href="#netcdf-shifted-in-longitude-by-90-degrees" id="toc-netcdf-shifted-in-longitude-by-90-degrees" class="nav-link" data-scroll-target="#netcdf-shifted-in-longitude-by-90-degrees">NetCDF shifted in longitude by 90 degrees</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -185,6 +186,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        shared_paths (@element, boundary($geometry))</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="netcdf-shifted-in-longitude-by-90-degrees" class="level2">
+<h2 class="anchored" data-anchor-id="netcdf-shifted-in-longitude-by-90-degrees">NetCDF shifted in longitude by 90 degrees</h2>
+<ul>
+<li>Run <code>gdalwarp</code> with input AND output CRS of 4326 and specify <code>-te -180 -90 180 90</code> as additional param</li>
+</ul>
 
 
 </section>
