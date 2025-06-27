@@ -224,6 +224,20 @@
     "text": "https://podaac.github.io/tutorials/quarto_text/DataSubscriberDownloader.html"
   },
   {
+    "objectID": "datasets/global-sea-surface-sst-data.html#how-to-download-data-from-cms",
+    "href": "datasets/global-sea-surface-sst-data.html#how-to-download-data-from-cms",
+    "title": "Sea Surface SST Data",
+    "section": "How to download data from CMS",
+    "text": "How to download data from CMS\n\nhttps://help.marine.copernicus.eu/en/articles/8638253-how-to-download-data-via-the-copernicus-marine-toolbox-in-r"
+  },
+  {
+    "objectID": "datasets/global-sea-surface-sst-data.html#mediterranean-sea-high-resolution-and-ultra-high-resolution-sea-surface-temperature-analysis",
+    "href": "datasets/global-sea-surface-sst-data.html#mediterranean-sea-high-resolution-and-ultra-high-resolution-sea-surface-temperature-analysis",
+    "title": "Sea Surface SST Data",
+    "section": "Mediterranean Sea High Resolution and Ultra High Resolution Sea Surface Temperature Analysis",
+    "text": "Mediterranean Sea High Resolution and Ultra High Resolution Sea Surface Temperature Analysis\n\nhttps://data.marine.copernicus.eu/product/SST_MED_SST_L4_NRT_OBSERVATIONS_010_004/services\n\n\nAlso comes with anomaly data and simple http download !!"
+  },
+  {
     "objectID": "datasets/global-sea-surface-sst-data.html#optimum-interpolation-sea-surface-temperature-oisst---daily-global-sst-and-sst-anomaly-data",
     "href": "datasets/global-sea-surface-sst-data.html#optimum-interpolation-sea-surface-temperature-oisst---daily-global-sst-and-sst-anomaly-data",
     "title": "Sea Surface SST Data",

@@ -14,7 +14,20 @@ format: html
 
 # Copernicus Marine Service
 
-[Copernicus Marine Service](https://data.marine.copernicus.eu/viewer/expert?view=catalogue&facets=mainVariables%7ETemperature--areas%7EMediterranean+Sea)
+[Copernicus Marine Service Medditeranean](https://data.marine.copernicus.eu/viewer/expert?view=catalogue&facets=mainVariables%7ETemperature--areas%7EMediterranean+Sea)
+
+
+## How to download data from CMS
+
+- https://help.marine.copernicus.eu/en/articles/8638253-how-to-download-data-via-the-copernicus-marine-toolbox-in-r
+
+## Mediterranean Sea High Resolution and Ultra High Resolution Sea Surface Temperature Analysis
+
+- https://data.marine.copernicus.eu/product/SST_MED_SST_L4_NRT_OBSERVATIONS_010_004/services
+
+> Also comes with anomaly data and simple http download !!
+
+
 
 # NASA
 
