@@ -2,6 +2,7 @@
   {
     "listing": "/datasets.html",
     "items": [
+      "/datasets/global-sea-surface-sst-data.html",
       "/datasets/us military bases.html",
       "/datasets/awesome-sentinel.html",
       "/datasets/middleeast.html",
@@ -19,6 +20,7 @@
   {
     "listing": "/all-datasets.html",
     "items": [
+      "/datasets/global-sea-surface-sst-data.html",
       "/datasets/us military bases.html",
       "/datasets/awesome-sentinel.html",
       "/datasets/middleeast.html",

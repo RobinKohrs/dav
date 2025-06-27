@@ -11,3 +11,8 @@ collect_geometries(
     )
 )
 ```
+
+
+## NetCDF shifted in longitude by 90 degrees
+
+- Run `gdalwarp` with input AND output CRS of 4326 and specify `-te -180 -90 180 90` as additional param

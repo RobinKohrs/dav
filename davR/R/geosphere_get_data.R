@@ -12,16 +12,17 @@
 #' @param end Optional end date/time string.
 #' @param station_ids Optional station IDs.
 #' @param output_format API output format (e.g., "csv").
+#' @param return_format R function return: "file", "dataframe", "raw".
+#' @param output_file Path for `return_format = "file"`.
+#' @param verbose If `TRUE`, prints "Requesting URL" message. Key success/fail messages always print.
+#' @param print_url If `TRUE`, prints the full URL that will be requested.
+#' @param debug Print detailed debug messages?
+#' @param timeout_seconds Request timeout.
 #' @param ... Additional API query parameters.
 #' @param api_url Base API URL.
 #' @param version API version (e.g., "v1").
 #' @param type API data type (e.g., "timeseries").
 #' @param mode API data mode (e.g., "historical").
-#' @param return_format R function return: "file", "dataframe", "raw".
-#' @param output_file Path for `return_format = "file"`.
-#' @param verbose If `TRUE`, prints "Requesting URL" message. Key success/fail messages always print.
-#' @param debug Print detailed debug messages?
-#' @param timeout_seconds Request timeout.
 #'
 #' @return Path, data frame, or httr response; NULL on failure.
 #' @export
@@ -35,16 +36,17 @@ geosphere_get_data <- function(
     end = NULL,
     station_ids = NULL,
     output_format = "csv",
+    return_format = c("file", "dataframe", "raw"),
+    output_file = NULL,
+    verbose = FALSE, # verbose now ONLY controls "Requesting URL" and some specific warnings
+    print_url = FALSE,
+    debug = FALSE,
+    timeout_seconds = 30,
     ...,
     api_url = "https://dataset.api.hub.geosphere.at",
     version = "v1",
     type = "timeseries",
-    mode = "historical",
-    return_format = c("file", "dataframe", "raw"),
-    output_file = NULL,
-    verbose = FALSE, # verbose now ONLY controls "Requesting URL" and some specific warnings
-    debug = FALSE,
-    timeout_seconds = 30) {
+    mode = "historical") {
   emoji_success <- "\U2705"
   emoji_fail <- "\U274C"
   emoji_network_fail <- "\U1F6AB"
@@ -97,6 +99,11 @@ geosphere_get_data <- function(
   api_path <- paste(version_str, type, mode, resource_id, sep = "/")
   final_url <- httr::modify_url(api_url, path = api_path, query = final_query_params)
 
+  # Print URL if requested
+  if (print_url) {
+    cat("URL:", final_url, "\n")
+  }
+
   # "Requesting URL" is now the primary message controlled by verbose
   if (verbose) {
     cli::cli_alert_info("Requesting URL: {cli::style_hyperlink(final_url, final_url)}")
@@ -125,6 +132,15 @@ geosphere_get_data <- function(
   if (is.null(response)) {
     return(NULL)
   }
+
+  # Extract rate limit headers
+  rate_limit_info <- list(
+    limit_hour = httr::headers(response)$`x-ratelimit-limit-hour`,
+    limit_second = httr::headers(response)$`x-ratelimit-limit-second`,
+    remaining_second = httr::headers(response)$`x-ratelimit-remaining-second`,
+    remaining_hour = httr::headers(response)$`x-ratelimit-remaining-hour`,
+    reset_seconds = httr::headers(response)$`ratelimit-reset`
+  )
 
   if (httr::http_error(response)) {
     status <- httr::status_code(response)
@@ -158,11 +174,26 @@ geosphere_get_data <- function(
     if (!is.null(error_details_text) && verbose) { # Only add details if verbose
       warn_msg_parts <- c(warn_msg_parts, glue::glue("Details: {error_details_text}"))
     }
+    
+    # Add rate limit info to error messages
+    if (status == 429) {
+      reset_seconds <- as.numeric(rate_limit_info$reset_seconds) %||% 3600
+      warn_msg_parts <- c(warn_msg_parts, 
+        glue::glue("Rate limit exceeded. Reset in {round(reset_seconds/60, 1)} minutes."))
+    }
+    
     cli::cli_warn(warn_msg_parts, .call = NULL)
-    return(NULL)
+    return(list(result = NULL, rate_limit_info = rate_limit_info))
   }
 
   if (debug) print(paste("--- Debug: HTTP Success. Status:", httr::status_code(response)))
+
+  # Print rate limit info if verbose
+  if (verbose) {
+    remaining_second <- as.numeric(rate_limit_info$remaining_second) %||% "unknown"
+    remaining_hour <- as.numeric(rate_limit_info$remaining_hour) %||% "unknown"
+    cli::cli_alert_info(glue::glue("Rate limit: {remaining_second} req/sec, {remaining_hour} req/hour remaining"))
+  }
 
   # --- 6. Process Successful Response based on return_format ---
   if (return_format == "file") {
@@ -183,23 +214,23 @@ geosphere_get_data <- function(
       {
         writeBin(raw_bytes, output_file_to_write)
         cli::cli_alert_success("{emoji_success} Data {cli::col_green('written to')} {.path {output_file_to_write}}")
-        return(output_file_to_write)
+        return(list(result = output_file_to_write, rate_limit_info = rate_limit_info))
       },
       error = function(e) {
         cli::cli_warn(
           c(
-            glue::glue("{emoji_fail} Failed to write to file: {.path {output_file_to_write}}."),
+            glue::glue("{emoji_fail} Failed to write to file: {output_file_to_write}."),
             glue::glue("Details: {e$message}")
           ), # Details might be useful even if not verbose
           .call = NULL
         )
-        return(NULL)
+        return(list(result = NULL, rate_limit_info = rate_limit_info))
       }
     )
   } else if (return_format == "dataframe") {
     if (httr::status_code(response) == 204) {
       cli::cli_alert_info(glue::glue("{emoji_success} API returned 204 No Content (Success, no data).")) # Info for 204
-      return(NULL)
+      return(list(result = NULL, rate_limit_info = rate_limit_info))
     }
 
     api_fmt <- tolower(final_query_params$output_format %||% "")
@@ -211,14 +242,14 @@ geosphere_get_data <- function(
 
     if (is.na(parse_attempt)) {
       cli::cli_alert_warning(glue::glue("{emoji_fail} Cannot determine parsing method for API format '{api_fmt}' / content type '{content_type}'. Returning NULL."))
-      return(NULL)
+      return(list(result = NULL, rate_limit_info = rate_limit_info))
     }
 
     response_text <- httr::content(response, as = "text", encoding = "UTF-8")
     if (is.null(response_text) || !nzchar(response_text)) {
       # This is a failure to get content, even if status was 200 (should be rare if not 204)
       cli::cli_alert_warning(glue::glue("{emoji_fail} API content is empty after successful fetch. Cannot parse to dataframe."))
-      return(NULL)
+      return(list(result = NULL, rate_limit_info = rate_limit_info))
     }
 
     parsed_object <- NULL
@@ -248,10 +279,10 @@ geosphere_get_data <- function(
       }
       cli::cli_warn(fail_msg, .call = NULL)
     }
-    return(parsed_object)
+    return(list(result = parsed_object, rate_limit_info = rate_limit_info))
   } else { # return_format == "raw"
     cli::cli_alert_success(glue::glue("{emoji_success} Returning raw httr response object."))
-    return(response)
+    return(list(result = response, rate_limit_info = rate_limit_info))
   }
 }
 

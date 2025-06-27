@@ -1,0 +1,24 @@
+---
+title: "Sea Surface SST Data"
+date: "2025-06-26T14:21:33Z"
+dataset-url: "https://podaac.jpl.nasa.gov/dataset/AVHRR_OI-NCEI-L4-GLOB-v2.1"
+format: html
+---
+
+# Global
+
+## [Global Sea Surface SST Data](https://podaac.jpl.nasa.gov/dataset/AVHRR_OI-NCEI-L4-GLOB-v2.1)
+
+- https://podaac.github.io/tutorials/quarto_text/DataSubscriberDownloader.html
+
+
+# Copernicus Marine Service
+
+[Copernicus Marine Service](https://data.marine.copernicus.eu/viewer/expert?view=catalogue&facets=mainVariables%7ETemperature--areas%7EMediterranean+Sea)
+
+# NASA
+
+## Optimum Interpolation Sea Surface Temperature (OISST) - Daily Global SST and SST anomaly data
+
+- https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/
+
