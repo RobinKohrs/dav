@@ -25,7 +25,7 @@
     "href": "datasets.html",
     "title": "Datasets",
     "section": "",
-    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nSea Surface SST Data\n\n\n\n\n\n\n\n\nJun 26, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nUS Military Bases\n\n\n\ntechnical\n\narticle\n\ndataset\n\n\n\nUS Military Bases around the world\n\n\n\n\n\nJun 19, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nAwesome Sentinel\n\n\n\narticle\n\ndataset\n\nreference\n\n\n\nSentinel Ressources\n\n\n\n\n\nMay 28, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nNaher Osten Daten\n\n\nDatensammlung zu Themen im nahen Osten\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\narticle\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\narticle\n\nreference\n\ntechnical\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\nNo matching items"
+    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nMicrosoft Footprints\n\n\n\n\n\n\n\n\nJul 15, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nICON-EU Europe Temperature Forecast\n\n\n\n\n\n\n\n\nJul 2, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nSea Surface SST Data\n\n\n\n\n\n\n\n\nJun 26, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nUS Military Bases\n\n\n\ntechnical\n\narticle\n\ndataset\n\n\n\nUS Military Bases around the world\n\n\n\n\n\nJun 19, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nAwesome Sentinel\n\n\n\narticle\n\ndataset\n\nreference\n\n\n\nSentinel Ressources\n\n\n\n\n\nMay 28, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nNaher Osten Daten\n\n\nDatensammlung zu Themen im nahen Osten\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\narticle\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\narticle\n\nreference\n\ntechnical\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "datasets/us military bases.html#description",
@@ -54,6 +54,20 @@
     "title": "Overture Maps",
     "section": "",
     "text": "Some fancy derivate of osm data\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
+  },
+  {
+    "objectID": "datasets/europe_weater_prediction.html",
+    "href": "datasets/europe_weater_prediction.html",
+    "title": "ICON-EU Europe Temperature Forecast",
+    "section": "",
+    "text": "https://dwd-geoportal.de/products/G_D5M/"
+  },
+  {
+    "objectID": "datasets/europe_weater_prediction.html#link",
+    "href": "datasets/europe_weater_prediction.html#link",
+    "title": "ICON-EU Europe Temperature Forecast",
+    "section": "",
+    "text": "https://dwd-geoportal.de/products/G_D5M/"
   },
   {
     "objectID": "datasets/middleeast.html",
@@ -119,11 +133,11 @@
     "text": "Humanitarian Funding Data\nData on money flows on humanitarian aid funding"
   },
   {
-    "objectID": "datasets/middleeast.html#timeline-damage-gaza-corey-scher",
-    "href": "datasets/middleeast.html#timeline-damage-gaza-corey-scher",
+    "objectID": "datasets/middleeast.html#ddmg---corey-scher-and-jamon-van-den-hoek",
+    "href": "datasets/middleeast.html#ddmg---corey-scher-and-jamon-van-den-hoek",
     "title": "Naher Osten Daten",
-    "section": "Timeline Damage Gaza Corey Scher",
-    "text": "Timeline Damage Gaza Corey Scher\nHistoric data on destruction in gaza strip"
+    "section": "DDMG - Corey Scher and Jamon van den Hoek",
+    "text": "DDMG - Corey Scher and Jamon van den Hoek\n\nDamaged Vegetation in the Gaza Strip"
   },
   {
     "objectID": "misc.html",
@@ -210,6 +224,13 @@
     "text": "Get the API Key…\n\nView External Link{:target=“_blank” rel=“noopener noreferrer”}"
   },
   {
+    "objectID": "datasets/microsoft-footprints.html#getting-data",
+    "href": "datasets/microsoft-footprints.html#getting-data",
+    "title": "Microsoft Footprints",
+    "section": "Getting Data",
+    "text": "Getting Data"
+  },
+  {
     "objectID": "datasets/global-sea-surface-sst-data.html",
     "href": "datasets/global-sea-surface-sst-data.html",
     "title": "Sea Surface SST Data",
@@ -270,6 +291,6 @@
     "href": "all-datasets.html",
     "title": "Datasets Collection",
     "section": "",
-    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nSea Surface SST Data\n\n\n\n\n\n\n\n\nJun 26, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nUS Military Bases\n\n\n\ntechnical\n\narticle\n\ndataset\n\n\n\nUS Military Bases around the world\n\n\n\n\n\nJun 19, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nAwesome Sentinel\n\n\n\narticle\n\ndataset\n\nreference\n\n\n\nSentinel Ressources\n\n\n\n\n\nMay 28, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nNaher Osten Daten\n\n\nDatensammlung zu Themen im nahen Osten\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\narticle\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\narticle\n\nreference\n\ntechnical\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\nNo matching items"
+    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nMicrosoft Footprints\n\n\n\n\n\n\n\n\nJul 15, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nICON-EU Europe Temperature Forecast\n\n\n\n\n\n\n\n\nJul 2, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nSea Surface SST Data\n\n\n\n\n\n\n\n\nJun 26, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nUS Military Bases\n\n\n\ntechnical\n\narticle\n\ndataset\n\n\n\nUS Military Bases around the world\n\n\n\n\n\nJun 19, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nAwesome Sentinel\n\n\n\narticle\n\ndataset\n\nreference\n\n\n\nSentinel Ressources\n\n\n\n\n\nMay 28, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nNaher Osten Daten\n\n\nDatensammlung zu Themen im nahen Osten\n\n\n\n\n\nMay 20, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nOverture Maps\n\n\n\narticle\n\ndataset\n\n\n\nSome fancy derivate of osm data\n\n\n\n\n\nMay 18, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nDeepl Account Page\n\n\n\ntechnical\n\n\n\nGet the API Key…\n\n\n\n\n\nMay 17, 2025\n\n\n\n\n\n\n\n\n\n\n\n\nFonts For Data Visualization\n\n\n\narticle\n\nreference\n\ntechnical\n\nfonts_\n\n\n\nHow to choose the right fonts for data viz\n\n\n\n\n\nMay 16, 2025\n\n\n\n\n\nNo matching items"
   }
 ]

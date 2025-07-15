@@ -1,0 +1,13 @@
+---
+title: "ICON-EU Europe Temperature Forecast"
+date: "2025-07-02T14:21:33Z"
+dataset-url: "https://dwd-geoportal.de/products/G_D5M/"
+format: html
+---
+
+## Link
+
+- https://dwd-geoportal.de/products/G_D5M/
+
+
+

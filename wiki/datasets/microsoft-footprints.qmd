@@ -1,0 +1,11 @@
+---
+title: "Microsoft Footprints"
+date: "2025-07-15T08:12:28Z"
+dataset-url: "https://github.com/microsoft/GlobalMLBuildingFootprints?tab=readme-ov-file"
+format: html
+---
+
+## [Microsoft Footprints](https://github.com/microsoft/GlobalMLBuildingFootprints?tab=readme-ov-file)
+
+## Getting Data
+

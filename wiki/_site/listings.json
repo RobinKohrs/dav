@@ -2,6 +2,8 @@
   {
     "listing": "/datasets.html",
     "items": [
+      "/datasets/microsoft-footprints.html",
+      "/datasets/europe_weater_prediction.html",
       "/datasets/global-sea-surface-sst-data.html",
       "/datasets/us military bases.html",
       "/datasets/awesome-sentinel.html",
@@ -20,6 +22,8 @@
   {
     "listing": "/all-datasets.html",
     "items": [
+      "/datasets/microsoft-footprints.html",
+      "/datasets/europe_weater_prediction.html",
       "/datasets/global-sea-surface-sst-data.html",
       "/datasets/us military bases.html",
       "/datasets/awesome-sentinel.html",
