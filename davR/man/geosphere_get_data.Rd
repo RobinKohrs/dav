@@ -11,16 +11,17 @@ geosphere_get_data(
   end = NULL,
   station_ids = NULL,
   output_format = "csv",
+  return_format = c("file", "dataframe", "raw"),
+  output_file = NULL,
+  verbose = FALSE,
+  print_url = FALSE,
+  debug = FALSE,
+  timeout_seconds = 30,
   ...,
   api_url = "https://dataset.api.hub.geosphere.at",
   version = "v1",
   type = "timeseries",
-  mode = "historical",
-  return_format = c("file", "dataframe", "raw"),
-  output_file = NULL,
-  verbose = FALSE,
-  debug = FALSE,
-  timeout_seconds = 30
+  mode = "historical"
 )
 }
 \arguments{
@@ -36,6 +37,18 @@ geosphere_get_data(
 
 \item{output_format}{API output format (e.g., "csv").}
 
+\item{return_format}{R function return: "file", "dataframe", "raw".}
+
+\item{output_file}{Path for \code{return_format = "file"}.}
+
+\item{verbose}{If \code{TRUE}, prints "Requesting URL" message. Key success/fail messages always print.}
+
+\item{print_url}{If \code{TRUE}, prints the full URL that will be requested.}
+
+\item{debug}{Print detailed debug messages?}
+
+\item{timeout_seconds}{Request timeout.}
+
 \item{...}{Additional API query parameters.}
 
 \item{api_url}{Base API URL.}
@@ -45,16 +58,6 @@ geosphere_get_data(
 \item{type}{API data type (e.g., "timeseries").}
 
 \item{mode}{API data mode (e.g., "historical").}
-
-\item{return_format}{R function return: "file", "dataframe", "raw".}
-
-\item{output_file}{Path for \code{return_format = "file"}.}
-
-\item{verbose}{If \code{TRUE}, prints "Requesting URL" message. Key success/fail messages always print.}
-
-\item{debug}{Print detailed debug messages?}
-
-\item{timeout_seconds}{Request timeout.}
 }
 \value{
 Path, data frame, or httr response; NULL on failure.

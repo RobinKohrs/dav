@@ -11,5 +11,10 @@ format: html
 
 Some fancy derivate of osm data
 
+### Qgis Plugin to download data from Overture to geoparquet
+
+- https://plugins.qgis.org/plugins/qgis_plugin_gpq_downloader/
+
+
 ---
 [View External Link](https://overturemaps.org/download/){:target="_blank" rel="noopener noreferrer"}

@@ -9,3 +9,4 @@ format: html
 
 ## Getting Data
 
+- https://tech.marksblogg.com/microsofts-global-ml-building-footprints.html

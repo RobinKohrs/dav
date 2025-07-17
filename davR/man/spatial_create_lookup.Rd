@@ -9,7 +9,8 @@ spatial_create_lookup(
   output_base_dir,
   n_groups = 500,
   crs_output = "EPSG:4326",
-  seed = 123
+  seed = 123,
+  resampling_method = "bilinear"
 )
 }
 \arguments{
@@ -28,11 +29,14 @@ the standard for web maps.}
 
 \item{seed}{An integer to set the random seed for k-means clustering,
 ensuring reproducible results. Defaults to 123.}
+
+\item{resampling_method}{The resampling method for reprojection. Defaults to
+"bilinear". Use "near" for categorical data. See \code{terra::project}.}
 }
 \value{
 Invisibly returns a list containing the paths to the generated
-\code{main.csv} file and the directory of group CSVs. This is primarily for
-programmatic use; the main effect is writing files to disk.
+\code{main.csv} file, the directory of group CSVs, the path to the grid vector file,
+and the path to the reprojected raster file.
 }
 \description{
 This function processes a geospatial raster file (e.g., GeoTIFF or NetCDF)
