@@ -9,6 +9,8 @@ format: html
 
 A collection of images of the gaza strip by the planet satellites. Processed, unprocessed,...
 
+- [RecentMosaics of Gaza](https://drive.google.com/drive/folders/1B8ZecFh1koVmOKG-sLNffkLlD9etzWEV)
+
 ## [Reliefweb](https://reliefweb.int/updates)
 
 Reliefweb collects most important humanitarian reports from around the world
