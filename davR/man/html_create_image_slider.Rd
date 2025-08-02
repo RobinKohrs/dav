@@ -11,6 +11,10 @@ html_create_image_slider(
   alt_right_image = "Right image",
   label_left = NULL,
   label_right = NULL,
+  overlay_image_url = NULL,
+  alt_overlay_image = "Overlay image",
+  overlay_position = "bottom-right",
+  overlay_height = "40\%",
   initial_slider_position_percent = 50,
   slide_on_hover = TRUE,
   enable_drag = TRUE,
@@ -27,6 +31,7 @@ html_create_image_slider(
   label_text_color = "white",
   label_background_color = "rgba(0, 0, 0, 0.6)",
   label_padding = "5px 10px",
+  label_vertical_position = "bottom",
   border_radius = "8px",
   show_labels_on_hover = FALSE,
   slider_aria_label = "Image comparison slider"
@@ -46,6 +51,14 @@ Defaults to "Right image".}
 \item{label_left}{Optional. Character string. A label displayed on the left image (e.g., "Before").}
 
 \item{label_right}{Optional. Character string. A label displayed on the right image (e.g., "After").}
+
+\item{overlay_image_url}{Optional. Character string. URL for an overlay image displayed in the bottom-right corner.}
+
+\item{alt_overlay_image}{Character string. Alt text for the overlay image. Defaults to "Overlay image".}
+
+\item{overlay_position}{Character string. Position of the overlay image ("top-left", "top-right", "bottom-left", "bottom-right"). Defaults to "bottom-right".}
+
+\item{overlay_height}{Character string. A valid CSS value for the overlay image's height (e.g., "150px", "40\%", "auto"). Width will be scaled automatically. Defaults to "40\%".}
 
 \item{initial_slider_position_percent}{Numeric (0-100). Initial position of the slider divider.
 Defaults to 50 (centered).}
@@ -86,6 +99,8 @@ Defaults to "#333333".}
 Defaults to "rgba(0, 0, 0, 0.6)".}
 
 \item{label_padding}{Character string. CSS padding for labels (e.g., "5px 10px"). Defaults to "5px 10px".}
+
+\item{label_vertical_position}{Character string. Vertical position of labels ("top" or "bottom"). Defaults to "bottom".}
 
 \item{border_radius}{Character string. CSS \code{border-radius} for the main container. Defaults to "8px".}
 
