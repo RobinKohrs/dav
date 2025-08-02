@@ -1,4 +1,3 @@
-
 # --- GEOSPHERE_DATA_SCHEMAS ---
 # --- RESOURCE IDs ARE NOW CORRECT. FILENAME TEMPLATES AND PARAMETERS ARE EDUCATED GUESSES ---
 # --- YOU MUST VERIFY filename_templates, variable codes, and season codes! ---
@@ -36,11 +35,15 @@ GEOSPHERE_DATA_SCHEMAS = list(
       )
     ),
     filename_template = "SPARTACUS2-MONTHLY_{toupper(variable_type)}_{year}.nc",
-    resource_subpath_parts_template = c("filelisting", "{toupper(variable_type)}") # Added subpath structure
+    resource_subpath_parts_template = c(
+      "filelisting",
+      "{toupper(variable_type)}"
+    ) # Added subpath structure
   ),
 
   # --- SPARTACUS v2 Seasonal (Quarterly) Data ---
-  "spartacus-v2-1q-1km" = list( # Corrected from 1s to 1q
+  "spartacus-v2-1q-1km" = list(
+    # Corrected from 1s to 1q
     description = "SPARTACUS v2 Seasonal (Quarterly) Gridded Data (1km resolution)",
     parameters = list(
       year = list(type = "integer"),
@@ -71,13 +74,15 @@ GEOSPHERE_DATA_SCHEMAS = list(
         allowed_values = c("TM", "RR", "SA")
       )
     ),
-    # ASSUMPTION: Example: SPARTACUS2-YEARLY_TM_2020.nc
+    # UPDATED: Files are organized in subfolders by variable type
     filename_template = "SPARTACUS2-YEARLY_{toupper(variable_type)}_{year}.nc",
-    resource_subpath_parts_template = NULL # Assuming no subpath
+    resource_subpath_parts_template = c(
+      "filelisting",
+      "{toupper(variable_type)}"
+    ) # Files are in filelisting/VARIABLE subfolders
   )
 )
 # --- End of GEOSPHERE_DATA_SCHEMAS ---
-
 
 # Use usethis to save this list as internal package data (in R/sysdata.rda)
 # This makes GEOSPHERE_DATA_SCHEMAS available to your package functions
@@ -87,7 +92,9 @@ if (requireNamespace("usethis", quietly = TRUE)) {
   usethis::use_data(GEOSPHERE_DATA_SCHEMAS, internal = TRUE, overwrite = TRUE)
   message("GEOSPHERE_DATA_SCHEMAS saved to R/sysdata.rda")
 } else {
-  warning("`usethis` package not found. Cannot save GEOSPHERE_DATA_SCHEMAS to R/sysdata.rda automatically.\n",
-          "Please install `usethis` and run this script again, or manually save the object:\n",
-          "save(GEOSPHERE_DATA_SCHEMAS, file = \"R/sysdata.rda\")")
+  warning(
+    "`usethis` package not found. Cannot save GEOSPHERE_DATA_SCHEMAS to R/sysdata.rda automatically.\n",
+    "Please install `usethis` and run this script again, or manually save the object:\n",
+    "save(GEOSPHERE_DATA_SCHEMAS, file = \"R/sysdata.rda\")"
+  )
 }

@@ -51,13 +51,14 @@
 #' @param # --- Accessibility Parameters ---
 #' @param slider_aria_label Character string. ARIA label for the slider functionality, for screen readers.
 #'  Defaults to "Image comparison slider".
+#' @param label_position Character string. Position of the labels: "bottom" (default) or "top".
 #'
 #' @importFrom htmltools htmlEscape HTML
 #' @importFrom glue glue
 #' @importFrom jsonlite toJSON
 #' @export
 html_create_image_slider <- function(
-    # --- Content Parameters ---
+  # --- Content Parameters ---
   image_left_url,
   image_right_url,
   alt_left_image = "Left image",
@@ -87,28 +88,53 @@ html_create_image_slider <- function(
   show_labels_on_hover = FALSE,
 
   # --- Accessibility Parameters ---
-  slider_aria_label = "Image comparison slider"
+  slider_aria_label = "Image comparison slider",
+  # --- New Parameter ---
+  label_position = "bottom"
 ) {
-
   # --- Input Validations ---
-  if (missing(image_left_url) || !is.character(image_left_url) || nzchar(trimws(image_left_url)) == 0) {
+  if (
+    missing(image_left_url) ||
+      !is.character(image_left_url) ||
+      nzchar(trimws(image_left_url)) == 0
+  ) {
     stop("`image_left_url` must be a non-empty string.")
   }
-  if (missing(image_right_url) || !is.character(image_right_url) || nzchar(trimws(image_right_url)) == 0) {
+  if (
+    missing(image_right_url) ||
+      !is.character(image_right_url) ||
+      nzchar(trimws(image_right_url)) == 0
+  ) {
     stop("`image_right_url` must be a non-empty string.")
   }
-  if (!is.numeric(initial_slider_position_percent) || initial_slider_position_percent < 0 || initial_slider_position_percent > 100) {
-    warning("`initial_slider_position_percent` should be between 0 and 100. Clamping to nearest valid value.")
-    initial_slider_position_percent <- max(0, min(100, initial_slider_position_percent))
+  if (
+    !is.numeric(initial_slider_position_percent) ||
+      initial_slider_position_percent < 0 ||
+      initial_slider_position_percent > 100
+  ) {
+    warning(
+      "`initial_slider_position_percent` should be between 0 and 100. Clamping to nearest valid value."
+    )
+    initial_slider_position_percent <- max(
+      0,
+      min(100, initial_slider_position_percent)
+    )
+  }
+  if (!label_position %in% c("bottom", "top")) {
+    stop("`label_position` must be either 'bottom' or 'top'.")
   }
 
   # --- Generate Unique ID for the slider instance with "dj-" prefix ---
-  unique_suffix <- paste0(sample(c(letters, 0:9), 12, replace = TRUE), collapse = "")
+  unique_suffix <- paste0(
+    sample(c(letters, 0:9), 12, replace = TRUE),
+    collapse = ""
+  )
   slider_id <- paste0("dj-image-slider-", unique_suffix)
   script_tag_id <- paste0("djImageSliderScript_", unique_suffix) # Consistent with info_card
 
   # --- CSS Styles (with "dj-image-slider-" prefix) ---
-  css_styles <- glue::glue("
+  css_styles <- glue::glue(
+    "
     .dj-image-slider-container {{
       box-sizing: border-box;
       position: relative;
@@ -198,7 +224,7 @@ html_create_image_slider <- function(
     }}
     .dj-image-slider-label {{
       position: absolute;
-      bottom: 10px;
+      {if (label_position == 'top') 'top: 10px;' else 'bottom: 10px;'}
       padding: {label_padding};
       border-radius: 4px;
       font-family: {label_font_family};
@@ -211,16 +237,20 @@ html_create_image_slider <- function(
     }}
     .dj-image-slider-label.dj-image-slider-label-left {{ left: 10px; }}
     .dj-image-slider-label.dj-image-slider-label-right {{ right: 10px; }}
+    .dj-image-slider-label-top {{ top: 10px; bottom: auto !important; }}
+    .dj-image-slider-label-bottom {{ bottom: 10px; top: auto !important; }}
     .dj-image-slider-label-hidden {{
       opacity: 0;
     }}
     .dj-image-slider-container:hover .dj-image-slider-label-hidden {{
       opacity: 1;
     }}
-  ")
+  "
+  )
 
   # --- JavaScript for Slider Functionality ---
-  script_html <- glue::glue("
+  script_html <- glue::glue(
+    "
     <script id='{script_tag_id}'>
     (function() {{
       if (typeof window.djImageSlidersInitialized === 'undefined') {{
@@ -340,25 +370,37 @@ html_create_image_slider <- function(
       }}
     }})();
     </script>
-  ")
+  "
+  )
 
   # --- Configuration for JavaScript ---
-  js_config <- jsonlite::toJSON(list(
-    initialPos = initial_slider_position_percent,
-    slideOnHover = slide_on_hover,
-    enableDrag = enable_drag
-  ), auto_unbox = TRUE)
+  js_config <- jsonlite::toJSON(
+    list(
+      initialPos = initial_slider_position_percent,
+      slideOnHover = slide_on_hover,
+      enableDrag = enable_drag
+    ),
+    auto_unbox = TRUE
+  )
 
   # --- Main HTML Output ---
-  label_class <- if(show_labels_on_hover) "dj-image-slider-label dj-image-slider-label-hidden" else "dj-image-slider-label"
-  
+  label_class <- if (show_labels_on_hover) {
+    "dj-image-slider-label dj-image-slider-label-hidden"
+  } else {
+    "dj-image-slider-label"
+  }
+  label_class <- paste(
+    label_class,
+    paste0("dj-image-slider-label-", label_position)
+  )
+
   label_left_html <- ""
   if (!is.null(label_left) && nzchar(trimws(label_left))) {
     label_left_html <- glue::glue(
       '<div class="{label_class} dj-image-slider-label-left" style="font-family: {label_font_family}; font-size: {label_font_size}; color: {label_text_color}; background-color: {label_background_color}; padding: {label_padding};">{htmltools::htmlEscape(label_left)}</div>'
     )
   }
-  
+
   label_right_html <- ""
   if (!is.null(label_right) && nzchar(trimws(label_right))) {
     label_right_html <- glue::glue(
@@ -366,7 +408,8 @@ html_create_image_slider <- function(
     )
   }
 
-  html_output <- glue::glue('
+  html_output <- glue::glue(
+    '
     <style>
       {css_styles}
     </style>
@@ -402,7 +445,8 @@ html_create_image_slider <- function(
       </div>
     </div>
     {script_html}
-  ')
+  '
+  )
 
   return(htmltools::HTML(html_output))
 }

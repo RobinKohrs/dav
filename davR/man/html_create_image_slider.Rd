@@ -29,7 +29,8 @@ html_create_image_slider(
   label_padding = "5px 10px",
   border_radius = "8px",
   show_labels_on_hover = FALSE,
-  slider_aria_label = "Image comparison slider"
+  slider_aria_label = "Image comparison slider",
+  label_position = "bottom"
 )
 }
 \arguments{
@@ -94,6 +95,8 @@ Defaults to FALSE (always visible if provided).}
 
 \item{slider_aria_label}{Character string. ARIA label for the slider functionality, for screen readers.
 Defaults to "Image comparison slider".}
+
+\item{label_position}{Character string. Position of the labels: "bottom" (default) or "top".}
 
 \item{#}{--- Accessibility Parameters ---}
 }

@@ -22,7 +22,7 @@ setup_dav_navigation() {
 
     # Get the absolute path of the dav directory (where setup.sh is located)
     dav_dir="$(dirname "$(get_absolute_path "$0")")"
-    nav_script_path="$dav_dir/wiki/helper_scripts/setup_dav_navigation.sh"
+    nav_script_path="$dav_dir/wiki/helper_scripts/dav_setup_dav_navigation.sh"
     target_link_path="$LINK_DIR/dav"
 
     # Verify the navigation script exists

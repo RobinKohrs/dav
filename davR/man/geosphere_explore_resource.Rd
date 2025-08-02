@@ -24,6 +24,8 @@ geosphere_explore_resource(
 
 \item{print_summary}{Logical. If \code{TRUE} (default), print a formatted summary
 to the console for each combination found.}
+
+\item{timeout_seconds}{Numeric. Timeout in seconds for HTTP requests. Defaults to 2.}
 }
 \value{
 A named list where each element corresponds to a unique combination of
@@ -50,17 +52,16 @@ This function first retrieves the list of all available datasets using
 \code{geosphere_get_datasets}. It then filters for the specified \code{resource_id}.
 For each unique combination of type, mode, and format found for that ID, it
 retrieves descriptive metadata (available parameters, time range, etc.)
-from the resource's \verb{/metadata} endpoint using \code{geosphere_get_resource_metadata}.
+from the resource's \verb{/metadata} endpoint via direct HTTP calls.
 Finally, for each combination, it makes a deliberate (parameter-less) request
 to the main \emph{data} endpoint to provoke an error message. By parsing this error
 message (typically JSON with a 'detail' field), it accurately identifies the
 query parameters that the API requires for that specific data endpoint.
-Requires \code{geosphere_get_datasets} and \code{geosphere_get_resource_metadata}
-functions to be available.
+Requires \code{geosphere_get_datasets} function to be available.
 }
 \examples{
 \dontrun{
-# Assume geosphere_get_datasets and geosphere_get_resource_metadata are available
+# Requires geosphere_get_datasets to be available
 
 # Explore a resource known to have multiple combinations
 exploration_results = geosphere_explore_resource(

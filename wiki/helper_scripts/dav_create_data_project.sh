@@ -208,8 +208,17 @@ if [[ "$PROJECT_CATEGORY" == "Personal" || "$PROJECT_CATEGORY" == "NDR" || "$PRO
   if [ -z "$PROJECT_NAME_FOR_FILES" ]; then print_error_dpc "Sanitized project name is empty. Use alphanumeric characters."; fi
   gum format -- "- Core project name (for files & dir part) set to: **$PROJECT_NAME_FOR_FILES**"
   PROJECT_CATEGORY_LOWER=$(echo "$PROJECT_CATEGORY" | tr '[:upper:]' '[:lower:]')
-  PROJECT_DIR_LEAF_NAME="$PROJECT_YEAR-$PROJECT_MONTH-$PROJECT_NAME_FOR_FILES"
-  TARGET_PROJECT_ROOT_DIR="$BASE_PROJECT_DIR_RESOLVED/$PROJECT_CATEGORY_LOWER/$PROJECT_YEAR/$PROJECT_DIR_LEAF_NAME"
+  
+  # Different directory structures based on project category
+  if [[ "$PROJECT_CATEGORY" == "DST" || "$PROJECT_CATEGORY" == "NDR" ]]; then
+    # For DST and NDR: <year>/<mm>/<year>_<mm>_<project_name>
+    PROJECT_DIR_LEAF_NAME="${PROJECT_YEAR}_${PROJECT_MONTH}_${PROJECT_NAME_FOR_FILES}"
+    TARGET_PROJECT_ROOT_DIR="$BASE_PROJECT_DIR_RESOLVED/$PROJECT_CATEGORY_LOWER/$PROJECT_YEAR/$PROJECT_MONTH/$PROJECT_DIR_LEAF_NAME"
+  else
+    # For Personal and other categories: keep original structure <year>/<year>-<month>-<project_name>
+    PROJECT_DIR_LEAF_NAME="$PROJECT_YEAR-$PROJECT_MONTH-$PROJECT_NAME_FOR_FILES"
+    TARGET_PROJECT_ROOT_DIR="$BASE_PROJECT_DIR_RESOLVED/$PROJECT_CATEGORY_LOWER/$PROJECT_YEAR/$PROJECT_DIR_LEAF_NAME"
+  fi
 elif [[ "$PROJECT_CATEGORY" == "Custom (select parent directory anywhere)" ]]; then
   gum format -- "- Selected category: **Custom**"
   CORE_PROJECT_NAME_DISPLAY=$(gum input --placeholder "Enter a name for your new project folder (e.g., 'Ad Hoc Report')" --header "Project Folder Name:")
