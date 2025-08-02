@@ -10,3 +10,7 @@ format: html
 ## Getting Data
 
 - https://tech.marksblogg.com/microsofts-global-ml-building-footprints.html
+
+## Erfahrungen
+- Häufig sind die Bulding Daten von OSM mindestens so genau wie die Daten von Microsoft!
+- Overture Maps auschecken!
