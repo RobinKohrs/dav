@@ -1,7 +1,7 @@
 ---
-title: "Temperaturen in der Nacht"
+title: "Klimaberichterstattung in den österreichischen Medien"
 author: "Robin Kohrs / Netzwerk Klimajournalismus"
-date: "2025-04-27" # Use specific date, or "today" to auto-update on render
+date: "2025-08-01" # Use specific date, or "today" to auto-update on render
 date-format: "DD MMMM YYYY" # Optional: How the date is displayed (e.g., 17 October 2023)
 
 # -------------------------------------
@@ -16,11 +16,4 @@ execute:
   # error: true # Set to 'false' to stop rendering on code errors
 ---
 
-
-## Mobile
-
-![mobile](images/tropennächte/mobile.png)
-
-## Desktop
-
-![desktop](images/tropennächte/desktop.png)
+# Graphics go here

@@ -2,6 +2,7 @@
   {
     "listing": "/datasets.html",
     "items": [
+      "/datasets/wien_gebäude.html",
       "/datasets/microsoft-footprints.html",
       "/datasets/europe_weater_prediction.html",
       "/datasets/global-sea-surface-sst-data.html",
@@ -16,12 +17,14 @@
   {
     "listing": "/climate_analyses.html",
     "items": [
-      "/climate-analyses/kjn_tropennächte.html"
+      "/climate-analyses/kjn/2025-08-klimaberichterstattung/2025-08-klimaberichterstattung.html",
+      "/climate-analyses/kjn/tropennächte/kjn_tropennächte.html"
     ]
   },
   {
     "listing": "/all-datasets.html",
     "items": [
+      "/datasets/wien_gebäude.html",
       "/datasets/microsoft-footprints.html",
       "/datasets/europe_weater_prediction.html",
       "/datasets/global-sea-surface-sst-data.html",
