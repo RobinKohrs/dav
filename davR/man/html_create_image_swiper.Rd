@@ -4,7 +4,11 @@
 \alias{html_create_image_swiper}
 \title{Create a Self-Contained HTML Image Swiper}
 \usage{
-html_create_image_swiper(image_data, overlay_path = NULL)
+html_create_image_swiper(
+  image_data,
+  overlay_path = NULL,
+  gradient_color = "#c1d9d9"
+)
 }
 \arguments{
 \item{image_data}{A list of lists. Each inner list must contain a \code{path}
@@ -12,6 +16,9 @@ html_create_image_swiper(image_data, overlay_path = NULL)
 (a string to be displayed over the image).}
 
 \item{overlay_path}{An optional string specifying the path to an overlay image.}
+
+\item{gradient_color}{An optional string specifying the color for the edge gradient.
+Defaults to "#c1d9d9" (light blue-green). Set to NULL to disable the gradient.}
 }
 \value{
 An \code{htmltools::tagList} object that can be rendered directly in
@@ -33,7 +40,8 @@ image_list <- list(
 # Create the swiper (will be an HTML object)
 swiper_widget <- html_create_image_swiper(
   image_data = image_list,
-  overlay_path = "http://b.staticfiles.at/elm/static/2025-dateien/slider_overview_final.png"
+  overlay_path = "http://b.staticfiles.at/elm/static/2025-dateien/slider_overview_final.png",
+  gradient_color = "#c1d9d9"  # Optional: customize gradient color or set to NULL to disable
 )
 
 }

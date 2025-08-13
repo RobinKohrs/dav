@@ -43,7 +43,12 @@ Data on money flows on humanitarian aid funding
 
 - [Damaged Vegetation in the Gaza Strip](https://oregonstate.app.box.com/s/jrmg6osfns03tvkxa2kmuekmy5banmt4)
 
+## Cogat
 
+Daten zu der Hilfe, die in den Gazastreifen reingelassen wird: https://gaza-aid-data.gov.il/main/
+
+## Schätzungen für benötigte Hilfe für den Gazstreifen
+https://www.ipcinfo.org/fileadmin/user_upload/ipcinfo/docs/IPC_GazaStrip_Alert_July2025.pdf
 
 
 

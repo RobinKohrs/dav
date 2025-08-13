@@ -2,9 +2,19 @@
 % Please edit documentation in R/geosphere_get_datasets.R
 \name{geosphere_get_datasets}
 \alias{geosphere_get_datasets}
+\alias{geosphere_find_datasets}
 \title{Find Available Geosphere Datasets}
 \usage{
 geosphere_get_datasets(
+  url = "https://dataset.api.hub.geosphere.at/v1/datasets",
+  user_agent = "davR",
+  filter_keywords = NULL,
+  filter_type = NULL,
+  filter_mode = NULL,
+  add_resource_id = TRUE
+)
+
+geosphere_find_datasets(
   url = "https://dataset.api.hub.geosphere.at/v1/datasets",
   user_agent = "davR",
   filter_keywords = NULL,

@@ -15,7 +15,9 @@ geosphere_archive_station_data(
   time_batch_size = "month",
   api_delay_secs = 0.2,
   api_url = "https://dataset.api.hub.geosphere.at",
-  print_url = FALSE
+  print_url = FALSE,
+  download_all_params = FALSE,
+  interactive = TRUE
 )
 }
 \arguments{
@@ -42,6 +44,13 @@ the current system date.}
 \item{api_url}{Base URL for the Geosphere API.}
 
 \item{print_url}{If \code{TRUE}, prints the full URL that will be requested for each API call.}
+
+\item{download_all_params}{Logical. If \code{TRUE}, downloads data for all available parameters
+for the resource instead of using the \code{params} argument. Requires user confirmation in
+interactive sessions. Defaults to \code{FALSE}.}
+
+\item{interactive}{Logical. If \code{TRUE} (default), prompts for user confirmation when
+\code{download_all_params = TRUE}. If \code{FALSE}, proceeds automatically with all parameters.}
 }
 \value{
 Invisibly returns a list containing counts of downloaded, skipped,
@@ -51,4 +60,31 @@ and failed files.
 Downloads data from Geosphere and saves it to a local archive by batching
 stations and time periods to minimize API calls. Respects API rate limits
 (5 requests/second, 240/hour) and request size limits (1M values for CSV).
+}
+\examples{
+\dontrun{
+  # Basic usage with default parameters
+  geosphere_archive_station_data(
+    resource_id = "klima-v2-1d",
+    start_date = "2024-01-01",
+    end_date = "2024-01-31"
+  )
+
+  # Download all available parameters (with confirmation prompt)
+  geosphere_archive_station_data(
+    resource_id = "klima-v2-1d",
+    download_all_params = TRUE,
+    start_date = "2024-01-01",
+    end_date = "2024-01-31"
+  )
+
+  # Non-interactive mode with all parameters
+  geosphere_archive_station_data(
+    resource_id = "klima-v2-1d",
+    download_all_params = TRUE,
+    interactive = FALSE,
+    start_date = "2024-01-01",
+    end_date = "2024-01-31"
+  )
+}
 }

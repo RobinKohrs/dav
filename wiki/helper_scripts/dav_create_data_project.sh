@@ -298,37 +298,14 @@ else
     gum format -- "- Git repository already exists."
 fi
 
-gum format -- "- Creating/Updating .gitignore..."
+gum format -- "- Creating minimal .gitignore (relying on smart git add for intelligent file handling)..."
 cat << EOF_GITIGNORE > ".gitignore"
-# --- General ---
-.DS_Store;.DS_Store?;._*;.Spotlight-V100;.Trashes;ehthumbs.db;Thumbs.db;*~
-# --- Common Data and Output Folders ---
-data_raw/;# data_output/;.graphic_output/;.temp/;.cache/
-# --- R ---
-.Rhistory;.Rapp.history;.RData;.Ruserdata;.Rproj.user/;R/.Rhistory;R/.RData;R/*_cache/;R/cache/;.Renviron;.httr-oauth;rsconnect/
-# --- QGIS ---
-*.qgs~;*.qgz~
-# --- Python ---
-.venv/;venv/;.pyc;__pycache__/;.env;.python-version;.mypy_cache/;.pytest_cache/;.ruff_cache/
-# --- Quarto ---
-_site/;_freeze/;.quarto/
-# --- Large Files (Git LFS) ---
-# *.tif;*.gpkg;*.shp;*.parquet;*.feather;*.rds;*.pdf;*.pptx;*.docx;*.zip;*.tar.gz
-# --- Secrets ---
-*.cred;*.secret;credentials.*;secret.*;*key*;*token*;*.pem;*.key
-# --- OS Specific ---
-desktop.ini
-# --- IDEs ---
-.vscode/;.idea/;.swp;*.swo;nbproject/;.sublime-project;*.sublime-workspace
-# --- Node.js ---
-node_modules/;npm-debug.log*;yarn-debug.log*;yarn-error.log*
-# --- Compiled output ---
-build/;dist/;out/;target/
-# --- Log files ---
-*.log;logs/
+# R history files
+.Rhistory
+
+# Backup files
+*~
 EOF_GITIGNORE
-# Convert semicolons to newlines for .gitignore
-awk '{gsub(/;/,"\n")}1' .gitignore > .gitignore_tmp && mv .gitignore_tmp .gitignore
 
 
 gum format -- "- Creating common project subdirectories..."

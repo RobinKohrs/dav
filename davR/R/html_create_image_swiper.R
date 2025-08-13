@@ -8,6 +8,8 @@
 #'   (a string for the image source URL) and can optionally contain a `caption`
 #'   (a string to be displayed over the image).
 #' @param overlay_path An optional string specifying the path to an overlay image.
+#' @param gradient_color An optional string specifying the color for the edge gradient.
+#'   Defaults to "#c1d9d9" (light blue-green). Set to NULL to disable the gradient.
 #'
 #' @return An `htmltools::tagList` object that can be rendered directly in
 #'   R Markdown, Shiny, or other HTML-supporting R environments.
@@ -25,11 +27,16 @@
 #' # Create the swiper (will be an HTML object)
 #' swiper_widget <- html_create_image_swiper(
 #'   image_data = image_list,
-#'   overlay_path = "http://b.staticfiles.at/elm/static/2025-dateien/slider_overview_final.png"
+#'   overlay_path = "http://b.staticfiles.at/elm/static/2025-dateien/slider_overview_final.png",
+#'   gradient_color = "#c1d9d9"  # Optional: customize gradient color or set to NULL to disable
 #' )
 #'
 #' @export
-html_create_image_swiper <- function(image_data, overlay_path = NULL) {
+html_create_image_swiper <- function(
+  image_data,
+  overlay_path = NULL,
+  gradient_color = "#c1d9d9"
+) {
   # Validate input
   if (!is.list(image_data) || length(image_data) == 0) {
     stop('`image_data` must be a non-empty list of lists with a `path`.')
@@ -69,6 +76,16 @@ html_create_image_swiper <- function(image_data, overlay_path = NULL) {
     )
   }
 
+  # Generate gradient CSS based on the gradient_color parameter
+  gradient_css <- ""
+  if (!is.null(gradient_color)) {
+    gradient_css <- sprintf(
+      ".gradient { position: absolute; width: 100%%; height: 100%%; background-image: linear-gradient(to right, %s 0%%, transparent 10%%, transparent 83%%, %s 100%%); z-index: 10; pointer-events: none; top: 0; left: 0; }",
+      gradient_color,
+      gradient_color
+    )
+  }
+
   # SVG for navigation buttons as raw HTML
   prev_svg <- HTML(
     '<svg viewBox="0 0 1200 1200" xmlns="http://www.w3.org/2000/svg"><path d="m825.84 1176c-29.668 0.035156-58.195-11.453-79.559-32.039l-432.84-417.6c-22.719-21.879-39.117-49.48-47.469-79.895-8.3555-30.414-8.3555-62.516 0-92.93 8.3516-30.414 24.75-58.016 47.469-79.895l432.84-417.6c29.453-28.402 71.82-38.934 111.14-27.629 39.324 11.305 69.629 42.734 79.5 82.441 9.8711 39.707-2.1914 81.664-31.645 110.07l-393 379.08 393 379.08c22.039 21.238 34.66 50.418 35.039 81.027 0.37891 30.605-11.516 60.09-33.027 81.867-21.508 21.773-50.844 34.031-81.453 34.027z"/></svg>'
@@ -77,7 +94,7 @@ html_create_image_swiper <- function(image_data, overlay_path = NULL) {
 
   # Define the complete HTML structure using htmltools
   swiper_component <- tagList(
-    tags$style(HTML(
+    tags$style(HTML(paste0(
       "
       .basic-slider-container { position: relative; width: 100%; max-width: 615px; font-family: STMatilda Info Variable, system-ui, sans-serif; }
       .image-wrapper { position: relative; width: 100%; overflow: hidden; }
@@ -87,7 +104,9 @@ html_create_image_swiper <- function(image_data, overlay_path = NULL) {
       .basic-slider-item img { display: block; width: 100%; height: 100%; border-radius: 5px; }
       .basic-slider-item:last-child { padding-right: 30px; }
       .dj-caption { position: absolute; top: 5px; left: 5px; z-index: 20; background: rgba(0, 0, 0, 0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 20px; font-weight: 400; }
-      .gradient { position: absolute; width: 100%; height: 100%; background-image: linear-gradient(to right, #c1d9d9 0%, transparent 10%, transparent 83%, #c1d9d9 100%); z-index: 10; pointer-events: none; top: 0; left: 0; }
+      ",
+      gradient_css,
+      "
       .slider-overview { position: absolute; bottom: 0; right: 0; height: 46%; z-index: 30; max-width: 100%; }
       .nav-button { position: absolute; top: 40%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.5); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 0; }
       .nav-button svg { width: 24px; height: 24px; fill: currentColor; }
@@ -100,12 +119,12 @@ html_create_image_swiper <- function(image_data, overlay_path = NULL) {
       .dot { width: 10px; height: 10px; border-radius: 50%; background: #efefef; cursor: pointer; transition: all 0.15s ease; }
       .dot.active { background: #454545; transform: scale(1.5); }
     "
-    )),
+    ))),
     tags$div(
       class = "basic-slider-container",
       tags$div(
         class = "image-wrapper",
-        tags$div(class = "gradient"),
+        if (!is.null(gradient_color)) tags$div(class = "gradient"),
         tags$div(class = "basic-slider-scroll", slider_items),
         overlay_tag,
         tags$button(class = "nav-button prev", prev_svg),
