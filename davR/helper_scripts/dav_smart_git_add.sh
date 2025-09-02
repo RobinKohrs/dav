@@ -3,6 +3,16 @@
 # Detects files >90MB, asks for confirmation, then moves them to iCloud and adds to .gitignore
 # Remaining files are added to git normally
 # Usage: This script should be aliased to override 'git add'
+#
+# To set up the alias, add this function to your ~/.zshrc file:
+# git() {
+#     if [[ $1 == "add" ]]; then
+#         shift
+#         "/Users/rk/projects/personal/dav/davR/helper_scripts/dav_smart_git_add.sh" "$@"
+#     else
+#         command git "$@"
+#     fi
+# }
 
 # Source common DAV functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
