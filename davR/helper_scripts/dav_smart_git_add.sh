@@ -21,7 +21,7 @@ source "$SCRIPT_DIR/dav_common.sh"
 # Check if we're in a git repository
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo "Error: Not in a git repository. Please run this from a git repository."
-    exit 1
+    return 1
 fi
 
 # Get project information for iCloud path

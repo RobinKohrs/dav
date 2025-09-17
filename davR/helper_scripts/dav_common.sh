@@ -2,7 +2,7 @@
 
 # --- DAV Common Configuration ---
 # This file contains shared configuration and functions for all DAV helper scripts.
-# Source this file in your script with: source "$(dirname "$0")/dav_common.sh"
+# It should be sourced by other scripts.
 
 # --- Shared Configuration File Details ---
 DAV_CONFIG_DIR="$HOME/.config/dav"
