@@ -1,0 +1,49 @@
+# Gaza Summary Data Functions
+# ==============================================================================
+
+#' Fetches summary data across all datasets
+#'
+#' This includes the latest cumulative values for casualties in Gaza and the West Bank,
+#' and demographic composition for the 'Killed in Gaza' name list. This function is
+#' useful for getting a quick overview and for dynamically finding the page count
+#' for the `gaza_killed_in_gaza` function.
+#'
+#' @details
+#' The summary data provides:
+#' \itemize{
+#'   \item \strong{Gaza section}: Latest cumulative values from daily reports including total killed, children killed, women killed, medical personnel killed, journalists killed, injured totals, and famine-related deaths
+#'   \item \strong{West Bank section}: Latest cumulative values including total killed, children killed, injured totals, and settler attacks
+#'   \item \strong{Known killed in Gaza}: Demographic breakdown by gender and age groups from the names list
+#'   \item \strong{Known press killed in Gaza}: Count of journalists in the names list
+#' }
+#'
+#' @return A list containing the summary data with sections for gaza, west_bank, known_killed_in_gaza, and known_press_killed_in_gaza
+#'
+#' @examples
+#' # Get latest summary statistics
+#' summary_info = gaza_summary_data()
+#' print(summary_info$gaza$killed$total)
+#' print(summary_info$known_killed_in_gaza$pages)
+#'
+#' # Get latest Gaza statistics
+#' gaza_stats = summary_info$gaza
+#' cat("Total killed in Gaza:", gaza_stats$killed$total, "\n")
+#' cat("Children killed:", gaza_stats$killed$children, "\n")
+#' cat("Women killed:", gaza_stats$killed$women, "\n")
+#'
+#' @export
+gaza_summary_data = function() {
+    url = paste0(BASE_URL, "/v3/summary.min.json")
+    message(paste("Fetching summary data from:", url))
+    response = httr::GET(url)
+
+    if (httr::status_code(response) == 200) {
+        content = httr::content(response, "text", encoding = "UTF-8")
+        return(jsonlite::fromJSON(content))
+    } else {
+        stop(paste(
+            "Failed to fetch summary data. Status code:",
+            httr::status_code(response)
+        ))
+    }
+}
