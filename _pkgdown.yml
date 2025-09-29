@@ -1,0 +1,5 @@
+url: https://robinkohrs.github.io/dav/
+destination: docs
+template:
+  bootstrap: 5
+
