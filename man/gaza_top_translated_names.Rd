@@ -18,9 +18,13 @@ This dataset is used to derive estimates of children killed for the home page na
 \examples{
 # Get top translated names by age group
 top_names = gaza_top_translated_names()
-print(top_names$girl)
-print(top_names$boy)
-print(top_names$woman)
-print(top_names$man)
+print(top_names$lists$girl)
+print(top_names$lists$boy)
+print(top_names$lists$woman)
+print(top_names$lists$man)
+
+# Get child counts
+print(top_names$totalPeople$boy)   # Total boys: 10656
+print(top_names$totalPeople$girl)   # Total girls: 7801
 
 }

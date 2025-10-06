@@ -35,7 +35,8 @@ setup_template() {
     local template="$1"
     BASE_DIR="$HOME/projects"
     YEAR=$(date +%Y)
-    MONTH=$(printf "%02d" $(date +%m))
+    # Use date's zero-padded month directly to avoid octal interpretation issues (e.g., 08/09)
+    MONTH=$(date +%m)
     
     case "$template" in
         "basic-dst")
@@ -353,23 +354,107 @@ if gum confirm "Make initial commit?"; then
     git commit -m "Initial structure for $PROJECT_NAME"
 fi
 
-# Open applications at the end
-if [ "$ADD_R" = true ] && command -v open >/dev/null; then
-    # Open RStudio with the init.R file
-    open "$PROJECT_SLUG.Rproj" 2>/dev/null &
-    sleep 3
+# Open applications at the end (interactive selection)
+echo ""
+if command -v gum >/dev/null 2>&1; then
+    AVAILABLE_APPS=()
+    APP_LABELS=()
+    # Always offer editor and terminal
+    AVAILABLE_APPS+=("cursor")
+    APP_LABELS+=("📝 Cursor/VS Code")
+    AVAILABLE_APPS+=("terminal")
+    APP_LABELS+=("💻 Terminal (cd to project)")
+    # Conditionally offer RStudio/QGIS
+    if [ "$ADD_R" = true ]; then
+        AVAILABLE_APPS+=("rstudio")
+        APP_LABELS+=("📊 RStudio (.Rproj)")
+    fi
+    if [ "$ADD_QGIS" = true ]; then
+        AVAILABLE_APPS+=("qgis")
+        APP_LABELS+=("🗺️  QGIS (.qgs)")
+    fi
+
+    echo "Which apps do you want to open now?"
+    # gum choose prints the selected values, one per line
+    SELECTED=$(printf '%s\n' "${AVAILABLE_APPS[@]}" | gum choose --no-limit --header "Open applications:" --height 8)
+    if [ -n "$SELECTED" ]; then
+        while IFS= read -r app; do
+            case "$app" in
+                "cursor")
+                    if command -v cursor >/dev/null 2>&1; then
+                        cursor . 2>/dev/null &
+                    elif command -v code >/dev/null 2>&1; then
+                        code . 2>/dev/null &
+                    else
+                        echo "Editor not found (cursor/code)."
+                    fi
+                    ;;
+                "terminal")
+                    # Prefer iTerm2 if available, fallback to Terminal (macOS)
+                    if command -v osascript >/dev/null 2>&1; then
+                        # Check for iTerm by trying to get its version silently
+                        if osascript -e 'tell application id "com.googlecode.iterm2" to version' >/dev/null 2>&1; then
+                            osascript >/dev/null 2>&1 <<OSA
+tell application id "com.googlecode.iterm2"
+    if (exists current window) then
+        tell current window
+            create tab with default profile
+            tell current session
+                write text "cd '$PROJECT_ROOT_DIR'"
+            end tell
+        end tell
+    else
+        create window with default profile
+        tell current session of current window
+            write text "cd '$PROJECT_ROOT_DIR'"
+        end tell
+    end if
+    activate
+end tell
+OSA
+                        else
+                            osascript >/dev/null 2>&1 <<OSA
+tell application "Terminal"
+    do script "cd '$PROJECT_ROOT_DIR'"
+    activate
+end tell
+OSA
+                        fi
+                    fi
+                    ;;
+                "rstudio")
+                    if [ -f "$PROJECT_SLUG.Rproj" ] && command -v open >/dev/null 2>&1; then
+                        open "$PROJECT_SLUG.Rproj" 2>/dev/null &
+                    else
+                        echo "Cannot open RStudio project file."
+                    fi
+                    ;;
+                "qgis")
+                    if [ -f "$PROJECT_SLUG.qgs" ] && command -v open >/dev/null 2>&1; then
+                        open "$PROJECT_SLUG.qgs" 2>/dev/null &
+                    else
+                        echo "Cannot open QGIS project file."
+                    fi
+                    ;;
+            esac
+        done <<EOF
+$SELECTED
+EOF
+    fi
+else
+    # Fallback: open nothing automatically, but show clear instructions
+    echo "You can now open any of these from the project folder:"
+    echo "- Cursor: cursor ."
+    echo "- VS Code: code ."
+    [ "$ADD_R" = true ] && echo "- RStudio: open '$PROJECT_SLUG.Rproj'"
+    [ "$ADD_QGIS" = true ] && echo "- QGIS: open '$PROJECT_SLUG.qgs'"
 fi
 
-if [ "$ADD_QGIS" = true ] && command -v open >/dev/null; then
-    open "$PROJECT_SLUG.qgs" 2>/dev/null &
-    sleep 3
-fi
-
-if command -v cursor >/dev/null; then
-    cursor . 2>/dev/null &
-elif command -v code >/dev/null; then
-    code . 2>/dev/null &
-fi
+# Graceful success message
+echo ""
+echo "✅ Project created successfully!"
+echo "📂 Location: $PROJECT_ROOT_DIR"
+echo "📝 README: $PROJECT_ROOT_DIR/README.md"
 
 SCRIPT_SUCCESSFUL=true
-return 0
+exit 0

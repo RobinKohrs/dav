@@ -201,3 +201,70 @@ gaza_killed = function(
         stop("Invalid format. Please use 'df', 'csv', 'json', or 'page'.")
     }
 }
+
+#' Fetches and processes the v3 list of known individuals killed in Gaza
+#'
+#' This function retrieves the dataset of names of those killed in Gaza from the v3 API endpoint.
+#' It then processes the data to create a time-series of cumulative deaths based on the release dates.
+#'
+#' @return A data frame with daily cumulative deaths, children deaths, and press deaths.
+#'
+#' @export
+gaza_killed_v3 <- function() {
+    url <- "https://data.techforpalestine.org/api/v3/killed-in-gaza.min.json"
+    message(paste("Fetching data from:", url))
+
+    response <- httr::GET(url)
+    if (httr::status_code(response) != 200) {
+        stop(paste(
+            "Failed to fetch data. Status code:",
+            httr::status_code(response)
+        ))
+    }
+
+    content <- httr::content(response, "text", encoding = "UTF-8")
+    json_data <- jsonlite::fromJSON(content)
+
+    # The first element is the header
+    header <- json_data[[1]]
+    data_rows <- json_data[-1]
+
+    df <- as.data.frame(do.call(rbind, data_rows))
+    colnames(df) <- header
+
+    df$age <- as.numeric(as.character(df$age))
+    df$update <- as.integer(as.character(df$update))
+
+    # Release dates mapped from the 'update' field, based on gaza_killed.R documentation
+    release_dates <- c(
+        `1` = as.Date("2024-01-05"), # Actually from Nov 2nd 2023 for North, but this is the first release date mentioned
+        `2` = as.Date("2024-03-29"),
+        `3` = as.Date("2024-04-30"),
+        `4` = as.Date("2024-06-30"),
+        `5` = as.Date("2024-08-31"),
+        `6` = as.Date("2025-03-23"),
+        `7` = as.Date("2025-06-15"),
+        `8` = as.Date("2025-07-15"),
+        `9` = as.Date("2025-07-31")
+    )
+
+    df$report_date <- release_dates[df$update]
+
+    # 'sex' column for women, 'age' for children. 'press' seems unavailable.
+    processed_data <- df |>
+        dplyr::group_by(report_date) |>
+        dplyr::summarise(
+            killed = dplyr::n(),
+            children_killed = sum(age < 18, na.rm = TRUE),
+            women_killed = sum(sex == 'f', na.rm = TRUE)
+        ) |>
+        dplyr::ungroup() |>
+        dplyr::arrange(report_date) |>
+        dplyr::mutate(
+            killed_cum = cumsum(killed),
+            children_killed_cum = cumsum(children_killed),
+            women_killed_cum = cumsum(women_killed)
+        )
+
+    return(processed_data)
+}
