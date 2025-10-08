@@ -64,6 +64,27 @@ add_project() {
     fi
 }
 
+# Remove a project from the config
+remove_project() {
+    local project_name="$1"
+
+    if ! jq -e --arg name "$project_name" '.projects[] | select(.name == $name)' "$PROJECTS_CONFIG_FILE" > /dev/null 2>&1; then
+        echo "Project '$project_name' not found."
+        return 1
+    fi
+
+    local updated_config
+    updated_config=$(jq --arg name "$project_name" 'del(.projects[] | select(.name == $name))' "$PROJECTS_CONFIG_FILE")
+
+    if echo "$updated_config" | jq -e . >/dev/null 2>&1; then
+        echo "$updated_config" > "$PROJECTS_CONFIG_FILE"
+        echo "Removed project: $project_name"
+    else
+        echo "Error: Failed to remove project. The configuration file might be corrupt."
+        return 1
+    fi
+}
+
 # List all projects
 list_projects() {
     if [ ! -f "$PROJECTS_CONFIG_FILE" ]; then
@@ -188,7 +209,7 @@ select_project() {
     
     # Use fzf if available (best experience), then gum, then fallback
     if command -v fzf >/dev/null 2>&1; then
-        local selected=$(echo "$projects_info" | fzf --height=40% --border --header="🎯 Select a project:" --preview="echo 'Project details:' && echo {}" --preview-window=up:3 | cut -d'|' -f1 | xargs)
+        local selected=$(echo "$projects_info" | fzf --height=60% --border --header="🎯 Select a project:" --preview="echo 'Project details:' && echo {}" --preview-window=up:3 | cut -d'|' -f1 | xargs)
         [ -z "$selected" ] && return 1
         echo "$selected"
     elif command -v gum >/dev/null 2>&1; then
@@ -281,22 +302,18 @@ open_project() {
             fi
             ;;
         "r"|"rstudio")
-            # New method: Use the direct path from config if available
-            local r_proj_file
-            r_proj_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .r_proj_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
-            
-            # Fallback for older entries: find the file
-            if [ -z "$r_proj_file" ] || [ "$r_proj_file" == "null" ]; then
-                r_proj_file=$(find "$project_path" -maxdepth 1 -name "*.Rproj" -type f | head -1)
-            fi
+            local r_proj_files
+            r_proj_files=$(find "$project_path" -name "*.Rproj" -type f)
 
-            if [ -n "$r_proj_file" ] && [ -f "$r_proj_file" ]; then
-                if command -v open >/dev/null 2>&1; then
-                    open "$r_proj_file" &
-                else
-                    echo "Cannot open .Rproj file: $r_proj_file"
-                    return 1
-                fi
+            if [ -n "$r_proj_files" ]; then
+                echo "$r_proj_files" | while IFS= read -r r_proj_file; do
+                    if command -v open >/dev/null 2>&1; then
+                        echo "Opening RStudio project: $r_proj_file"
+                        open "$r_proj_file" &
+                    else
+                        echo "Cannot open .Rproj file: $r_proj_file"
+                    fi
+                done
             else
                 echo "No .Rproj file found in project directory"
                 return 1
@@ -308,7 +325,7 @@ open_project() {
             qgs_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .qgs_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
 
             # Fallback for older entries: find the file
-            if [ -z "$qgs_file" ] || [ "$qgs_file" == "null" ]; then
+            if [ -z "$qgs_file" ] || [ "$qgs_file" = "null" ]; then
                  qgs_file=$(find "$project_path" -maxdepth 1 -name "*.qgs" -type f | head -1)
             fi
 
@@ -438,6 +455,26 @@ dav_projects() {
             # Add the project
             add_project "$project_name" "$project_path"
             ;;
+        "remove")
+            local project_to_remove="$2"
+            if [ -z "$project_to_remove" ]; then
+                project_to_remove=$(select_project)
+                [ -z "$project_to_remove" ] && return 1
+            fi
+            
+            if command -v gum >/dev/null 2>&1; then
+                if ! gum confirm "Are you sure you want to remove '$project_to_remove'?"; then
+                    return 0
+                fi
+            else
+                read -r -p "Are you sure you want to remove '$project_to_remove'? [y/N] " response
+                if [[ ! "$response" =~ ^[Yy]$ ]]; then
+                    return 0
+                fi
+            fi
+
+            remove_project "$project_to_remove"
+            ;;
         "list")
             if command -v gum >/dev/null 2>&1; then
                 local projects_info
@@ -498,6 +535,7 @@ dav_projects() {
                 echo "  pj install                     # Install/update the project manager in your shell"
                 echo "  pj open [project] [app]      # Open specific project with specific app"
                 echo "  pj add [directory]           # Add a new project (interactively)"
+                echo "  pj remove [project]          # Remove a project"
                 echo "  pj list                      # List all projects"
                 echo "  pj help                      # Show this help"
                 echo ""
@@ -514,6 +552,7 @@ dav_projects() {
                 echo "  dav_projects install            # Install/update the project manager in your shell"
                 echo "  dav_projects open [project] [app] # Open specific project with specific app"
                 echo "  dav_projects add [directory]      # Add a new project (interactively)"
+                echo "  dav_projects remove [project]     # Remove a project"
                 echo "  dav_projects list              # List all projects"
                 echo "  dav_projects help              # Show this help"
                 echo ""

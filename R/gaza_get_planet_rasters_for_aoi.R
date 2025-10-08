@@ -1,37 +1,26 @@
-#' Find, Filter, and Crop Rasters by a Polygon AOI
+#' Find Rasters Intersecting an AOI (Polygon or Points)
 #'
-#' This function automates the process of selecting raster files that
-#' significantly overlap with a given Area of Interest (AOI) polygon,
-#' then crops and saves them. It uses namespace-qualified function calls
-#' (e.g., terra::vect) for robustness and does not require packages to be loaded.
+#' This function identifies raster files from a tile index that intersect with a
+#' given Area of Interest (AOI), which can be a polygon or a set of points. It
+#' returns a character vector of the full paths to the qualifying raster files.
 #'
-#' @param aoi_path A character string. The full path to the polygon file
+#' @param aoi_path A character string. The full path to the spatial file
 #'   (e.g., GeoPackage, Shapefile) defining your Area of Interest.
-#' @param aoi_name the prefixed name for the cropped rasters. E.g "gaza_city" till turn
-#' the rasters names into gaza_city_<raster_name>
-#' @param tile_index_path A character string. The full path to the master
-#'   GeoPackage or Shapefile that contains the footprints of all your rasters.
-#' @param output_dir A character string. The path to the directory where the
-#'   newly cropped rasters will be saved. The directory will be created if
-#'   it does not exist.
-#' @param overlap_threshold A numeric value between 0 and 1. The minimum
-#'   required overlap as a proportion of the AOI's total area. For example,
-#'   0.5 means the raster's footprint must cover at least 50% of the AOI.
-#'   Defaults to 0.5.
+#' @param tile_index_path A character string. The full path to the master vector
+#'   file (e.g., GeoPackage, Shapefile) containing the footprints of all rasters.
+#' @param overlap_threshold A numeric value between 0 and 1. If the AOI is a
+#'   polygon, this specifies the minimum required overlap as a proportion of the
+#'   AOI's total area. Defaults to 0.5. Ignored for point AOIs.
 #'
-#' @return Invisibly returns a character vector containing the full paths to
-#'   the newly created cropped raster files.
+#' @return A character vector of full paths to the raster files that meet the
+#'   intersection criteria. Returns an empty character vector if no rasters are found.
 #' @export
-
-gaza_get_planet_rasters_for_aoi <- function(
+gaza_find_rasters_for_aoi <- function(
     aoi_path,
-    aoi_name = "cropped",
     tile_index_path,
-    output_dir,
     overlap_threshold = 0.5
 ) {
     # --- 1. Input Validation ---
-    # Ensure the 'terra' package is installed
     if (!requireNamespace("terra", quietly = TRUE)) {
         stop(
             "Package 'terra' is required but not installed. Please run: install.packages('terra')"
@@ -39,103 +28,149 @@ gaza_get_planet_rasters_for_aoi <- function(
     }
 
     stopifnot(
-        "Error: aoi_path does not exist. Please check the file path." = file.exists(
-            aoi_path
-        ),
-        "Error: tile_index_path does not exist. Please check the file path." = file.exists(
-            tile_index_path
-        ),
-        "Error: overlap_threshold must be a number between 0 and 1." = is.numeric(
+        "Error: aoi_path does not exist." = file.exists(aoi_path),
+        "Error: tile_index_path does not exist." = file.exists(tile_index_path),
+        "Error: overlap_threshold must be between 0 and 1." = is.numeric(
             overlap_threshold
         ) &&
             overlap_threshold >= 0 &&
             overlap_threshold <= 1
     )
 
-    cat("--- Starting Raster Processing ---\n")
+    # --- 2. Find Intersecting Rasters ---
+    cat("--- Finding Intersecting Rasters ---\n")
 
-    # --- 2. Setup and Data Loading ---
+    # Load spatial data
+    aoi <- terra::vect(aoi_path)
+    tile_index <- terra::vect(tile_index_path)
+
+    # Ensure CRS Consistency
+    if (terra::crs(tile_index) != terra::crs(aoi)) {
+        cat("CRS mismatch. Reprojecting AOI to match the tile index CRS.\n")
+        aoi <- terra::project(aoi, terra::crs(tile_index))
+    }
+
+    # Find candidates by spatial intersection
+    candidates <- tile_index[aoi, ]
+    if (nrow(candidates) == 0) {
+        message("No rasters were found intersecting the AOI.")
+        return(character(0))
+    }
+
+    aoi_geom_type <- terra::geomtype(aoi)
+    final_raster_list <- character(0)
+
+    if (grepl("polygon", aoi_geom_type, ignore.case = TRUE)) {
+        # Polygon AOI: Filter by overlap threshold
+        cat(
+            nrow(candidates),
+            "candidate rasters found. Filtering by overlap threshold...\n"
+        )
+        aoi_area <- terra::expanse(aoi)
+        for (i in 1:nrow(candidates)) {
+            footprint <- candidates[i, ]
+            intersection_geom <- terra::intersect(aoi, footprint)
+            if (nrow(intersection_geom) > 0) {
+                overlap_ratio <- terra::expanse(intersection_geom) / aoi_area
+                if (overlap_ratio >= overlap_threshold) {
+                    final_raster_list <- c(
+                        final_raster_list,
+                        footprint$location
+                    )
+                }
+            }
+        }
+    } else {
+        # Point AOI: Keep all intersecting candidates
+        cat(nrow(candidates), "raster footprints intersect the input points.\n")
+        final_raster_list <- candidates$location
+    }
+
+    if (length(final_raster_list) == 0) {
+        message("No rasters met the required criteria.")
+    } else {
+        cat("Found", length(final_raster_list), "rasters to process.\n")
+    }
+
+    return(final_raster_list)
+}
+
+
+#' Crop a List of Rasters to an AOI
+#'
+#' This function takes a list of raster file paths, crops them to the extent of
+#' a given Area of Interest (AOI), and saves the results to a specified directory.
+#'
+#' @param raster_list A character vector of full paths to the raster files that
+#'   you want to crop.
+#' @param aoi_path A character string. The full path to the spatial file
+#'   (e.g., GeoPackage, Shapefile) defining the cropping extent.
+#' @param output_dir A character string. The path to the directory where the
+#'   newly cropped rasters will be saved. The directory will be created if it
+#'   does not exist.
+#' @param aoi_name A character string used as a prefix for the cropped output files.
+#'   For example, `aoi_name = "gaza_city"` results in `gaza_city_<raster_name>`.
+#'
+#' @return Invisibly returns a character vector containing the full paths to the
+#'   newly created cropped raster files.
+#' @export
+gaza_crop_rasters_for_aoi <- function(
+    raster_list,
+    aoi_path,
+    output_dir,
+    aoi_name = "cropped"
+) {
+    # --- 1. Input Validation ---
+    if (!requireNamespace("terra", quietly = TRUE)) {
+        stop(
+            "Package 'terra' is required but not installed. Please run: install.packages('terra')"
+        )
+    }
+
+    stopifnot(
+        "Error: aoi_path does not exist." = file.exists(aoi_path),
+        "Error: raster_list must be a character vector of file paths." = !is.null(
+            raster_list
+        ) &&
+            is.character(raster_list) &&
+            length(raster_list) > 0,
+        "Error: output_dir must be provided." = !is.null(output_dir)
+    )
+
+    if (length(raster_list) == 0) {
+        message("The provided raster_list is empty. No rasters to crop.")
+        return(invisible(character(0)))
+    }
+
+    # --- 2. Setup ---
     if (!dir.exists(output_dir)) {
         dir.create(output_dir, recursive = TRUE)
         cat("Created output directory at:", output_dir, "\n")
     }
 
-    cat("Loading spatial data using 'terra'...\n")
-    tile_index <- terra::vect(tile_index_path)
     aoi <- terra::vect(aoi_path)
-
-    # Ensure CRS Consistency
-    cat("Checking Coordinate Reference Systems (CRS)...\n")
-    if (terra::crs(tile_index) != terra::crs(aoi)) {
-        cat("CRS mismatch. Reprojecting AOI to match the tile index CRS.\n")
-        aoi <- terra::project(aoi, terra::crs(tile_index))
-    } else {
-        cat("CRS match. No reprojection needed.\n")
-    }
-
-    # --- 3. Filter Rasters by Overlap ---
-    cat("Finding intersecting raster footprints...\n")
-    candidates <- tile_index[aoi, ]
-
-    if (nrow(candidates) == 0) {
-        message(
-            "No rasters were found intersecting the AOI. The function will now stop."
-        )
-        return(invisible(character(0)))
-    }
-    cat(
-        "Found",
-        nrow(candidates),
-        "candidate rasters. Calculating overlap percentage...\n"
-    )
-
-    aoi_area <- terra::expanse(aoi)
-    final_raster_list <- c()
-
-    for (i in 1:nrow(candidates)) {
-        footprint <- candidates[i, ]
-        intersection_geom <- terra::intersect(aoi, footprint)
-
-        if (nrow(intersection_geom) > 0) {
-            overlap_ratio <- terra::expanse(intersection_geom) / aoi_area
-            if (overlap_ratio >= overlap_threshold) {
-                final_raster_list <- c(final_raster_list, footprint$location)
-            }
-        }
-    }
-
-    if (length(final_raster_list) == 0) {
-        message(
-            "No rasters met the required ",
-            overlap_threshold * 100,
-            "% overlap threshold. The function will now stop."
-        )
-        return(invisible(character(0)))
-    }
-    cat(
-        "\nFound",
-        length(final_raster_list),
-        "rasters that meet the overlap criteria.\n"
-    )
-
-    # --- 4. Crop and Save Qualifying Rasters ---
-    cat("--- Starting the cropping process ---\n")
     newly_created_files <- c()
 
-    for (i in 1:length(final_raster_list)) {
-        raster_path <- final_raster_list[i]
+    # --- 3. Crop and Save Rasters ---
+    cat("--- Starting the cropping process ---\n")
+    for (i in 1:length(raster_list)) {
+        raster_path <- raster_list[i]
+
+        if (!file.exists(raster_path)) {
+            warning(paste("File not found, skipping:", raster_path))
+            next
+        }
 
         output_filename <- file.path(
             output_dir,
             paste0(aoi_name, "_", basename(raster_path))
         )
 
-        # Check if cropped file already exists
         if (file.exists(output_filename)) {
             cat(sprintf(
                 "Skipping %d of %d: %s (already exists)\n",
                 i,
-                length(final_raster_list),
+                length(raster_list),
                 basename(output_filename)
             ))
             newly_created_files <- c(newly_created_files, output_filename)
@@ -145,13 +180,13 @@ gaza_get_planet_rasters_for_aoi <- function(
         cat(sprintf(
             "Processing %d of %d: %s\n",
             i,
-            length(final_raster_list),
+            length(raster_list),
             basename(raster_path)
         ))
 
         original_raster <- terra::rast(raster_path)
-        crs_raster <- terra::crs(original_raster)
-        aoi_projected <- terra::project(aoi, crs_raster)
+        aoi_projected <- terra::project(aoi, terra::crs(original_raster))
+
         cropped_raster <- terra::crop(
             original_raster,
             aoi_projected,
@@ -159,7 +194,6 @@ gaza_get_planet_rasters_for_aoi <- function(
         )
 
         terra::writeRaster(cropped_raster, output_filename, overwrite = TRUE)
-
         newly_created_files <- c(newly_created_files, output_filename)
     }
 
