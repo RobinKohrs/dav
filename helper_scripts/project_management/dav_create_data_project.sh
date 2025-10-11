@@ -332,19 +332,14 @@ if [ -f "$GLOBAL_ALIAS_FILE" ]; then
         # Alias exists, check if the path is correct
         EXISTING_PATH=$(grep "alias createdp=" "$GLOBAL_ALIAS_FILE" | sed -n 's/.*source "\(.*\)".*/\1/p' | head -1)
         if [ "$EXISTING_PATH" != "$SCRIPT_PATH" ]; then
-            if gum confirm "Update existing 'createdp' alias to point to the new script location?"; then
-                # Use sed to replace the path. Using a temp file for safety.
-                sed -i.bak "s|alias createdp='source \".*\"'|alias createdp='source \"$SCRIPT_PATH\"'|g" "$GLOBAL_ALIAS_FILE"
-                echo "Updated 'createdp' alias in $GLOBAL_ALIAS_FILE"
-            fi
+            sed -i.bak "s|alias createdp='source \".*\"'|alias createdp='source \"$SCRIPT_PATH\"'|g" "$GLOBAL_ALIAS_FILE"
+            echo "Updated 'createdp' alias in $GLOBAL_ALIAS_FILE to point to new location."
         fi
     else
-        # Alias does not exist, offer to create it
-        if gum confirm "Add global 'createdp' alias?"; then
-            echo "" >> "$GLOBAL_ALIAS_FILE"
-            echo "alias createdp='source \"$SCRIPT_PATH\"'" >> "$GLOBAL_ALIAS_FILE"
-            echo "Added createdp alias to $GLOBAL_ALIAS_FILE"
-        fi
+        # Alias does not exist, create it
+        echo "" >> "$GLOBAL_ALIAS_FILE"
+        echo "alias createdp='source \"$SCRIPT_PATH\"'" >> "$GLOBAL_ALIAS_FILE"
+        echo "Added global 'createdp' alias to $GLOBAL_ALIAS_FILE. Run 'source $GLOBAL_ALIAS_FILE' to use it."
     fi
 fi
 
@@ -430,10 +425,17 @@ OSA
                     fi
                     ;;
                 "qgis")
-                    if [ -f "$PROJECT_SLUG.qgs" ] && command -v open >/dev/null 2>&1; then
-                        open "$PROJECT_SLUG.qgs" 2>/dev/null &
+                    if [ -f "$PROJECT_SLUG.qgs" ]; then
+                        if command -v qgis >/dev/null 2>&1; then
+                            qgis "$PROJECT_SLUG.qgs" &
+                        elif command -v open >/dev/null 2>&1; then
+                            # Try with explicit app name first, then fallback to default
+                            (open -a QGIS "$PROJECT_SLUG.qgs" 2>/dev/null || open -a QGIS-LTR "$PROJECT_SLUG.qgs" 2>/dev/null || open "$PROJECT_SLUG.qgs") &
+                        else
+                            echo "Cannot open QGIS project file. Neither 'qgis' nor 'open' command is available."
+                        fi
                     else
-                        echo "Cannot open QGIS project file."
+                        echo "QGIS project file '$PROJECT_SLUG.qgs' not found."
                     fi
                     ;;
             esac

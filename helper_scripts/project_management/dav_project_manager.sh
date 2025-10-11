@@ -242,26 +242,58 @@ select_applications() {
     # Check for R project by reading the config
     local r_proj_file
     r_proj_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .r_proj_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
-    if [ -n "$r_proj_file" ] && [ "$r_proj_file" != "null" ]; then
-        available_apps+=("r")
-        app_descriptions+=("📊 RStudio (.Rproj)")
-    fi
     
     # Check for QGIS project by reading the config
     local qgs_file
     qgs_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .qgs_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
-    if [ -n "$qgs_file" ] && [ "$qgs_file" != "null" ]; then
-        available_apps+=("qgis")
-        app_descriptions+=("🗺️  QGIS (.qgs)")
-    fi
     
     # Always available
     available_apps+=("terminal")
     app_descriptions+=("💻 Terminal (cd to project)")
     
+    # --- Check for available project files directly on disk ---
+    if [ -n "$project_path" ]; then
+        # Check for RStudio Project
+        if [ -z "$r_proj_file" ] || [ "$r_proj_file" = "null" ]; then
+            if find "$project_path" -maxdepth 1 -name "*.Rproj" -print -quit | grep -q "."; then
+                available_apps+=("r")
+                app_descriptions+=("📊 RStudio (.Rproj)")
+            fi
+        fi
+        
+        # Check for QGIS Project
+        if [ -z "$qgs_file" ] || [ "$qgs_file" = "null" ]; then
+            if find "$project_path" -maxdepth 1 -name "*.qgs" -print -quit | grep -q "."; then
+                available_apps+=("qgis")
+                app_descriptions+=("🗺️  QGIS (.qgs)")
+            fi
+        fi
+    fi
+    
     # Use gum for multi-select if available
     if command -v gum >/dev/null 2>&1; then
-        local selected_apps=($(printf '%s\n' "${available_apps[@]}" | gum choose --no-limit --header="🚀 How do you want to open '$project_name'?" --height=8))
+        # Use gum choose with descriptions. First, format for gum.
+        local gum_options=()
+        for i in "${!available_apps[@]}"; do
+            gum_options+=("${available_apps[i]}")
+            gum_options+=("${app_descriptions[i]}")
+        done
+        
+        # We need to get the app key back from the selection.
+        local selected_descriptions
+        selected_descriptions=$(printf '%s\n' "${app_descriptions[@]}" | gum choose --no-limit --header="🚀 How do you want to open '$project_name'?" --height=8)
+        [ -z "$selected_descriptions" ] && return 1
+
+        local selected_apps=()
+        while IFS= read -r desc; do
+            for i in "${!app_descriptions[@]}"; do
+                if [[ "${app_descriptions[i]}" == "$desc" ]]; then
+                    selected_apps+=("${available_apps[i]}")
+                    break
+                fi
+            done
+        done <<< "$selected_descriptions"
+
         [ ${#selected_apps[@]} -eq 0 ] && return 1
         printf '%s\n' "${selected_apps[@]}"
     else
@@ -330,12 +362,14 @@ open_project() {
             fi
 
             if [ -n "$qgs_file" ] && [ -f "$qgs_file" ]; then
-                if command -v open >/dev/null 2>&1; then
-                    open "$qgs_file" &
+                if command -v qgis >/dev/null 2>&1; then
+                    qgis "$qgs_file" &
+                elif command -v open >/dev/null 2>&1; then
+                    (open -a QGIS "$qgs_file" 2>/dev/null || open -a QGIS-LTR "$qgs_file" 2>/dev/null || open "$qgs_file") &
                 else
-                    echo "Cannot open .qgs file: $qgs_file"
+                    echo "Cannot open .qgs file: $qgs_file. Neither 'qgis' nor 'open' command is available."
                     return 1
-            fi
+                fi
             else
                 echo "No .qgs file found in project directory"
                 return 1
