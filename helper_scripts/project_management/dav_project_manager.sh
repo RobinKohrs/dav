@@ -272,13 +272,6 @@ select_applications() {
     
     # Use gum for multi-select if available
     if command -v gum >/dev/null 2>&1; then
-        # Use gum choose with descriptions. First, format for gum.
-        local gum_options=()
-        for i in "${!available_apps[@]}"; do
-            gum_options+=("${available_apps[i]}")
-            gum_options+=("${app_descriptions[i]}")
-        done
-        
         # We need to get the app key back from the selection.
         local selected_descriptions
         selected_descriptions=$(printf '%s\n' "${app_descriptions[@]}" | gum choose --no-limit --header="🚀 How do you want to open '$project_name'?" --height=8)
@@ -286,11 +279,13 @@ select_applications() {
 
         local selected_apps=()
         while IFS= read -r desc; do
-            for i in "${!app_descriptions[@]}"; do
-                if [[ "${app_descriptions[i]}" == "$desc" ]]; then
-                    selected_apps+=("${available_apps[i]}")
+            local i=1
+            while [[ $i -le ${#app_descriptions[@]} ]]; do
+                if [[ "${app_descriptions[$i]}" == "$desc" ]]; then
+                    selected_apps+=("${available_apps[$i]}")
                     break
                 fi
+                ((i++))
             done
         done <<< "$selected_descriptions"
 
