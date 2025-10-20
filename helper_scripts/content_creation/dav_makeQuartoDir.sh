@@ -260,9 +260,13 @@ Welcome to your new Quarto document!
 \`\`\`{r setup, include=FALSE}
 knitr::opts_chunk\$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(tidyverse)
-# library(davR)
-# library(sf)
-# library(jsonlite)
+library(here)
+library(glue)
+library(sf)
+library(davR)
+library(jsonlite)
+library(mapview)
+m <- mapview
 \`\`\`
 
 Start writing your content here.
