@@ -239,34 +239,23 @@ select_applications() {
     available_apps+=("cursor")
     app_descriptions+=("📝 Cursor/VS Code")
     
-    # Check for R project by reading the config
-    local r_proj_file
-    r_proj_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .r_proj_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
-    
-    # Check for QGIS project by reading the config
-    local qgs_file
-    qgs_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .qgs_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
-    
-    # Always available
     available_apps+=("terminal")
     app_descriptions+=("💻 Terminal (cd to project)")
     
-    # --- Check for available project files directly on disk ---
-    if [ -n "$project_path" ]; then
-        # Check for RStudio Project
-        if [ -z "$r_proj_file" ] || [ "$r_proj_file" = "null" ]; then
-            if find "$project_path" -maxdepth 1 -name "*.Rproj" -print -quit | grep -q "."; then
-                available_apps+=("r")
-                app_descriptions+=("📊 RStudio (.Rproj)")
-            fi
+    # --- Check for available project files from config ---
+    if [ -n "$project_name" ]; then
+        # Check for RStudio Project from config
+        local r_proj_file; r_proj_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .r_proj_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
+        if [ -n "$r_proj_file" ] && [ "$r_proj_file" != "null" ] && [ -f "$r_proj_file" ]; then
+            available_apps+=("r")
+            app_descriptions+=("📊 RStudio (.Rproj)")
         fi
         
-        # Check for QGIS Project
-        if [ -z "$qgs_file" ] || [ "$qgs_file" = "null" ]; then
-            if find "$project_path" -maxdepth 1 -name "*.qgs" -print -quit | grep -q "."; then
-                available_apps+=("qgis")
-                app_descriptions+=("🗺️  QGIS (.qgs)")
-            fi
+        # Check for QGIS Project from config
+        local qgs_file; qgs_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .qgs_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
+        if [ -n "$qgs_file" ] && [ "$qgs_file" != "null" ] && [ -f "$qgs_file" ]; then
+            available_apps+=("qgis")
+            app_descriptions+=("🗺️  QGIS (.qgs)")
         fi
     fi
     
@@ -329,20 +318,23 @@ open_project() {
             fi
             ;;
         "r"|"rstudio")
-            local r_proj_files
-            r_proj_files=$(find "$project_path" -name "*.Rproj" -type f)
+            local r_proj_file
+            r_proj_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .r_proj_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
 
-            if [ -n "$r_proj_files" ]; then
-                echo "$r_proj_files" | while IFS= read -r r_proj_file; do
-                    if command -v open >/dev/null 2>&1; then
-                        echo "Opening RStudio project: $r_proj_file"
-                        open "$r_proj_file" &
-                    else
-                        echo "Cannot open .Rproj file: $r_proj_file"
-                    fi
-                done
+            # Fallback for older entries or if config is weird: find the file
+            if [ -z "$r_proj_file" ] || [ "$r_proj_file" = "null" ]; then
+                 r_proj_file=$(find "$project_path" -maxdepth 1 -name "*.Rproj" -type f | head -1)
+            fi
+
+            if [ -n "$r_proj_file" ] && [ -f "$r_proj_file" ]; then
+                if command -v open >/dev/null 2>&1; then
+                    echo "Opening RStudio project: $r_proj_file"
+                    open "$r_proj_file" &
+                else
+                    echo "Cannot open .Rproj file: $r_proj_file"
+                fi
             else
-                echo "No .Rproj file found in project directory"
+                echo "No .Rproj file found in project directory or config"
                 return 1
             fi
             ;;
