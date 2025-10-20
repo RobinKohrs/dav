@@ -243,17 +243,35 @@ select_applications() {
     app_descriptions+=("💻 Terminal (cd to project)")
     
     # --- Check for available project files from config ---
+    # Check for RStudio Project
+    local r_proj_found=false
     if [ -n "$project_name" ]; then
-        # Check for RStudio Project from config
         local r_proj_file; r_proj_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .r_proj_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
         if [ -n "$r_proj_file" ] && [ "$r_proj_file" != "null" ] && [ -f "$r_proj_file" ]; then
             available_apps+=("r")
             app_descriptions+=("📊 RStudio (.Rproj)")
+            r_proj_found=true
         fi
-        
-        # Check for QGIS Project from config
+    fi
+    if ! $r_proj_found && [ -n "$project_path" ]; then
+        if find "$project_path" -maxdepth 1 -name "*.Rproj" -print -quit | grep -q "."; then
+            available_apps+=("r")
+            app_descriptions+=("📊 RStudio (.Rproj)")
+        fi
+    fi
+
+    # Check for QGIS Project
+    local qgs_found=false
+    if [ -n "$project_name" ]; then
         local qgs_file; qgs_file=$(jq -r --arg name "$project_name" '.projects[] | select(.name == $name) | .qgs_file' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
         if [ -n "$qgs_file" ] && [ "$qgs_file" != "null" ] && [ -f "$qgs_file" ]; then
+            available_apps+=("qgis")
+            app_descriptions+=("🗺️  QGIS (.qgs)")
+            qgs_found=true
+        fi
+    fi
+    if ! $qgs_found && [ -n "$project_path" ]; then
+        if find "$project_path" -maxdepth 1 -name "*.qgs" -print -quit | grep -q "."; then
             available_apps+=("qgis")
             app_descriptions+=("🗺️  QGIS (.qgs)")
         fi
@@ -526,6 +544,23 @@ dav_projects() {
                 project_name=$(select_project)
                 [ -z "$project_name" ] && return 1
             fi
+
+            # --- New Logic: Resolve path to project name ---
+            # Check if the provided "name" is actually a path
+            if [ -d "$project_name" ]; then
+                local resolved_path
+                resolved_path=$(realpath "$project_name")
+                
+                # Find the project name from the config that matches this path
+                local name_from_path
+                name_from_path=$(jq -r --arg path "$resolved_path" '.projects[] | select(.path == $path) | .name' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
+                
+                if [ -n "$name_from_path" ]; then
+                    # Found it! Use the correct project name from now on.
+                    project_name="$name_from_path"
+                fi
+            fi
+            # --- End New Logic ---
             
             # If no app type specified, let user select
             if [ -z "$app_type" ]; then
