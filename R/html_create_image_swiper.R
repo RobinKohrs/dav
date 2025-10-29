@@ -10,6 +10,11 @@
 #' @param overlay_path An optional string specifying the path to an overlay image.
 #' @param gradient_color An optional string specifying the color for the edge gradient.
 #'   Defaults to "#c1d9d9" (light blue-green). Set to NULL to disable the gradient.
+#' @param debounce_delay An optional integer. The debounce delay in milliseconds
+#' for the scroll event. Defaults to 0 (no delay). Set to a positive value (e.g., 50)
+#' to delay the dot indicator update until scrolling has paused.
+#' @param animation_duration An optional numeric value. The duration of the dot
+#'   indicator's grow/shrink animation in seconds. Defaults to 0.3.
 #'
 #' @return An `htmltools::tagList` object that can be rendered directly in
 #'   R Markdown, Shiny, or other HTML-supporting R environments.
@@ -35,7 +40,9 @@
 html_create_image_swiper <- function(
   image_data,
   overlay_path = NULL,
-  gradient_color = "#c1d9d9"
+  gradient_color = "#c1d9d9",
+  debounce_delay = 0,
+  animation_duration = 0.3
 ) {
   # Validate input
   if (!is.list(image_data) || length(image_data) == 0) {
@@ -92,23 +99,102 @@ html_create_image_swiper <- function(
   )
   next_svg <- prev_svg
 
-  # Define the complete HTML structure using htmltools
-  swiper_component <- tagList(
-    tags$style(HTML(paste0(
-      "
-      .basic-slider-container { position: relative; width: 100%; max-width: 615px; font-family: STMatilda Info Variable, system-ui, sans-serif; }
-      .image-wrapper { position: relative; width: 100%; overflow: hidden; }
-      .basic-slider-scroll { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; position: relative; width: 100%; -ms-overflow-style: none; scrollbar-width: none; }
+  js_code <- sprintf(
+    "
+      (function() {
+        const debounceDelay = %d;
+        const allSliders = document.querySelectorAll('.basic-slider-container:not([data-initialized])');
+        const container = allSliders[allSliders.length - 1];
+        if (!container) return;
+        container.setAttribute('data-initialized', 'true');
+        const slider = container.querySelector('.basic-slider-scroll');
+        const slides = container.querySelectorAll('.basic-slider-item');
+        const prevBtn = container.querySelector('.prev');
+        const nextBtn = container.querySelector('.next');
+        const dotsContainer = container.querySelector('.dots');
+        if (!slider || !slides || slides.length === 0) return;
+        let current_image = 0;
+        const total_images = slides.length;
+        for (let i = 0; i < total_images; i++) {
+          const dot = document.createElement('div');
+          dot.className = 'dot' + (i === 0 ? ' active' : '');
+          dot.onclick = () => goToSlide(i);
+          dotsContainer.appendChild(dot);
+        }
+        function updateButtons() {
+          prevBtn.disabled = current_image === 0;
+          nextBtn.disabled = current_image >= total_images - 1;
+        }
+        function updateDots() {
+          const dots = dotsContainer.querySelectorAll('.dot');
+          dots.forEach((dot, i) => {
+            dot.className = 'dot' + (i === current_image ? ' active' : '');
+          });
+        }
+        function updateCurrentImageOnScroll() {
+          const containerRect = slider.getBoundingClientRect();
+          let maxVisibleIndex = current_image;
+          let maxVisibleArea = 0;
+          slides.forEach((slide, index) => {
+            const rect = slide.getBoundingClientRect();
+            const visibleLeft = Math.max(rect.left, containerRect.left);
+            const visibleRight = Math.min(rect.right, containerRect.right);
+            const visibleWidth = Math.max(0, visibleRight - visibleLeft);
+            if (visibleWidth > maxVisibleArea) {
+              maxVisibleArea = visibleWidth;
+              maxVisibleIndex = index;
+            }
+          });
+          if (current_image !== maxVisibleIndex) {
+            current_image = maxVisibleIndex;
+            updateButtons();
+            updateDots();
+          }
+        }
+        function goToSlide(index) {
+          const slideWidth = slides[0].clientWidth;
+          const gap = parseInt(window.getComputedStyle(slider).gap) || 10;
+          slider.scrollTo({ left: index * (slideWidth + gap), behavior: 'smooth' });
+          current_image = index;
+          updateButtons();
+          updateDots();
+        }
+        prevBtn.onclick = () => { if (current_image > 0) goToSlide(current_image - 1); };
+        nextBtn.onclick = () => { if (current_image < total_images - 1) goToSlide(current_image + 1); };
+        if (debounceDelay > 0) {
+          let scrollTimeout;
+          slider.addEventListener('scroll', () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(updateCurrentImageOnScroll, debounceDelay);
+          });
+        } else {
+          slider.addEventListener('scroll', updateCurrentImageOnScroll);
+        }
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(updateCurrentImageOnScroll, 50);
+        });
+        updateButtons();
+        updateDots();
+      })();
+    ",
+    debounce_delay
+  )
+
+  css_code <- sprintf(
+    "
+      .basic-slider-container { position: relative; width: 100%%; max-width: 615px; font-family: STMatilda Info Variable, system-ui, sans-serif; }
+      .image-wrapper { position: relative; width: 100%%; overflow: hidden; }
+      .basic-slider-scroll { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; position: relative; width: 100%%; -ms-overflow-style: none; scrollbar-width: none; }
       .basic-slider-scroll::-webkit-scrollbar { display: none; }
-      .basic-slider-item { flex-shrink: 0; scroll-snap-type: x mandatory; scroll-snap-align: center; max-width: 80%; height: 100%; position: relative; }
-      .basic-slider-item img { display: block; width: 100%; height: 100%; border-radius: 5px; }
+      .basic-slider-item { flex-shrink: 0; scroll-snap-type: x mandatory; scroll-snap-align: center; max-width: 80%%; height: 100%%; position: relative; }
+      .basic-slider-item img { display: block; width: 100%%; height: 100%%; border-radius: 5px; }
       .basic-slider-item:last-child { padding-right: 30px; }
       .dj-caption { position: absolute; top: 5px; left: 5px; z-index: 20; background: rgba(0, 0, 0, 0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 20px; font-weight: 400; }
-      ",
-      gradient_css,
-      "
-      .slider-overview { position: absolute; bottom: 0; right: 0; height: 46%; z-index: 30; max-width: 100%; }
-      .nav-button { position: absolute; top: 40%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.5); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 0; }
+      %s
+      .slider-overview { position: absolute; bottom: 0; right: 0; height: 46%%; z-index: 30; max-width: 100%%; }
+      .nav-button { position: absolute; top: 40%%; transform: translateY(-50%%); background: rgba(0, 0, 0, 0.5); color: white; border: none; width: 50px; height: 50px; border-radius: 50%%; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 0; }
       .nav-button svg { width: 24px; height: 24px; fill: currentColor; }
       @media (max-width: 600px) { .nav-button { width: 40px; height: 40px; } .nav-button svg { width: 20px; height: 20px; } }
       .nav-button.next svg { transform: scaleX(-1); }
@@ -116,10 +202,16 @@ html_create_image_swiper <- function(
       .nav-button.prev { left: 10px; }
       .nav-button.next { right: 10px; }
       .dots { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
-      .dot { width: 10px; height: 10px; border-radius: 50%; background: #efefef; cursor: pointer; transition: all 0.15s ease; }
+      .dot { width: 10px; height: 10px; border-radius: 50%%; background: #efefef; cursor: pointer; transition: all %.2fs ease; }
       .dot.active { background: #454545; transform: scale(1.5); }
-    "
-    ))),
+    ",
+    gradient_css,
+    animation_duration
+  )
+
+  # Define the complete HTML structure using htmltools
+  swiper_component <- tagList(
+    tags$style(HTML(css_code)),
     tags$div(
       class = "basic-slider-container",
       tags$div(
@@ -132,96 +224,7 @@ html_create_image_swiper <- function(
       ),
       tags$div(class = "dots")
     ),
-    tags$script(HTML(
-      "
-      (function() {
-        const allSliders = document.querySelectorAll('.basic-slider-container:not([data-initialized])');
-        const container = allSliders[allSliders.length - 1];
-        if (!container) return;
-        container.setAttribute('data-initialized', 'true');
-
-        const slider = container.querySelector('.basic-slider-scroll');
-        const slides = container.querySelectorAll('.basic-slider-item');
-        const prevBtn = container.querySelector('.prev');
-        const nextBtn = container.querySelector('.next');
-        const dotsContainer = container.querySelector('.dots');
-
-        if (!slider || !slides || slides.length === 0) return;
-
-        let current_image = 0;
-        const total_images = slides.length;
-
-        for (let i = 0; i < total_images; i++) {
-          const dot = document.createElement('div');
-          dot.className = 'dot' + (i === 0 ? ' active' : '');
-          dot.onclick = () => goToSlide(i);
-          dotsContainer.appendChild(dot);
-        }
-
-        function updateButtons() {
-          prevBtn.disabled = current_image === 0;
-          nextBtn.disabled = current_image >= total_images - 1;
-        }
-
-        function updateDots() {
-          const dots = dotsContainer.querySelectorAll('.dot');
-          dots.forEach((dot, i) => {
-            dot.className = 'dot' + (i === current_image ? ' active' : '');
-          });
-        }
-
-        function updateCurrentImageOnScroll() {
-          const containerRect = slider.getBoundingClientRect();
-          let maxVisibleIndex = current_image;
-          let maxVisibleArea = 0;
-
-          slides.forEach((slide, index) => {
-            const rect = slide.getBoundingClientRect();
-            const visibleLeft = Math.max(rect.left, containerRect.left);
-            const visibleRight = Math.min(rect.right, containerRect.right);
-            const visibleWidth = Math.max(0, visibleRight - visibleLeft);
-
-            if (visibleWidth > maxVisibleArea) {
-              maxVisibleArea = visibleWidth;
-              maxVisibleIndex = index;
-            }
-          });
-
-          if (current_image !== maxVisibleIndex) {
-            current_image = maxVisibleIndex;
-            updateButtons();
-            updateDots();
-          }
-        }
-
-        function goToSlide(index) {
-          const slideWidth = slides[0].clientWidth;
-          const gap = parseInt(window.getComputedStyle(slider).gap) || 10;
-          slider.scrollTo({ left: index * (slideWidth + gap), behavior: 'smooth' });
-          current_image = index;
-          updateButtons();
-          updateDots();
-        }
-
-        prevBtn.onclick = () => { if (current_image > 0) goToSlide(current_image - 1); };
-        nextBtn.onclick = () => { if (current_image < total_images - 1) goToSlide(current_image + 1); };
-
-        let scrollTimeout;
-        slider.addEventListener('scroll', () => {
-          clearTimeout(scrollTimeout);
-          scrollTimeout = setTimeout(updateCurrentImageOnScroll, 150);
-        });
-
-        window.addEventListener('resize', () => {
-          clearTimeout(scrollTimeout);
-          scrollTimeout = setTimeout(updateCurrentImageOnScroll, 150);
-        });
-
-        updateButtons();
-        updateDots();
-      })();
-    "
-    ))
+    tags$script(HTML(js_code))
   )
 
   return(swiper_component)
