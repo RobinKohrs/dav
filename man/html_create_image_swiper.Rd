@@ -8,6 +8,8 @@ html_create_image_swiper(
   image_data,
   overlay_path = NULL,
   gradient_color = "#c1d9d9",
+  aspect_ratio = "1/1",
+  max_width = NULL,
   debounce_delay = 0,
   animation_duration = 0.3
 )
@@ -21,6 +23,13 @@ html_create_image_swiper(
 
 \item{gradient_color}{An optional string specifying the color for the edge gradient.
 Defaults to "#c1d9d9" (light blue-green). Set to NULL to disable the gradient.}
+
+\item{aspect_ratio}{A string defining the aspect ratio for the slider items,
+e.g., "1/1" for a square or "16/9" for widescreen. Defaults to "1/1".}
+
+\item{max_width}{An optional numeric value for the maximum width of the
+container in pixels. Defaults to \code{NULL}, allowing the slider to fill its
+parent's width.}
 
 \item{debounce_delay}{An optional integer. The debounce delay in milliseconds
 for the scroll event. Defaults to 0 (no delay). Set to a positive value (e.g., 50)
@@ -50,7 +59,8 @@ image_list <- list(
 swiper_widget <- html_create_image_swiper(
   image_data = image_list,
   overlay_path = "http://b.staticfiles.at/elm/static/2025-dateien/slider_overview_final.png",
-  gradient_color = "#c1d9d9"  # Optional: customize gradient color or set to NULL to disable
+  gradient_color = "#c1d9d9",  # Optional: customize gradient color or set to NULL to disable
+  max_width = 615 # Optional: Set a max-width for the container
 )
 
 }

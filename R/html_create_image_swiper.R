@@ -10,6 +10,16 @@
 #' @param overlay_path An optional string specifying the path to an overlay image.
 #' @param gradient_color An optional string specifying the color for the edge gradient.
 #'   Defaults to "#c1d9d9" (light blue-green). Set to NULL to disable the gradient.
+#' @param gradient_stops An optional numeric vector of length 3 specifying the
+#'   gradient stops: `c(left_opaque_end, middle_transparent, right_opaque_start)`.
+#'   For example, `c(10, 50, 90)` will keep the gradient solid until 10%,
+#'   fade to transparent at 50%, and then fade back to solid at 90%.
+#'   Defaults to `NULL`, which uses `c(15, 50, 85)`.
+#' @param aspect_ratio A string defining the aspect ratio for the slider items,
+#'   e.g., "1/1" for a square or "16/9" for widescreen. Defaults to "1/1".
+#' @param max_width An optional numeric value for the maximum width of the
+#'   container in pixels. Defaults to `NULL`, allowing the slider to fill its
+#'   parent's width.
 #' @param debounce_delay An optional integer. The debounce delay in milliseconds
 #' for the scroll event. Defaults to 0 (no delay). Set to a positive value (e.g., 50)
 #' to delay the dot indicator update until scrolling has paused.
@@ -33,7 +43,8 @@
 #' swiper_widget <- html_create_image_swiper(
 #'   image_data = image_list,
 #'   overlay_path = "http://b.staticfiles.at/elm/static/2025-dateien/slider_overview_final.png",
-#'   gradient_color = "#c1d9d9"  # Optional: customize gradient color or set to NULL to disable
+#'   gradient_color = "#c1d9d9",  # Optional: customize gradient color or set to NULL to disable
+#'   max_width = 615 # Optional: Set a max-width for the container
 #' )
 #'
 #' @export
@@ -41,6 +52,9 @@ html_create_image_swiper <- function(
   image_data,
   overlay_path = NULL,
   gradient_color = "#c1d9d9",
+  gradient_stops = NULL,
+  aspect_ratio = "1/1",
+  max_width = NULL,
   debounce_delay = 0,
   animation_duration = 0.3
 ) {
@@ -86,11 +100,32 @@ html_create_image_swiper <- function(
   # Generate gradient CSS based on the gradient_color parameter
   gradient_css <- ""
   if (!is.null(gradient_color)) {
+    if (is.null(gradient_stops)) {
+      # Default stops for a gradient that is opaque at the edges
+      gradient_stops <- c(15, 50, 85)
+    } else {
+      if (!is.numeric(gradient_stops) || length(gradient_stops) != 3) {
+        stop(
+          "`gradient_stops` must be a numeric vector of length 3, e.g., c(15, 50, 85)."
+        )
+      }
+    }
     gradient_css <- sprintf(
-      ".gradient { position: absolute; width: 100%%; height: 100%%; background-image: linear-gradient(to right, %s 0%%, transparent 10%%, transparent 83%%, %s 100%%); z-index: 10; pointer-events: none; top: 0; left: 0; }",
+      ".gradient { position: absolute; width: 100%%; height: 100%%; background-image: linear-gradient(to right, %s 0%%, %s %d%%, transparent %d%%, %s %d%%, %s 100%%); z-index: 10; pointer-events: none; top: 0; left: 0; }",
       gradient_color,
+      gradient_color,
+      gradient_stops[1],
+      gradient_stops[2],
+      gradient_color,
+      gradient_stops[3],
       gradient_color
     )
+  }
+
+  # Conditionally generate max-width CSS
+  max_width_css <- ""
+  if (!is.null(max_width)) {
+    max_width_css <- sprintf("max-width: %spx;", max_width)
   }
 
   # SVG for navigation buttons as raw HTML
@@ -99,8 +134,54 @@ html_create_image_swiper <- function(
   )
   next_svg <- prev_svg
 
-  js_code <- sprintf(
-    "
+  # Define the complete HTML structure using htmltools
+  swiper_component <- tagList(
+    tags$style(HTML(paste0(
+      sprintf(
+        "
+      .basic-slider-container { position: relative; width: 100%%; %s margin: 0 auto; font-family: STMatilda Info Variable, system-ui, sans-serif; }
+      .image-wrapper { position: relative; width: 100%%; overflow: hidden; }
+      .basic-slider-scroll { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; position: relative; width: 100%%; -ms-overflow-style: none; scrollbar-width: none; padding: 0 10%%; box-sizing: border-box; }
+      .basic-slider-scroll::-webkit-scrollbar { display: none; }
+      .basic-slider-item { flex-shrink: 0; scroll-snap-align: center; width: 100%%; position: relative; aspect-ratio: %s; }
+      .basic-slider-item img { display: block; width: 100%%; height: 100%%; border-radius: 5px; object-fit: cover; }
+      .dj-caption { position: absolute; top: 5px; left: 5px; z-index: 20; background: rgba(0, 0, 0, 0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 20px; font-weight: 400; }
+      ",
+        max_width_css,
+        aspect_ratio
+      ),
+      gradient_css,
+      sprintf(
+        "
+      .slider-overview { position: absolute; bottom: 0; right: 0; height: 46%%; z-index: 30; max-width: 100%%; }
+      .nav-button { position: absolute; top: 40%%; transform: translateY(-50%%); background: rgba(0, 0, 0, 0.5); color: white; border: none; width: 3.125rem; height: 3.125rem; border-radius: 50%%; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 0; }
+      .nav-button svg { width: 1.5rem; height: 1.5rem; fill: currentColor; }
+      @media (max-width: 600px) { .nav-button { width: 2.5rem; height: 2.5rem; } .nav-button svg { width: 1.25rem; height: 1.25rem; } }
+      .nav-button.next svg { transform: scaleX(-1); }
+      .nav-button:disabled { opacity: 0.3; cursor: not-allowed; }
+      .nav-button.prev { left: 0.625rem; }
+      .nav-button.next { right: 0.625rem; }
+      .dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.625rem; }
+      .dot { width: 0.625rem; height: 0.625rem; border-radius: 50%%; background: #efefef; cursor: pointer; transition: all %.2fs ease; }
+      .dot.active { background: #454545; transform: scale(1.5); }
+    ",
+        animation_duration
+      )
+    ))),
+    tags$div(
+      class = "basic-slider-container",
+      tags$div(
+        class = "image-wrapper",
+        if (!is.null(gradient_color)) tags$div(class = "gradient"),
+        tags$div(class = "basic-slider-scroll", slider_items),
+        overlay_tag,
+        tags$button(class = "nav-button prev", prev_svg),
+        tags$button(class = "nav-button next", next_svg)
+      ),
+      tags$div(class = "dots")
+    ),
+    tags$script(HTML(sprintf(
+      "
       (function() {
         const debounceDelay = %d;
         const allSliders = document.querySelectorAll('.basic-slider-container:not([data-initialized])');
@@ -179,52 +260,8 @@ html_create_image_swiper <- function(
         updateDots();
       })();
     ",
-    debounce_delay
-  )
-
-  css_code <- sprintf(
-    "
-      .basic-slider-container { position: relative; width: 100%%; max-width: 615px; font-family: STMatilda Info Variable, system-ui, sans-serif; }
-      .image-wrapper { position: relative; width: 100%%; overflow: hidden; }
-      .basic-slider-scroll { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; position: relative; width: 100%%; -ms-overflow-style: none; scrollbar-width: none; }
-      .basic-slider-scroll::-webkit-scrollbar { display: none; }
-      .basic-slider-item { flex-shrink: 0; scroll-snap-type: x mandatory; scroll-snap-align: center; max-width: 80%%; height: 100%%; position: relative; }
-      .basic-slider-item img { display: block; width: 100%%; height: 100%%; border-radius: 5px; }
-      .basic-slider-item:last-child { padding-right: 30px; }
-      .dj-caption { position: absolute; top: 5px; left: 5px; z-index: 20; background: rgba(0, 0, 0, 0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 20px; font-weight: 400; }
-      %s
-      .slider-overview { position: absolute; bottom: 0; right: 0; height: 46%%; z-index: 30; max-width: 100%%; }
-      .nav-button { position: absolute; top: 40%%; transform: translateY(-50%%); background: rgba(0, 0, 0, 0.5); color: white; border: none; width: 50px; height: 50px; border-radius: 50%%; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 0; }
-      .nav-button svg { width: 24px; height: 24px; fill: currentColor; }
-      @media (max-width: 600px) { .nav-button { width: 40px; height: 40px; } .nav-button svg { width: 20px; height: 20px; } }
-      .nav-button.next svg { transform: scaleX(-1); }
-      .nav-button:disabled { opacity: 0.3; cursor: not-allowed; }
-      .nav-button.prev { left: 10px; }
-      .nav-button.next { right: 10px; }
-      .dots { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
-      .dot { width: 10px; height: 10px; border-radius: 50%%; background: #efefef; cursor: pointer; transition: all %.2fs ease; }
-      .dot.active { background: #454545; transform: scale(1.5); }
-    ",
-    gradient_css,
-    animation_duration
-  )
-
-  # Define the complete HTML structure using htmltools
-  swiper_component <- tagList(
-    tags$style(HTML(css_code)),
-    tags$div(
-      class = "basic-slider-container",
-      tags$div(
-        class = "image-wrapper",
-        if (!is.null(gradient_color)) tags$div(class = "gradient"),
-        tags$div(class = "basic-slider-scroll", slider_items),
-        overlay_tag,
-        tags$button(class = "nav-button prev", prev_svg),
-        tags$button(class = "nav-button next", next_svg)
-      ),
-      tags$div(class = "dots")
-    ),
-    tags$script(HTML(js_code))
+      debounce_delay
+    )))
   )
 
   return(swiper_component)
