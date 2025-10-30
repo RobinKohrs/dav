@@ -10,11 +10,11 @@
 #' @param overlay_path An optional string specifying the path to an overlay image.
 #' @param gradient_color An optional string specifying the color for the edge gradient.
 #'   Defaults to "#c1d9d9" (light blue-green). Set to NULL to disable the gradient.
-#' @param gradient_stops An optional numeric vector of length 3 specifying the
-#'   gradient stops: `c(left_opaque_end, middle_transparent, right_opaque_start)`.
-#'   For example, `c(10, 50, 90)` will keep the gradient solid until 10%,
-#'   fade to transparent at 50%, and then fade back to solid at 90%.
-#'   Defaults to `NULL`, which uses `c(15, 50, 85)`.
+#' @param gradient_stops An optional named character vector where names are
+#'   percentage stops (e.g., `'0'`, `'50'`) and values are CSS colors (e.g.,
+#'   `'#ffffff'`, `'transparent'`). This allows for creating complex, multi-color
+#'   gradients. If `NULL` (the default), a standard gradient is created using
+#'   `gradient_color`.
 #' @param aspect_ratio A string defining the aspect ratio for the slider items,
 #'   e.g., "1/1" for a square or "16/9" for widescreen. Defaults to "1/1".
 #' @param max_width An optional numeric value for the maximum width of the
@@ -25,6 +25,11 @@
 #' to delay the dot indicator update until scrolling has paused.
 #' @param animation_duration An optional numeric value. The duration of the dot
 #'   indicator's grow/shrink animation in seconds. Defaults to 0.3.
+#' @param object_fit A string specifying how an image should be resized to fit
+#'   its container. Common values are "cover", "contain", "fill", "none",
+#'   or "scale-down". Defaults to "contain".
+#' @param main_image_width An optional numeric value (1-100) for the percentage
+#'   width of the central image. Defaults to 60.
 #'
 #' @return An `htmltools::tagList` object that can be rendered directly in
 #'   R Markdown, Shiny, or other HTML-supporting R environments.
@@ -56,7 +61,9 @@ html_create_image_swiper <- function(
   aspect_ratio = "1/1",
   max_width = NULL,
   debounce_delay = 0,
-  animation_duration = 0.3
+  animation_duration = 0.3,
+  object_fit = "contain",
+  main_image_width = 60
 ) {
   # Validate input
   if (!is.list(image_data) || length(image_data) == 0) {
@@ -67,6 +74,20 @@ html_create_image_swiper <- function(
       stop('Each entry in `image_data` must be a list with a `path`.')
     }
   }
+
+  if (
+    !is.numeric(main_image_width) ||
+      main_image_width < 1 ||
+      main_image_width > 100
+  ) {
+    stop("`main_image_width` must be a numeric value between 1 and 100.")
+  }
+  side_peek_width <- (100 - main_image_width) / 2
+
+  uid <- paste0(
+    "swiper-",
+    paste(sample(c(letters, 0:9), 8, replace = TRUE), collapse = "")
+  )
 
   # Generate the HTML for each slider item
   slider_items <- lapply(image_data, function(item) {
@@ -97,28 +118,58 @@ html_create_image_swiper <- function(
     )
   }
 
-  # Generate gradient CSS based on the gradient_color parameter
+  # Generate gradient CSS
   gradient_css <- ""
-  if (!is.null(gradient_color)) {
+  # Create a gradient if a color or stops are provided
+  if (!is.null(gradient_color) || !is.null(gradient_stops)) {
+    colors <- NULL
+    stops <- NULL
+    # If gradient_stops is not provided, create a default one using gradient_color
     if (is.null(gradient_stops)) {
-      # Default stops for a gradient that is opaque at the edges
-      gradient_stops <- c(15, 50, 85)
+      # Default behavior: fade to transparent in the middle
+      stops <- c(0, 15, 50, 85, 100)
+      colors <- c(
+        gradient_color,
+        gradient_color,
+        "transparent",
+        gradient_color,
+        gradient_color
+      )
     } else {
-      if (!is.numeric(gradient_stops) || length(gradient_stops) != 3) {
+      # Validate the user-provided named vector
+      if (
+        !is.vector(gradient_stops) ||
+          is.null(names(gradient_stops)) ||
+          !is.character(gradient_stops)
+      ) {
         stop(
-          "`gradient_stops` must be a numeric vector of length 3, e.g., c(15, 50, 85)."
+          "`gradient_stops` must be a named character vector, where names are percentages."
         )
       }
+      stops_num <- suppressWarnings(as.numeric(names(gradient_stops)))
+      if (anyNA(stops_num)) {
+        stop("Names of `gradient_stops` must be numeric percentages.")
+      }
+      colors <- as.character(gradient_stops)
+      stops <- stops_num
     }
+
+    # Construct the gradient string from the list
+    gradient_parts <- mapply(
+      function(color, percent) {
+        sprintf("%s %s%%", color, percent)
+      },
+      colors,
+      stops,
+      SIMPLIFY = FALSE
+    )
+
+    gradient_values <- paste(unlist(gradient_parts), collapse = ", ")
+
     gradient_css <- sprintf(
-      ".gradient { position: absolute; width: 100%%; height: 100%%; background-image: linear-gradient(to right, %s 0%%, %s %d%%, transparent %d%%, %s %d%%, %s 100%%); z-index: 10; pointer-events: none; top: 0; left: 0; }",
-      gradient_color,
-      gradient_color,
-      gradient_stops[1],
-      gradient_stops[2],
-      gradient_color,
-      gradient_stops[3],
-      gradient_color
+      ".%s .gradient { position: absolute; width: 100%%; height: 100%%; background-image: linear-gradient(to right, %s); z-index: 10; pointer-events: none; top: 0; left: 0; }",
+      uid,
+      gradient_values
     )
   }
 
@@ -139,37 +190,62 @@ html_create_image_swiper <- function(
     tags$style(HTML(paste0(
       sprintf(
         "
-      .basic-slider-container { position: relative; width: 100%%; %s margin: 0 auto; font-family: STMatilda Info Variable, system-ui, sans-serif; }
-      .image-wrapper { position: relative; width: 100%%; overflow: hidden; }
-      .basic-slider-scroll { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; position: relative; width: 100%%; -ms-overflow-style: none; scrollbar-width: none; padding: 0 10%%; box-sizing: border-box; }
-      .basic-slider-scroll::-webkit-scrollbar { display: none; }
-      .basic-slider-item { flex-shrink: 0; scroll-snap-align: center; width: 100%%; position: relative; aspect-ratio: %s; }
-      .basic-slider-item img { display: block; width: 100%%; height: 100%%; border-radius: 5px; object-fit: cover; }
-      .dj-caption { position: absolute; top: 5px; left: 5px; z-index: 20; background: rgba(0, 0, 0, 0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 20px; font-weight: 400; }
+      .%s.basic-slider-container { position: relative; width: 100%%; %s margin: 0 auto; font-family: STMatilda Info Variable, system-ui, sans-serif; }
+      .%s .image-wrapper { position: relative; width: 100%%; overflow: hidden; }
+      .%s .basic-slider-scroll { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; position: relative; width: 100%%; -ms-overflow-style: none; scrollbar-width: none; }
+      .%s .basic-slider-scroll::before, .%s .basic-slider-scroll::after { content: ''; flex-basis: %.2f%%; flex-shrink: 0; }
+      .%s .basic-slider-scroll::-webkit-scrollbar { display: none; }
+      .%s .basic-slider-item { flex-shrink: 0; scroll-snap-align: center; width: %.2f%%; position: relative; aspect-ratio: %s; }
+      .%s .basic-slider-item img { display: block; width: 100%%; height: 100%%; border-radius: 5px; object-fit: %s; }
+      .%s .dj-caption { position: absolute; top: 5px; left: 5px; z-index: 20; background: rgba(0, 0, 0, 0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 20px; font-weight: 400; }
       ",
+        uid,
         max_width_css,
-        aspect_ratio
+        uid,
+        uid,
+        uid,
+        uid,
+        side_peek_width,
+        uid,
+        uid,
+        main_image_width,
+        aspect_ratio,
+        uid,
+        object_fit,
+        uid
       ),
       gradient_css,
       sprintf(
         "
-      .slider-overview { position: absolute; bottom: 0; right: 0; height: 46%%; z-index: 30; max-width: 100%%; }
-      .nav-button { position: absolute; top: 40%%; transform: translateY(-50%%); background: rgba(0, 0, 0, 0.5); color: white; border: none; width: 3.125rem; height: 3.125rem; border-radius: 50%%; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 0; }
-      .nav-button svg { width: 1.5rem; height: 1.5rem; fill: currentColor; }
-      @media (max-width: 600px) { .nav-button { width: 2.5rem; height: 2.5rem; } .nav-button svg { width: 1.25rem; height: 1.25rem; } }
-      .nav-button.next svg { transform: scaleX(-1); }
-      .nav-button:disabled { opacity: 0.3; cursor: not-allowed; }
-      .nav-button.prev { left: 0.625rem; }
-      .nav-button.next { right: 0.625rem; }
-      .dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.625rem; }
-      .dot { width: 0.625rem; height: 0.625rem; border-radius: 50%%; background: #efefef; cursor: pointer; transition: all %.2fs ease; }
-      .dot.active { background: #454545; transform: scale(1.5); }
+      .%s .slider-overview { position: absolute; bottom: 0; right: 0; height: 46%%; z-index: 30; max-width: 100%%; }
+      .%s .nav-button { position: absolute; top: 40%%; transform: translateY(-50%%); background: rgba(100,100,100); color: white; border: none; width: 3.125rem; height: 3.125rem; border-radius: 50%%; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 0; }
+      .%s .nav-button svg { width: 1.5rem; height: 1.5rem; fill: currentColor; }
+      @media (max-width: 600px) { .%s .nav-button { width: 2.5rem; height: 2.5rem; } .%s .nav-button svg { width: 1.25rem; height: 1.25rem; } }
+      .%s .nav-button.next svg { transform: scaleX(-1); }
+      .%s .nav-button:disabled { opacity: 0.3; cursor: not-allowed; }
+      .%s .nav-button.prev { left: 0.625rem; }
+      .%s .nav-button.next { right: 0.625rem; }
+      .%s .dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.625rem; }
+      .%s .dot { width: 0.625rem; height: 0.625rem; border-radius: 50%%; background: #efefef; cursor: pointer; transition: all %.2fs ease; }
+      .%s .dot.active { background: #454545; transform: scale(1.5); }
     ",
-        animation_duration
+        uid,
+        uid,
+        uid,
+        uid,
+        uid,
+        uid,
+        uid,
+        uid,
+        uid,
+        uid,
+        uid,
+        animation_duration,
+        uid
       )
     ))),
     tags$div(
-      class = "basic-slider-container",
+      class = paste("basic-slider-container", uid),
       tags$div(
         class = "image-wrapper",
         if (!is.null(gradient_color)) tags$div(class = "gradient"),
@@ -184,8 +260,7 @@ html_create_image_swiper <- function(
       "
       (function() {
         const debounceDelay = %d;
-        const allSliders = document.querySelectorAll('.basic-slider-container:not([data-initialized])');
-        const container = allSliders[allSliders.length - 1];
+        const container = document.querySelector('.%s.basic-slider-container:not([data-initialized])');
         if (!container) return;
         container.setAttribute('data-initialized', 'true');
         const slider = container.querySelector('.basic-slider-scroll');
@@ -260,7 +335,8 @@ html_create_image_swiper <- function(
         updateDots();
       })();
     ",
-      debounce_delay
+      debounce_delay,
+      uid
     )))
   )
 

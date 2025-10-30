@@ -8,10 +8,13 @@ html_create_image_swiper(
   image_data,
   overlay_path = NULL,
   gradient_color = "#c1d9d9",
+  gradient_stops = NULL,
   aspect_ratio = "1/1",
   max_width = NULL,
   debounce_delay = 0,
-  animation_duration = 0.3
+  animation_duration = 0.3,
+  object_fit = "contain",
+  main_image_width = 60
 )
 }
 \arguments{
@@ -23,6 +26,12 @@ html_create_image_swiper(
 
 \item{gradient_color}{An optional string specifying the color for the edge gradient.
 Defaults to "#c1d9d9" (light blue-green). Set to NULL to disable the gradient.}
+
+\item{gradient_stops}{An optional named character vector where names are
+percentage stops (e.g., \code{'0'}, \code{'50'}) and values are CSS colors (e.g.,
+\code{'#ffffff'}, \code{'transparent'}). This allows for creating complex, multi-color
+gradients. If \code{NULL} (the default), a standard gradient is created using
+\code{gradient_color}.}
 
 \item{aspect_ratio}{A string defining the aspect ratio for the slider items,
 e.g., "1/1" for a square or "16/9" for widescreen. Defaults to "1/1".}
@@ -37,6 +46,13 @@ to delay the dot indicator update until scrolling has paused.}
 
 \item{animation_duration}{An optional numeric value. The duration of the dot
 indicator's grow/shrink animation in seconds. Defaults to 0.3.}
+
+\item{object_fit}{A string specifying how an image should be resized to fit
+its container. Common values are "cover", "contain", "fill", "none",
+or "scale-down". Defaults to "contain".}
+
+\item{main_image_width}{An optional numeric value (1-100) for the percentage
+width of the central image. Defaults to 60.}
 }
 \value{
 An \code{htmltools::tagList} object that can be rendered directly in
