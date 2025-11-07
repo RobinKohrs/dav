@@ -14,7 +14,11 @@ html_create_image_swiper(
   debounce_delay = 0,
   animation_duration = 0.3,
   object_fit = "contain",
-  main_image_width = 60
+  main_image_width = 60,
+  output_file = NULL,
+  overwrite = TRUE,
+  dot_size = "0.625rem",
+  include_html_header = FALSE
 )
 }
 \arguments{
@@ -53,6 +57,21 @@ or "scale-down". Defaults to "contain".}
 
 \item{main_image_width}{An optional numeric value (1-100) for the percentage
 width of the central image. Defaults to 60.}
+
+\item{output_file}{An optional string. If provided, the generated HTML will
+be saved to this file path. Defaults to \code{NULL}.}
+
+\item{overwrite}{A logical value. If \code{TRUE} (the default), an existing output
+file will be overwritten. If \code{FALSE}, the function will stop with an error
+if the file already exists.}
+
+\item{dot_size}{A string specifying the CSS size for the navigation dots
+(e.g., "1rem", "10px", "4pt"). Defaults to "0.625rem".}
+
+\item{include_html_header}{A logical value. If \code{TRUE}, the output file will
+be a complete HTML document, including the necessary viewport meta tag for
+proper mobile scaling. Defaults to \code{FALSE}, which outputs only the HTML
+fragment.}
 }
 \value{
 An \code{htmltools::tagList} object that can be rendered directly in

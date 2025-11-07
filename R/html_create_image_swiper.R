@@ -30,11 +30,23 @@
 #'   or "scale-down". Defaults to "contain".
 #' @param main_image_width An optional numeric value (1-100) for the percentage
 #'   width of the central image. Defaults to 60.
+#' @param output_file An optional string. If provided, the generated HTML will
+#'   be saved to this file path. Defaults to `NULL`.
+#' @param overwrite A logical value. If `TRUE` (the default), an existing output
+#'   file will be overwritten. If `FALSE`, the function will stop with an error
+#'   if the file already exists.
+#' @param dot_size A string specifying the CSS size for the navigation dots
+#'   (e.g., "1rem", "10px", "4pt"). Defaults to "0.625rem".
+#' @param include_html_header A logical value. If `TRUE`, the output file will
+#'   be a complete HTML document, including the necessary viewport meta tag for
+#'   proper mobile scaling. Defaults to `FALSE`, which outputs only the HTML
+#'   fragment.
 #'
 #' @return An `htmltools::tagList` object that can be rendered directly in
 #'   R Markdown, Shiny, or other HTML-supporting R environments.
 #'
 #' @importFrom htmltools tagList tags HTML htmlEscape
+#' @importFrom cli cli_alert_success cli_abort
 #'
 #' @examples
 #' # Define a list of images and their captions
@@ -63,7 +75,11 @@ html_create_image_swiper <- function(
   debounce_delay = 0,
   animation_duration = 0.3,
   object_fit = "contain",
-  main_image_width = 60
+  main_image_width = 60,
+  output_file = NULL,
+  overwrite = TRUE,
+  dot_size = "0.625rem",
+  include_html_header = FALSE
 ) {
   # Validate input
   if (!is.list(image_data) || length(image_data) == 0) {
@@ -226,7 +242,7 @@ html_create_image_swiper <- function(
       .%s .nav-button.prev { left: 0.625rem; }
       .%s .nav-button.next { right: 0.625rem; }
       .%s .dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.625rem; }
-      .%s .dot { width: 0.625rem; height: 0.625rem; border-radius: 50%%; background: #efefef; cursor: pointer; transition: all %.2fs ease; }
+      .%s .dot { width: %s; height: %s; border-radius: 50%%; background: #efefef; cursor: pointer; transition: all %.2fs ease; }
       .%s .dot.active { background: #454545; transform: scale(1.5); }
     ",
         uid,
@@ -240,6 +256,8 @@ html_create_image_swiper <- function(
         uid,
         uid,
         uid,
+        dot_size,
+        dot_size,
         animation_duration,
         uid
       )
@@ -339,6 +357,43 @@ html_create_image_swiper <- function(
       uid
     )))
   )
+
+  # If an output file is specified, save the HTML
+  if (!is.null(output_file)) {
+    # Check if the file exists and should not be overwritten
+    if (file.exists(output_file) && !overwrite) {
+      cli::cli_abort(
+        "File already exists at '{.path {output_file}}' and `overwrite` is `FALSE`."
+      )
+    }
+    # Ensure the directory exists
+    dir.create(dirname(output_file), showWarnings = FALSE, recursive = TRUE)
+    # Render the component to a character string
+    html_content <- as.character(swiper_component)
+
+    # If requested, wrap the fragment in a full HTML document
+    if (include_html_header) {
+      html_content <- paste(
+        "<!DOCTYPE html>",
+        "<html lang=\"en\">",
+        "<head>",
+        "  <meta charset=\"UTF-8\" />",
+        "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />",
+        "  <title>Swiper</title>",
+        "</head>",
+        "<body>",
+        html_content,
+        "</body>",
+        "</html>",
+        sep = "\n"
+      )
+    }
+
+    writeLines(html_content, con = output_file)
+    cli::cli_alert_success(
+      "Swiper HTML successfully written to '{.path {output_file}}'"
+    )
+  }
 
   return(swiper_component)
 }
