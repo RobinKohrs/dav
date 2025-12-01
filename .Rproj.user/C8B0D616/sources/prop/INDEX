@@ -1,5 +1,8 @@
 ~%2F.gitignore="1157B1A8"
 ~%2Fprojects%2Fpersonal%2Fdav%2FR%2Fcreate_clipped_laea.R="87D1400B"
+~%2Fprojects%2Fpersonal%2Fdav%2FR%2Fdav_coords_to_country.R="FA5DC82F"
+~%2Fprojects%2Fpersonal%2Fdav%2FR%2Feaws_get_geo_ratings.R="6212FE68"
+~%2Fprojects%2Fpersonal%2Fdav%2FR%2Feaws_get_season_data.R="BFF74EF5"
 ~%2Fprojects%2Fpersonal%2Fdav%2FR%2Fgaza_get_planet_rasters_for_aoi.R="F73C8C4D"
 ~%2Fprojects%2Fpersonal%2Fdav%2FdavR%2FDESCRIPTION="DAB23C25"
 ~%2Fprojects%2Fpersonal%2Fdav%2FdavR%2FNAMESPACE="A0B33127"
