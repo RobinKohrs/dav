@@ -41,9 +41,80 @@
 nice_colors <- function(palette = NULL, include_contrasts = TRUE) {
     # Define color palettes with main and contrasting colors
     palettes <- list(
+        observable10 = list(
+            main = c(
+                blue = "#4269d0",
+                orange = "#efb118",
+                red = "#ff725c",
+                cyan = "#6cc5b0",
+                green = "#3ca951",
+                purple = "#ff8ab7",
+                fuchsia = "#a463f2",
+                brown = "#97bbf5",
+                gray = "#9c6b4e",
+                light_gray = "#9498a0"
+            ),
+            description = "The Observable 10 palette: A contemporary categorical color scheme designed for data visualization."
+        ),
+        retro_metro = list(
+            main = c(
+                red = "#ea5545",
+                pink = "#f46a9b",
+                orange = "#ef9b20",
+                yellow = "#edbf33",
+                lime = "#ede15b",
+                green = "#bdcf32",
+                grass = "#87bc45",
+                blue = "#27aeef",
+                purple = "#b33dc6"
+            ),
+            description = "Retro Metro: A vibrant blend of lively and engaging colors."
+        ),
+        dutch_field = list(
+            main = c(
+                red = "#e60049",
+                blue = "#0bb4ff",
+                green = "#50e991",
+                yellow = "#e6d800",
+                purple = "#9b19f5",
+                orange = "#ffa300",
+                magenta = "#dc0ab4",
+                light_blue = "#b3d4ff",
+                teal = "#00bfa0"
+            ),
+            description = "Dutch Field: Bold colors for a modern look that pops."
+        ),
+        river_nights = list(
+            main = c(
+                red = "#b30000",
+                maroon = "#7c1158",
+                indigo = "#4421af",
+                blue = "#1a53ff",
+                sky = "#0d88e6",
+                teal = "#00b7c7",
+                green = "#5ad45a",
+                lime = "#8be04e",
+                yellow = "#ebdc78"
+            ),
+            description = "River Nights: Deeper hues for a sophisticated presentation."
+        ),
+        spring_pastels = list(
+            main = c(
+                pink = "#fd7f6f",
+                blue = "#7eb0d5",
+                green = "#b2e061",
+                purple = "#bd7ebe",
+                orange = "#ffb55a",
+                yellow = "#ffee65",
+                lavender = "#beb9db",
+                rose = "#fdcce5",
+                mint = "#8bd3c7"
+            ),
+            description = "Spring Pastels: Soft, lighter colors for a soothing look."
+        ),
         modern = list(
             main = c(
-                purple = "#5856D6", # User's color
+                purple = "#5856D6",
                 teal = "#5AC8FA",
                 green = "#34C759",
                 orange = "#FF9500",
@@ -51,16 +122,6 @@ nice_colors <- function(palette = NULL, include_contrasts = TRUE) {
                 yellow = "#FFCC00",
                 pink = "#FF2D92",
                 indigo = "#007AFF"
-            ),
-            contrast = c(
-                purple = "#FFFFFF",
-                teal = "#000000",
-                green = "#FFFFFF",
-                orange = "#FFFFFF",
-                red = "#FFFFFF",
-                yellow = "#000000",
-                pink = "#FFFFFF",
-                indigo = "#FFFFFF"
             ),
             description = "Modern iOS-inspired colors with high contrast"
         ),
@@ -76,16 +137,6 @@ nice_colors <- function(palette = NULL, include_contrasts = TRUE) {
                 salmon = "#FFB3BA",
                 mint = "#BAFFC9"
             ),
-            contrast = c(
-                electric_blue = "#FFFFFF",
-                coral = "#FFFFFF",
-                lime = "#000000",
-                gold = "#000000",
-                magenta = "#000000",
-                violet = "#FFFFFF",
-                salmon = "#000000",
-                mint = "#000000"
-            ),
             description = "Vibrant and energetic colors"
         ),
 
@@ -99,16 +150,6 @@ nice_colors <- function(palette = NULL, include_contrasts = TRUE) {
                 cream = "#FFF8DC",
                 lilac = "#DDA0DD",
                 powder_blue = "#B0E0E6"
-            ),
-            contrast = c(
-                lavender = "#4B0082",
-                peach = "#8B4513",
-                mint = "#006400",
-                rose = "#8B0000",
-                sky = "#000080",
-                cream = "#8B4513",
-                lilac = "#4B0082",
-                powder_blue = "#000080"
             ),
             description = "Soft pastel colors with dark contrasts"
         ),
@@ -124,16 +165,6 @@ nice_colors <- function(palette = NULL, include_contrasts = TRUE) {
                 bronze = "#D35400",
                 steel = "#95A5A6"
             ),
-            contrast = c(
-                navy = "#FFFFFF",
-                steel_blue = "#FFFFFF",
-                charcoal = "#FFFFFF",
-                slate = "#FFFFFF",
-                forest = "#FFFFFF",
-                burgundy = "#FFFFFF",
-                bronze = "#FFFFFF",
-                steel = "#000000"
-            ),
             description = "Professional and corporate colors"
         ),
 
@@ -147,16 +178,6 @@ nice_colors <- function(palette = NULL, include_contrasts = TRUE) {
                 bark_brown = "#A0522D",
                 ocean_blue = "#4682B4",
                 moss_green = "#9ACD32"
-            ),
-            contrast = c(
-                forest_green = "#FFFFFF",
-                earth_brown = "#FFFFFF",
-                sky_blue = "#000000",
-                sunset_orange = "#FFFFFF",
-                leaf_green = "#000000",
-                bark_brown = "#FFFFFF",
-                ocean_blue = "#FFFFFF",
-                moss_green = "#000000"
             ),
             description = "Natural earth and sky tones"
         ),
@@ -172,16 +193,6 @@ nice_colors <- function(palette = NULL, include_contrasts = TRUE) {
                 peach = "#FFCCCB",
                 rose_gold = "#E8B4B8"
             ),
-            contrast = c(
-                deep_purple = "#FFFFFF",
-                coral_pink = "#000000",
-                golden_yellow = "#000000",
-                burnt_orange = "#FFFFFF",
-                crimson = "#FFFFFF",
-                lavender = "#4B0082",
-                peach = "#8B4513",
-                rose_gold = "#000000"
-            ),
             description = "Warm sunset and twilight colors"
         ),
 
@@ -196,45 +207,41 @@ nice_colors <- function(palette = NULL, include_contrasts = TRUE) {
                 pearl = "#F0F8FF",
                 wave = "#4682B4"
             ),
-            contrast = c(
-                deep_blue = "#FFFFFF",
-                aqua = "#000000",
-                teal = "#FFFFFF",
-                navy = "#FFFFFF",
-                seafoam = "#000000",
-                coral = "#FFFFFF",
-                pearl = "#000080",
-                wave = "#FFFFFF"
-            ),
             description = "Ocean and marine-inspired colors"
         ),
 
         newspaper = list(
             main = c(
-                apo = "#C1D9D9", # Light blue-gray
-                wirt = "#D8DEC1", # Light sage green
-                sport = "#C6DC73", # Light lime green
-                pano = "#AFD4AE", # Light mint green
-                kultur = "#D2D0CF", # Light warm gray
-                etat = "#FFCC66", # Light golden yellow
-                wiss = "#BEDAE3", # Light sky blue
-                karriere = "#F8F8F8", # Very light gray
-                zukunft = "#E6E6E6" # Light gray
-            ),
-            contrast = c(
-                apo = "#2C3E50", # Dark blue-gray (contrast ratio: ~12.6:1)
-                wirt = "#2C3E50", # Dark blue-gray (contrast ratio: ~10.2:1)
-                sport = "#2C3E50", # Dark blue-gray (contrast ratio: ~9.5:1)
-                pano = "#2C3E50", # Dark blue-gray (contrast ratio: ~11.3:1)
-                kultur = "#2C3E50", # Dark blue-gray (contrast ratio: ~10.8:1)
-                etat = "#2C3E50", # Dark blue-gray (contrast ratio: ~9.1:1)
-                wiss = "#2C3E50", # Dark blue-gray (contrast ratio: ~12.4:1)
-                karriere = "#2C3E50", # Dark blue-gray (contrast ratio: ~21:1)
-                zukunft = "#2C3E50" # Dark blue-gray (contrast ratio: ~16.1:1)
+                apo = "#C1D9D9",
+                wirt = "#D8DEC1",
+                sport = "#C6DC73",
+                pano = "#AFD4AE",
+                kultur = "#D2D0CF",
+                etat = "#FFCC66",
+                wiss = "#BEDAE3",
+                karriere = "#F8F8F8",
+                zukunft = "#E6E6E6"
             ),
             description = "Newspaper-themed colors with WCAG AA compliant contrasts"
         )
     )
+
+    # Automatically calculate contrasts for palettes where they are not explicitly defined
+    for (name in names(palettes)) {
+        if (is.null(palettes[[name]]$contrast)) {
+            palettes[[name]]$contrast <- sapply(
+                palettes[[name]]$main,
+                function(hex) {
+                    # Calculate luminance to decide between black and white
+                    rgb <- col2rgb(hex)
+                    # Perceived brightness formula
+                    lum <- (0.299 * rgb[1] + 0.587 * rgb[2] + 0.114 * rgb[3]) /
+                        255
+                    if (lum > 0.5) "#000000" else "#FFFFFF"
+                }
+            )
+        }
+    }
 
     # If no specific palette requested, return all
     if (is.null(palette)) {

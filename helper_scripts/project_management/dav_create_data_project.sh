@@ -213,11 +213,11 @@ fi
 [ ! -d ".git" ] && { git init -q; echo ".Rhistory" > .gitignore; echo "*~" >> .gitignore; }
 
 # Create directory structure
-mkdir -p data_raw/{geodata,tabular} data_output graphic_output docs scripts
+mkdir -p data/{csv,excel,misc} data/geodata/{raster,vector} graphic_output docs scripts
 
 # Setup R components
 if [ "$ADD_R" = true ]; then
-    mkdir -p R/{analysis,functions}
+    mkdir -p R
     cat > "$PROJECT_SLUG.Rproj" << EOF
 Version: 1.0
 RestoreWorkspace: Default
@@ -244,9 +244,12 @@ library(terra)
 
 
 # Set up project paths
-data_raw_path = here("data_raw")
-data_output_path = here("data_output")
-graphic_output_path = here("graphic_output")
+p_data = here("data")
+p_csv = here("data", "csv")
+p_excel = here("data", "excel")
+p_geo_vec = here("data", "geodata", "vector")
+p_geo_ras = here("data", "geodata", "raster")
+p_graphic = here("graphic_output")
 
 EOF
 fi
@@ -301,15 +304,70 @@ Created: $(date +"%Y-%m-%d")
 Location: $PROJECT_ROOT_DIR
 
 ## Structure
-- data_raw/: Raw input data
-- data_output/: Processed outputs  
+- data/: Input and output data
+  - csv/
+  - excel/
+  - geodata/
+    - vector/
+    - raster/
 - graphic_output/: Charts and maps
-- docs/: Documentation
+- docs/: Documentation and Quarto files
 - scripts/: General scripts
 EOF
 
-[ "$ADD_R" = true ] && echo "- R/: R scripts and functions" >> README.md
+[ "$ADD_R" = true ] && echo "- R/: R scripts" >> README.md
 [ "$ADD_QGIS" = true ] && echo "- qgis/: QGIS files" >> README.md
+
+# Create Quarto Doc
+cat > "docs/$PROJECT_SLUG.qmd" << EOF
+---
+title: "$PROJECT_NAME"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    code-summary: "Show Code"
+    backgroundcolor: "#C6DC73"
+    grid:
+      body-width: 600px
+editor: source
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+\`\`\`{r setup, include=FALSE}
+knitr::opts_chunk\$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(polyglotr)
+library(here)
+library(glue)
+library(sf)
+library(davR)
+library(jsonlite)
+library(mapview)
+library(DatawRappr)
+library(DT)
+library(gt)
+library(zoo)
+
+m <- mapview
+
+# Define paths
+p_data = here("data")
+p_csv = here("data", "csv")
+p_excel = here("data", "excel")
+p_geo_vec = here("data", "geodata", "vector")
+p_geo_ras = here("data", "geodata", "raster")
+p_graphic = here("graphic_output")
+\`\`\`
+
+EOF
 
 echo ""
 echo "Project created: $PROJECT_ROOT_DIR"

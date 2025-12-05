@@ -10,6 +10,7 @@
 #' @param source_link Optional. A URL to link the source text.
 #' @param legend_breakpoint_px Integer pixel width below which the legend is shown and labels are hidden.
 #' @param border Optional. Logical. Whether to show a border around the chart. Defaults to TRUE.
+#' @param show_legend Optional. Logical. Whether to always show the legend. Defaults to FALSE (responsive behavior).
 #'
 #' @return A character string containing HTML markup for the chart.
 #'
@@ -34,19 +35,32 @@
 #' @importFrom glue glue
 #' @export
 html_create_stacked_bar_chart = function(
-    data,
-    headline,
-    subheader,
-    source_text,
-    source_link = NULL,
-    legend_breakpoint_px = 350,
-    border = TRUE
+  data,
+  headline,
+  subheader,
+  source_text,
+  source_link = NULL,
+  legend_breakpoint_px = 350,
+  border = TRUE,
+  show_legend = FALSE
 ) {
-  if (!is.list(data) || length(data) == 0) stop("`data` must be a non-empty list.")
-  if (length(data) > 3) warning("Displaying more than 3 segments might clutter the chart.")
+  if (!is.list(data) || length(data) == 0) {
+    stop("`data` must be a non-empty list.")
+  }
+  if (length(data) > 3) {
+    warning("Displaying more than 3 segments might clutter the chart.")
+  }
   for (i in seq_along(data)) {
-    if (!all(c("value", "color") %in% names(data[[i]]))) stop(glue::glue("Segment {i} missing 'value' or 'color'."))
-    if (!is.numeric(data[[i]]$value) || data[[i]]$value < 0 || data[[i]]$value > 100) stop(glue::glue("Segment {i} 'value' invalid."))
+    if (!all(c("value", "color") %in% names(data[[i]]))) {
+      stop(glue::glue("Segment {i} missing 'value' or 'color'."))
+    }
+    if (
+      !is.numeric(data[[i]]$value) ||
+        data[[i]]$value < 0 ||
+        data[[i]]$value > 100
+    ) {
+      stop(glue::glue("Segment {i} 'value' invalid."))
+    }
   }
 
   bar_segments_html = ""
@@ -56,7 +70,11 @@ html_create_stacked_bar_chart = function(
 
   for (i in seq_along(data)) {
     segment = data[[i]]
-    segment_name = if (!is.null(segment$name) && nzchar(segment$name)) segment$name else paste0("Segment ", i)
+    segment_name = if (!is.null(segment$name) && nzchar(segment$name)) {
+      segment$name
+    } else {
+      paste0("Segment ", i)
+    }
 
     # Determine border radius based on border and segment position
     if (!border) {
@@ -73,18 +91,35 @@ html_create_stacked_bar_chart = function(
 
     hex_to_rgb = function(hex) {
       hex = gsub("#", "", hex)
-      if (nchar(hex) == 3) hex = paste0(strsplit(hex, "")[[1]], strsplit(hex, "")[[1]], collapse = "")
-      sapply(c(1, 3, 5), function(idx) strtoi(paste0("0x", substr(hex, idx, idx + 1))))
+      if (nchar(hex) == 3) {
+        hex = paste0(
+          strsplit(hex, "")[[1]],
+          strsplit(hex, "")[[1]],
+          collapse = ""
+        )
+      }
+      sapply(c(1, 3, 5), function(idx) {
+        strtoi(paste0("0x", substr(hex, idx, idx + 1)))
+      })
     }
-    rgb_color = tryCatch(hex_to_rgb(segment$color), error = function(e) c(128, 128, 128))
-    luminance = 0.299 * rgb_color[1] + 0.587 * rgb_color[2] + 0.114 * rgb_color[3]
+    rgb_color = tryCatch(hex_to_rgb(segment$color), error = function(e) {
+      c(128, 128, 128)
+    })
+    luminance = 0.299 *
+      rgb_color[1] +
+      0.587 * rgb_color[2] +
+      0.114 * rgb_color[3]
     text_color_inside_bar = ifelse(luminance > 128, "#333333", "#efefef")
 
     bar_label <- ""
     if (segment$value >= 8) {
       abs_val <- ""
       if (!is.null(segment$absolute_value)) {
-        abs_val <- paste0('<span style="font-size: 14px; font-weight: normal;">(', segment$absolute_value, ')</span>')
+        abs_val <- paste0(
+          '<span style="font-size: 14px; font-weight: normal;">(',
+          segment$absolute_value,
+          ')</span>'
+        )
       }
       bar_label <- glue::glue(
         '<span class="chart-bar-inline-label" style="font-size: 20px; font-weight: bold; color: {text_color_inside_bar}; padding-right: 12px; white-space: nowrap; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0;">{segment$value}%<span style="font-size: 14px; font-weight: normal;">{abs_val}</span></span>'
@@ -98,13 +133,15 @@ html_create_stacked_bar_chart = function(
       )
     )
 
-    legend_item_name_display = if (!is.null(segment$name) && nzchar(segment$name)) {
+    legend_item_name_display = if (
+      !is.null(segment$name) && nzchar(segment$name)
+    ) {
       glue::glue('<span class="chart-legend-item-name">{segment$name}:</span> ')
     } else {
       ""
     }
 
-    legend_value = if(!is.null(segment$absolute_value)) {
+    legend_value = if (!is.null(segment$absolute_value)) {
       glue::glue('{segment$value}% ({segment$absolute_value})')
     } else {
       glue::glue('{segment$value}%')
@@ -124,13 +161,21 @@ html_create_stacked_bar_chart = function(
 
   source_content_html = source_text
   if (!is.null(source_link) && nzchar(source_link)) {
-    source_content_html = glue::glue('<a href="{source_link}" target="_blank" style="color: #0056b3; text-decoration: none;">{source_text}</a>')
+    source_content_html = glue::glue(
+      '<a href="{source_link}" target="_blank" style="color: #0056b3; text-decoration: none;">{source_text}</a>'
+    )
   }
 
   segment_descriptions = sapply(data, function(s) {
-    paste0(s$value, "% ", ifelse(!is.null(s$name) && nzchar(s$name), s$name, "segment"))
+    paste0(
+      s$value,
+      "% ",
+      ifelse(!is.null(s$name) && nzchar(s$name), s$name, "segment")
+    )
   })
-  chart_description = glue::glue("Bar chart showing a total of {total_percentage}%. Segments: {paste(segment_descriptions, collapse='; ')}.")
+  chart_description = glue::glue(
+    "Bar chart showing a total of {total_percentage}%. Segments: {paste(segment_descriptions, collapse='; ')}."
+  )
 
   css_styles = glue::glue(
     ".chart-bar-inline-label {{
@@ -138,7 +183,7 @@ html_create_stacked_bar_chart = function(
       line-height: 1.1;
     }}
     .chart-legend {{
-      display: none;
+      display: {if (show_legend) 'block' else 'none'};
       margin-top: 10px;
       padding: 8px;
       border: 1px solid #eee;
@@ -185,7 +230,8 @@ html_create_stacked_bar_chart = function(
     }}"
   )
 
-  html_output = glue::glue('
+  html_output = glue::glue(
+    '
     <style>
       * {{
         box-sizing: border-box;
@@ -203,7 +249,8 @@ html_create_stacked_bar_chart = function(
       <div class="chart-legend">{legend_items_html}</div>
       <p style="text-align: center; font-size: 12px; color: #777; margin-top: 8px;">Quelle: {source_content_html}</p>
     </div>
-  ')
+  '
+  )
 
   return(html_output)
 }

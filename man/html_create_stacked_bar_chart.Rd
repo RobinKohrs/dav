@@ -11,7 +11,8 @@ html_create_stacked_bar_chart(
   source_text,
   source_link = NULL,
   legend_breakpoint_px = 350,
-  border = TRUE
+  border = TRUE,
+  show_legend = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ html_create_stacked_bar_chart(
 \item{legend_breakpoint_px}{Integer pixel width below which the legend is shown and labels are hidden.}
 
 \item{border}{Optional. Logical. Whether to show a border around the chart. Defaults to TRUE.}
+
+\item{show_legend}{Optional. Logical. Whether to always show the legend. Defaults to FALSE (responsive behavior).}
 }
 \value{
 A character string containing HTML markup for the chart.

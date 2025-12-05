@@ -25,14 +25,16 @@ Imports:
     gdalUtilities,
     terra,
     acled.api,
-    htmltools
+    htmltools,
+    aws.s3,
+    dplyr,
+    lubridate,
+    readr
 Suggests:
     knitr,
     rmarkdown,
     DT,
-    dplyr,
     ggplot2,
-    readr,
     readxl      
 Depends:
     R (>= 3.5)
