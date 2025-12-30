@@ -7,7 +7,7 @@
 html_create_image_swiper(
   image_data,
   overlay_path = NULL,
-  gradient_color = "#c1d9d9",
+  gradient_color = "hsla(180, 23\%, 81\%, 1)",
   gradient_stops = NULL,
   aspect_ratio = "1/1",
   max_width = NULL,
@@ -18,7 +18,12 @@ html_create_image_swiper(
   output_file = NULL,
   overwrite = TRUE,
   dot_size = "0.625rem",
-  include_html_header = FALSE
+  include_html_header = FALSE,
+  title = NULL,
+  subtitle = NULL,
+  caption_position = c("inside", "outside"),
+  outside_caption_position = c("bottom", "top"),
+  dots_position = c("bottom", "top")
 )
 }
 \arguments{
@@ -29,7 +34,7 @@ html_create_image_swiper(
 \item{overlay_path}{An optional string specifying the path to an overlay image.}
 
 \item{gradient_color}{An optional string specifying the color for the edge gradient.
-Defaults to "#c1d9d9" (light blue-green). Set to NULL to disable the gradient.}
+Defaults to "hsla(180, 23\%, 81\%, 1)" (light blue-green). Set to NULL to disable the gradient.}
 
 \item{gradient_stops}{An optional named character vector where names are
 percentage stops (e.g., \code{'0'}, \code{'50'}) and values are CSS colors (e.g.,
@@ -72,6 +77,20 @@ if the file already exists.}
 be a complete HTML document, including the necessary viewport meta tag for
 proper mobile scaling. Defaults to \code{FALSE}, which outputs only the HTML
 fragment.}
+
+\item{title}{An optional string. A header title to display above the slider.}
+
+\item{subtitle}{An optional string. A subtitle to display below the title.}
+
+\item{caption_position}{A string, either "inside" (default) or "outside".
+If "inside", captions are overlayed on the image. If "outside", they are
+placed above or below the image as standard text.}
+
+\item{outside_caption_position}{A string, either "bottom" (default) or "top".
+Only applies if \code{caption_position} is "outside".}
+
+\item{dots_position}{A string, either "bottom" (default) or "top".
+Controls where the navigation dots are placed relative to the slider.}
 }
 \value{
 An \code{htmltools::tagList} object that can be rendered directly in
@@ -94,8 +113,10 @@ image_list <- list(
 swiper_widget <- html_create_image_swiper(
   image_data = image_list,
   overlay_path = "http://b.staticfiles.at/elm/static/2025-dateien/slider_overview_final.png",
-  gradient_color = "#c1d9d9",  # Optional: customize gradient color or set to NULL to disable
-  max_width = 615 # Optional: Set a max-width for the container
+  gradient_color = "hsla(180, 23\%, 81\%, 1)",
+  max_width = 615, # Optional: Set a max-width for the container
+  caption_position = "outside",
+  dots_position = "top"
 )
 
 }

@@ -9,7 +9,7 @@
 #'   (a string to be displayed over the image).
 #' @param overlay_path An optional string specifying the path to an overlay image.
 #' @param gradient_color An optional string specifying the color for the edge gradient.
-#'   Defaults to "#c1d9d9" (light blue-green). Set to NULL to disable the gradient.
+#'   Defaults to "hsla(180, 23%, 81%, 1)" (light blue-green). Set to NULL to disable the gradient.
 #' @param gradient_stops An optional named character vector where names are
 #'   percentage stops (e.g., `'0'`, `'50'`) and values are CSS colors (e.g.,
 #'   `'#ffffff'`, `'transparent'`). This allows for creating complex, multi-color
@@ -41,6 +41,15 @@
 #'   be a complete HTML document, including the necessary viewport meta tag for
 #'   proper mobile scaling. Defaults to `FALSE`, which outputs only the HTML
 #'   fragment.
+#' @param title An optional string. A header title to display above the slider.
+#' @param subtitle An optional string. A subtitle to display below the title.
+#' @param caption_position A string, either "inside" (default) or "outside".
+#'   If "inside", captions are overlayed on the image. If "outside", they are
+#'   placed above or below the image as standard text.
+#' @param outside_caption_position A string, either "bottom" (default) or "top".
+#'   Only applies if `caption_position` is "outside".
+#' @param dots_position A string, either "bottom" (default) or "top".
+#'   Controls where the navigation dots are placed relative to the slider.
 #'
 #' @return An `htmltools::tagList` object that can be rendered directly in
 #'   R Markdown, Shiny, or other HTML-supporting R environments.
@@ -60,15 +69,17 @@
 #' swiper_widget <- html_create_image_swiper(
 #'   image_data = image_list,
 #'   overlay_path = "http://b.staticfiles.at/elm/static/2025-dateien/slider_overview_final.png",
-#'   gradient_color = "#c1d9d9",  # Optional: customize gradient color or set to NULL to disable
-#'   max_width = 615 # Optional: Set a max-width for the container
+#'   gradient_color = "hsla(180, 23%, 81%, 1)",
+#'   max_width = 615, # Optional: Set a max-width for the container
+#'   caption_position = "outside",
+#'   dots_position = "top"
 #' )
 #'
 #' @export
 html_create_image_swiper <- function(
   image_data,
   overlay_path = NULL,
-  gradient_color = "#c1d9d9",
+  gradient_color = "hsla(180, 23%, 81%, 1)",
   gradient_stops = NULL,
   aspect_ratio = "1/1",
   max_width = NULL,
@@ -79,9 +90,19 @@ html_create_image_swiper <- function(
   output_file = NULL,
   overwrite = TRUE,
   dot_size = "0.625rem",
-  include_html_header = FALSE
+  caption_fade_duration = 0.5,
+  include_html_header = FALSE,
+  title = NULL,
+  subtitle = NULL,
+  caption_position = c("inside", "outside"),
+  outside_caption_position = c("bottom", "top"),
+  dots_position = c("bottom", "top")
 ) {
   # Validate input
+  caption_position <- match.arg(caption_position)
+  outside_caption_position <- match.arg(outside_caption_position)
+  dots_position <- match.arg(dots_position)
+
   if (!is.list(image_data) || length(image_data) == 0) {
     stop('`image_data` must be a non-empty list of lists with a `path`.')
   }
@@ -106,23 +127,62 @@ html_create_image_swiper <- function(
   )
 
   # Generate the HTML for each slider item
-  slider_items <- lapply(image_data, function(item) {
-    caption_tag <- NULL
-    if (!is.null(item$caption)) {
-      caption_tag <- tags$span(
+  slider_items <- list()
+  caption_items <- list()
+
+  for (i in seq_along(image_data)) {
+    item <- image_data[[i]]
+
+    # 1. Build Image Item (always)
+    # If caption is INSIDE, we include it here.
+    inside_caption_tag <- NULL
+    if (!is.null(item$caption) && caption_position == "inside") {
+      inside_caption_tag <- tags$div(
         class = "dj-caption",
         htmltools::htmlEscape(item$caption)
       )
     }
-    tags$div(
+
+    img_tag <- tags$div(
       class = "basic-slider-item",
-      caption_tag,
-      tags$img(
-        src = item$path,
-        alt = htmltools::htmlEscape(item$caption %||% "Slider Image")
+      tags$div(
+        class = "img-container",
+        inside_caption_tag,
+        tags$img(
+          src = item$path,
+          alt = htmltools::htmlEscape(item$caption %||% "Slider Image")
+        )
       )
     )
-  })
+    slider_items[[i]] <- img_tag
+
+    # 2. Build Caption Item (if OUTSIDE)
+    if (caption_position == "outside") {
+      # HTML allowed for outside
+      cap_content <- if (!is.null(item$caption)) {
+        htmltools::HTML(item$caption)
+      } else {
+        ""
+      }
+      cap_tag <- tags$div(
+        class = "caption-item",
+        cap_content
+      )
+      caption_items[[i]] <- cap_tag
+    }
+  }
+
+  # Wrapper for captions
+  # We render captions in a scroll container that mirrors the image scroller geometry
+  # so both can be synced via scrollLeft (same speed, same snap behavior).
+  caption_container <- if (caption_position == "outside") {
+    tags$div(
+      class = "caption-container",
+      tags$div(class = "caption-scroll", caption_items)
+    )
+  } else {
+    NULL
+  }
 
   # Define the optional overlay image
   overlay_tag <- NULL
@@ -142,11 +202,12 @@ html_create_image_swiper <- function(
     stops <- NULL
     # If gradient_stops is not provided, create a default one using gradient_color
     if (is.null(gradient_stops)) {
-      # Default behavior: fade to transparent in the middle
-      stops <- c(0, 15, 50, 85, 100)
+      # Default behavior: Sharp transition at 10% and 90%
+      stops <- c(0, 10, 10, 90, 90, 100)
       colors <- c(
         gradient_color,
         gradient_color,
+        "transparent",
         "transparent",
         gradient_color,
         gradient_color
@@ -182,9 +243,13 @@ html_create_image_swiper <- function(
 
     gradient_values <- paste(unlist(gradient_parts), collapse = ", ")
 
+    # Standard full coverage since wrapper now only contains images
+    grad_style <- "position: absolute; width: 100%; height: 100%; top: 0; left: 0;"
+
     gradient_css <- sprintf(
-      ".%s .gradient { position: absolute; width: 100%%; height: 100%%; background-image: linear-gradient(to right, %s); z-index: 10; pointer-events: none; top: 0; left: 0; }",
+      ".%s .gradient { %s background-image: linear-gradient(to right, %s); z-index: 10; pointer-events: none; }",
       uid,
+      grad_style,
       gradient_values
     )
   }
@@ -193,6 +258,21 @@ html_create_image_swiper <- function(
   max_width_css <- ""
   if (!is.null(max_width)) {
     max_width_css <- sprintf("max-width: %spx;", max_width)
+  }
+
+  # Determine CSS for caption based on position
+  caption_css <- if (caption_position == "inside") {
+    "position: absolute; top: 5px; left: 5px; z-index: 20; background: rgba(0, 0, 0, 0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 20px; font-weight: 400;"
+  } else {
+    # Outside caption CSS - now handled by container/item classes mostly, but this applies to text styling
+    "font-size: 1rem; line-height: 1.4; text-align: left; color: inherit;"
+  }
+
+  # Dots margin adjustment based on position
+  dots_margin <- if (dots_position == "bottom") {
+    "margin-top: 0.625rem;"
+  } else {
+    "margin-bottom: 0.625rem;"
   }
 
   # SVG for navigation buttons as raw HTML
@@ -207,16 +287,27 @@ html_create_image_swiper <- function(
       sprintf(
         "
       .%s.basic-slider-container { position: relative; width: 100%%; %s margin: 0 auto; font-family: STMatilda Info Variable, system-ui, sans-serif; }
+      .%s .slider-header { margin-bottom: 1rem; text-align: left; }
+      .%s .slider-title { font-size: 1.25rem; font-weight: bold; margin: 0 0 0.25rem 0; }
+      .%s .slider-subtitle { font-size: 1rem; color: #666; margin: 0; }
       .%s .image-wrapper { position: relative; width: 100%%; overflow: hidden; }
       .%s .basic-slider-scroll { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; position: relative; width: 100%%; -ms-overflow-style: none; scrollbar-width: none; }
       .%s .basic-slider-scroll::before, .%s .basic-slider-scroll::after { content: ''; flex-basis: %.2f%%; flex-shrink: 0; }
       .%s .basic-slider-scroll::-webkit-scrollbar { display: none; }
-      .%s .basic-slider-item { flex-shrink: 0; scroll-snap-align: center; width: %.2f%%; position: relative; aspect-ratio: %s; }
-      .%s .basic-slider-item img { display: block; width: 100%%; height: 100%%; border-radius: 5px; object-fit: %s; }
-      .%s .dj-caption { position: absolute; top: 5px; left: 5px; z-index: 20; background: rgba(0, 0, 0, 0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 20px; font-weight: 400; }
+      .%s .basic-slider-item { flex-shrink: 0; scroll-snap-align: center; width: %.2f%%; position: relative; }
+      .%s .img-container { position: relative; width: 100%%; aspect-ratio: %s; }
+      .%s .img-container img { display: block; width: 100%%; height: 100%%; border-radius: 5px; object-fit: %s; }
+      .%s .dj-caption { %s }
+      .%s .caption-container { position: relative; width: 100%%; margin: 0.5rem 0; }
+      .%s .caption-scroll { display: flex; gap: 0; overflow-x: hidden; scroll-snap-type: x mandatory; position: relative; width: 100%%; -ms-overflow-style: none; scrollbar-width: none; pointer-events: none; }
+      .%s .caption-scroll::-webkit-scrollbar { display: none; }
+      .%s .caption-item { flex: 0 0 100%%; width: 100%%; scroll-snap-align: start; position: relative; padding: 0 2px; box-sizing: border-box; }
       ",
         uid,
         max_width_css,
+        uid,
+        uid,
+        uid,
         uid,
         uid,
         uid,
@@ -225,9 +316,15 @@ html_create_image_swiper <- function(
         uid,
         uid,
         main_image_width,
+        uid,
         aspect_ratio,
         uid,
         object_fit,
+        uid,
+        caption_css,
+        uid,
+        uid,
+        uid,
         uid
       ),
       gradient_css,
@@ -241,7 +338,7 @@ html_create_image_swiper <- function(
       .%s .nav-button:disabled { opacity: 0.3; cursor: not-allowed; }
       .%s .nav-button.prev { left: 0.625rem; }
       .%s .nav-button.next { right: 0.625rem; }
-      .%s .dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.625rem; }
+      .%s .dots { display: flex; justify-content: center; gap: 0.5rem; %s }
       .%s .dot { width: %s; height: %s; border-radius: 50%%; background: #efefef; cursor: pointer; transition: all %.2fs ease; }
       .%s .dot.active { background: #454545; transform: scale(1.5); }
     ",
@@ -255,6 +352,7 @@ html_create_image_swiper <- function(
         uid,
         uid,
         uid,
+        dots_margin,
         uid,
         dot_size,
         dot_size,
@@ -264,15 +362,43 @@ html_create_image_swiper <- function(
     ))),
     tags$div(
       class = paste("basic-slider-container", uid),
+      # Header
+      if (!is.null(title) || !is.null(subtitle)) {
+        tags$div(
+          class = "slider-header",
+          if (!is.null(title)) tags$div(class = "slider-title", title),
+          if (!is.null(subtitle)) tags$div(class = "slider-subtitle", subtitle)
+        )
+      },
+      # Dots (Top)
+      if (dots_position == "top") tags$div(class = "dots"),
+
+      # Captions (Top)
+      if (caption_position == "outside" && outside_caption_position == "top") {
+        caption_container
+      },
+
+      # Slider
       tags$div(
         class = "image-wrapper",
-        if (!is.null(gradient_color)) tags$div(class = "gradient"),
+        if (!is.null(gradient_color) || !is.null(gradient_stops)) {
+          tags$div(class = "gradient")
+        },
         tags$div(class = "basic-slider-scroll", slider_items),
         overlay_tag,
         tags$button(class = "nav-button prev", prev_svg),
         tags$button(class = "nav-button next", next_svg)
       ),
-      tags$div(class = "dots")
+
+      # Captions (Bottom)
+      if (
+        caption_position == "outside" && outside_caption_position == "bottom"
+      ) {
+        caption_container
+      },
+
+      # Dots (Bottom)
+      if (dots_position == "bottom") tags$div(class = "dots")
     ),
     tags$script(HTML(sprintf(
       "
@@ -286,6 +412,8 @@ html_create_image_swiper <- function(
         const prevBtn = container.querySelector('.prev');
         const nextBtn = container.querySelector('.next');
         const dotsContainer = container.querySelector('.dots');
+        const captionContainer = container.querySelector('.caption-container');
+        const captionScroll = container.querySelector('.caption-scroll');
         if (!slider || !slides || slides.length === 0) return;
         let current_image = 0;
         const total_images = slides.length;
@@ -303,6 +431,21 @@ html_create_image_swiper <- function(
           const dots = dotsContainer.querySelectorAll('.dot');
           dots.forEach((dot, i) => {
             dot.className = 'dot' + (i === current_image ? ' active' : '');
+          });
+        }
+        // One-way sync: captions follow images.
+        // Bidirectional syncing can fight native momentum and appear as if scrolling is broken.
+        let captionSyncRaf = null;
+        function syncCaptionsToImages() {
+          if (!captionScroll) return;
+          if (captionSyncRaf) cancelAnimationFrame(captionSyncRaf);
+          captionSyncRaf = requestAnimationFrame(() => {
+            // Map image scroll progress to caption scroll progress (geometries differ)
+            const imgMax = slider.scrollWidth - slider.clientWidth;
+            const capMax = captionScroll.scrollWidth - captionScroll.clientWidth;
+            if (imgMax <= 0 || capMax <= 0) return;
+            const p = slider.scrollLeft / imgMax;
+            captionScroll.scrollLeft = p * capMax;
           });
         }
         function updateCurrentImageOnScroll() {
@@ -328,13 +471,23 @@ html_create_image_swiper <- function(
         function goToSlide(index) {
           const slideWidth = slides[0].clientWidth;
           const gap = parseInt(window.getComputedStyle(slider).gap) || 10;
-          slider.scrollTo({ left: index * (slideWidth + gap), behavior: 'smooth' });
+          const left = index * (slideWidth + gap);
+          slider.scrollTo({ left, behavior: 'smooth' });
+          if (captionScroll) {
+            const capLeft = index * captionScroll.clientWidth;
+            captionScroll.scrollTo({ left: capLeft, behavior: 'smooth' });
+          }
           current_image = index;
           updateButtons();
           updateDots();
         }
         prevBtn.onclick = () => { if (current_image > 0) goToSlide(current_image - 1); };
         nextBtn.onclick = () => { if (current_image < total_images - 1) goToSlide(current_image + 1); };
+        // Keep captions in perfect sync with the image scroller while swiping
+        if (captionScroll) {
+          slider.addEventListener('scroll', syncCaptionsToImages, { passive: true });
+        }
+
         if (debounceDelay > 0) {
           let scrollTimeout;
           slider.addEventListener('scroll', () => {
@@ -351,6 +504,8 @@ html_create_image_swiper <- function(
         });
         updateButtons();
         updateDots();
+        // Initial sync (important when rendered mid-scroll)
+        if (captionScroll) captionScroll.scrollLeft = slider.scrollLeft;
       })();
     ",
       debounce_delay,

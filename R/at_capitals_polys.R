@@ -14,4 +14,5 @@
 #' plot(at_capitals_polys["geometry"])
 #'
 #' @keywords datasets spatial sf Austria
-"at_capitals_polys"
+#' @name at_capitals_polys
+NULL

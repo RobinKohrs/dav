@@ -8,7 +8,14 @@
 #' @param subheader A character string for the chart subtitle.
 #' @param source_text A character string for the data source.
 #' @param source_link Optional. A URL to link the source text.
-#' @param legend_breakpoint_px Integer pixel width below which the legend is shown and labels are hidden.
+#' @param break_point_legend Integer pixel width below which the legend is shown and labels are hidden.
+#' @param header_margin Optional. Character string. CSS margin for the header container (headline + subheader). Defaults to "10px 0".
+#' @param headline_margin Optional. Character string. CSS margin for the headline element. Defaults to "0".
+#' @param font_size_dt Optional. Font size for labels on desktop. Defaults to "18px".
+#' @param font_size_mb Optional. Font size for labels on mobile (< 650px). Defaults to "12px".
+#' @param padding_bar_labels Optional. Padding for bar labels. Defaults to "12px".
+#' @param bg_gradient Optional. CSS background gradient string. Defaults to a white fade.
+#' @param border_radius Optional. CSS border radius for the container. Defaults to "3px".
 #' @param border Optional. Logical. Whether to show a border around the chart. Defaults to TRUE.
 #' @param show_legend Optional. Logical. Whether to always show the legend. Defaults to FALSE (responsive behavior).
 #'
@@ -40,7 +47,14 @@ html_create_stacked_bar_chart = function(
   subheader,
   source_text,
   source_link = NULL,
-  legend_breakpoint_px = 350,
+  break_point_legend = 350,
+  header_margin = "10px 0",
+  headline_margin = "0",
+  font_size_dt = "18px",
+  font_size_mb = "12px",
+  padding_bar_labels = "12px",
+  bg_gradient = "linear-gradient(to bottom, rgba(255,255,255,0.2), rgba(255,255,255,0.0) 80%)",
+  border_radius = "3px",
   border = TRUE,
   show_legend = FALSE
 ) {
@@ -116,13 +130,13 @@ html_create_stacked_bar_chart = function(
       abs_val <- ""
       if (!is.null(segment$absolute_value)) {
         abs_val <- paste0(
-          '<span style="font-size: 14px; font-weight: normal;">(',
+          '<span>(',
           segment$absolute_value,
           ')</span>'
         )
       }
       bar_label <- glue::glue(
-        '<span class="chart-bar-inline-label" style="font-size: 20px; font-weight: bold; color: {text_color_inside_bar}; padding-right: 12px; white-space: nowrap; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0;">{segment$value}%<span style="font-size: 14px; font-weight: normal;">{abs_val}</span></span>'
+        '<span class="chart-bar-inline-label" style="font-weight: bold; color: {text_color_inside_bar}; white-space: nowrap; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 0;">{segment$value}%<span style="font-size: 0.7em; font-weight: normal;">{abs_val}</span></span>'
       )
     }
 
@@ -178,9 +192,16 @@ html_create_stacked_bar_chart = function(
   )
 
   css_styles = glue::glue(
-    ".chart-bar-inline-label {{
+    "    .chart-bar-inline-label {{
       white-space: nowrap;
       line-height: 1.1;
+      font-size: {font_size_dt};
+      padding-right: {padding_bar_labels};
+    }}
+    @media (max-width: 650px) {{
+      .chart-bar-inline-label {{
+        font-size: {font_size_mb};
+      }}
     }}
     .chart-legend {{
       display: {if (show_legend) 'block' else 'none'};
@@ -220,7 +241,7 @@ html_create_stacked_bar_chart = function(
     .chart-legend-item-value {{
       white-space: nowrap;
     }}
-    @media (max-width: {legend_breakpoint_px}px) {{
+    @media (max-width: {break_point_legend}px) {{
       .chart-bar-inline-label {{
         display: none !important;
       }}
@@ -238,9 +259,9 @@ html_create_stacked_bar_chart = function(
       }}
       {css_styles}
     </style>
-    <div class="responsive-bar-chart-container" style="width: 100%; max-width: 615px; margin: 0 auto; font-family: STMatilda Text Variable, system-ui, serif;">
-      <div style="margin: 10px 0;">
-        <div style="color: #000; font-size: 1.2em; text-align: center; font-weight: 700; line-height: 1.3;"><strong>{headline}</strong></div>
+    <div class="responsive-bar-chart-container" style="width: 100%; max-width: 615px; margin: 0 auto; font-family: STMatilda Text Variable, system-ui, serif; background: {bg_gradient}; border-radius: {border_radius}; padding: 10px;">
+      <div style="margin: {header_margin};">
+        <div style="color: #000; font-size: 1.2em; text-align: center; font-weight: 700; line-height: 1.3; margin: {headline_margin};"><strong>{headline}</strong></div>
         <div style="color: #888; font-size: 14px; text-align: center; line-height: 16px;">{subheader}</div>
       </div>
       <div title="{chart_description}" role="progressbar" aria-valuenow="{total_percentage}" aria-valuemin="0" aria-valuemax="100" aria-label="{chart_description}" style="width: 100%; height: 50px; background-color: transparent; {if(border) "border: 3px solid #343434;" else ""} border-radius: {if(border) "5px" else "0"}; overflow: hidden; position: relative; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); display: flex; flex-wrap: nowrap;">

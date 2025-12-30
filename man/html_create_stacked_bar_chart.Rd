@@ -10,7 +10,15 @@ html_create_stacked_bar_chart(
   subheader,
   source_text,
   source_link = NULL,
-  legend_breakpoint_px = 350,
+  break_point_legend = 350,
+  header_margin = "10px 0",
+  headline_margin = "0",
+  font_size_dt = "18px",
+  font_size_mb = "12px",
+  padding_bar_labels = "12px",
+  bg_gradient =
+    "linear-gradient(to bottom, rgba(255,255,255,0.2), rgba(255,255,255,0.0) 80\%)",
+  border_radius = "3px",
   border = TRUE,
   show_legend = FALSE
 )
@@ -26,7 +34,21 @@ html_create_stacked_bar_chart(
 
 \item{source_link}{Optional. A URL to link the source text.}
 
-\item{legend_breakpoint_px}{Integer pixel width below which the legend is shown and labels are hidden.}
+\item{break_point_legend}{Integer pixel width below which the legend is shown and labels are hidden.}
+
+\item{header_margin}{Optional. Character string. CSS margin for the header container (headline + subheader). Defaults to "10px 0".}
+
+\item{headline_margin}{Optional. Character string. CSS margin for the headline element. Defaults to "0".}
+
+\item{font_size_dt}{Optional. Font size for labels on desktop. Defaults to "18px".}
+
+\item{font_size_mb}{Optional. Font size for labels on mobile (< 650px). Defaults to "12px".}
+
+\item{padding_bar_labels}{Optional. Padding for bar labels. Defaults to "12px".}
+
+\item{bg_gradient}{Optional. CSS background gradient string. Defaults to a white fade.}
+
+\item{border_radius}{Optional. CSS border radius for the container. Defaults to "3px".}
 
 \item{border}{Optional. Logical. Whether to show a border around the chart. Defaults to TRUE.}
 
