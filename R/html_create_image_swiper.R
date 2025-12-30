@@ -298,10 +298,12 @@ html_create_image_swiper <- function(
       .%s .img-container { position: relative; width: 100%%; aspect-ratio: %s; }
       .%s .img-container img { display: block; width: 100%%; height: 100%%; border-radius: 5px; object-fit: %s; }
       .%s .dj-caption { %s }
-      .%s .caption-container { position: relative; width: 100%%; margin: 0.5rem 0; }
-      .%s .caption-scroll { display: flex; gap: 0; overflow-x: hidden; scroll-snap-type: x mandatory; position: relative; width: 100%%; -ms-overflow-style: none; scrollbar-width: none; pointer-events: none; }
+      .%s .caption-container { position: relative; width: 100%%; margin: 0.5rem 0; box-sizing: border-box; }
+      /* Caption strip: must be scrollable for programmatic scrollLeft, but should not capture user swipes. */
+      .%s .caption-scroll { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; overflow-y: visible; position: relative; width: 100%%; -ms-overflow-style: none; scrollbar-width: none; pointer-events: none; }
       .%s .caption-scroll::-webkit-scrollbar { display: none; }
-      .%s .caption-item { flex: 0 0 100%%; width: 100%%; scroll-snap-align: start; position: relative; padding: 0 2px; box-sizing: border-box; }
+      /* Avoid per-item horizontal padding; it makes each slide look shifted vs the container. */
+      .%s .caption-item { flex: 0 0 100%%; width: 100%%; position: relative; padding: 0; box-sizing: border-box; }
       ",
         uid,
         max_width_css,
@@ -434,18 +436,25 @@ html_create_image_swiper <- function(
           });
         }
         // One-way sync: captions follow images.
-        // Bidirectional syncing can fight native momentum and appear as if scrolling is broken.
+        // Note: the image scroller has side spacers, so scrollLeft at slide 0 is not necessarily 0.
+        // We capture a baseline offset so captions can start at scrollLeft=0 (no visual left shift).
         let captionSyncRaf = null;
+        let imageScrollBase = null;
         function syncCaptionsToImages() {
           if (!captionScroll) return;
           if (captionSyncRaf) cancelAnimationFrame(captionSyncRaf);
           captionSyncRaf = requestAnimationFrame(() => {
-            // Map image scroll progress to caption scroll progress (geometries differ)
-            const imgMax = slider.scrollWidth - slider.clientWidth;
+            // Smooth mapping: map image scroll position in slides to caption pages.
+            // This avoids jumpiness from before/after spacers and scrollWidth rounding.
+            const slideWidth = slides[0].clientWidth;
+            const gap = parseInt(window.getComputedStyle(slider).gap) || 10;
+            const step = slideWidth + gap;
+            if (step <= 0) return;
+            if (imageScrollBase === null) imageScrollBase = slider.scrollLeft;
+            const posInSlides = (slider.scrollLeft - imageScrollBase) / step; // e.g. 0.0 .. (n-1)
+            const target = posInSlides * captionScroll.clientWidth;
             const capMax = captionScroll.scrollWidth - captionScroll.clientWidth;
-            if (imgMax <= 0 || capMax <= 0) return;
-            const p = slider.scrollLeft / imgMax;
-            captionScroll.scrollLeft = p * capMax;
+            captionScroll.scrollLeft = Math.max(0, Math.min(capMax, target));
           });
         }
         function updateCurrentImageOnScroll() {
@@ -466,12 +475,17 @@ html_create_image_swiper <- function(
             current_image = maxVisibleIndex;
             updateButtons();
             updateDots();
+            // Hard-align captions to the page once we know the active slide.
+            // This avoids tiny drift from subpixel rounding during snap.
+            if (captionScroll) captionScroll.scrollLeft = current_image * captionScroll.clientWidth;
           }
         }
         function goToSlide(index) {
           const slideWidth = slides[0].clientWidth;
           const gap = parseInt(window.getComputedStyle(slider).gap) || 10;
-          const left = index * (slideWidth + gap);
+          const step = slideWidth + gap;
+          if (imageScrollBase === null) imageScrollBase = slider.scrollLeft;
+          const left = imageScrollBase + index * step;
           slider.scrollTo({ left, behavior: 'smooth' });
           if (captionScroll) {
             const capLeft = index * captionScroll.clientWidth;
@@ -505,7 +519,11 @@ html_create_image_swiper <- function(
         updateButtons();
         updateDots();
         // Initial sync (important when rendered mid-scroll)
-        if (captionScroll) captionScroll.scrollLeft = slider.scrollLeft;
+        // Establish baseline after layout so slide 0 maps to caption scrollLeft=0.
+        requestAnimationFrame(() => {
+          imageScrollBase = slider.scrollLeft;
+          if (captionScroll) captionScroll.scrollLeft = 0;
+        });
       })();
     ",
       debounce_delay,
