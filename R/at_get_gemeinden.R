@@ -43,7 +43,7 @@ at_get_gemeinden <- function(year, cache = TRUE) {
 
     # Construct URL for the specific year
     url = glue::glue(
-        "https://data.statistik.gv.at/data/OGDEXT_GEM_1_STATISTIK_AUSTRIA_{year}0101.zip"
+        "https://www.statistik.gv.at/gs-open/GEODATA/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=GEODATA:STATISTIK_AUSTRIA_GEM_{year}0101&outputFormat=SHAPE-ZIP&format_options=CHARSET:UTF-8"
     )
 
     # Create temporary files

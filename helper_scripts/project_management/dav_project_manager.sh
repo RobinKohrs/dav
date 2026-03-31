@@ -226,6 +226,49 @@ select_project() {
     fi
 }
 
+# Interactive multi-project selection
+select_projects() {
+    if [ ! -f "$PROJECTS_CONFIG_FILE" ]; then
+        if command -v gum >/dev/null 2>&1; then
+            gum style --foreground="red" --border="normal" --border-foreground="red" --padding="1 2" \
+                      "No projects configured yet." \
+                      "Run 'pj add' to add your first project!"
+        else
+            echo "No projects configured yet."
+            echo "Run 'pj add' to add your first project!"
+        fi
+        return 1
+    fi
+    
+    local projects_info=$(jq -r '.projects[] | "\(.name) | \(.path)"' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
+    
+    if [ -z "$projects_info" ]; then
+        if command -v gum >/dev/null 2>&1; then
+            gum style --foreground="red" --border="normal" --border-foreground="red" --padding="1 2" \
+                      "No projects found." \
+                      "Run 'pj add' to add your first project!"
+        else
+            echo "No projects found."
+            echo "Run 'pj add' to add your first project!"
+        fi
+        return 1
+    fi
+    
+    if command -v fzf >/dev/null 2>&1; then
+        # Use awk to trim leading/trailing space from the name part
+        local selected=$(echo "$projects_info" | fzf -m --bind 'space:toggle+down' --height=60% --border --header="🎯 Select projects (SPACE to select multiple):" --preview="echo 'Project details:' && echo {}" --preview-window=up:3 | cut -d'|' -f1 | awk '{$1=$1};1')
+        [ -z "$selected" ] && return 1
+        echo "$selected"
+    elif command -v gum >/dev/null 2>&1; then
+        # Use awk to trim leading/trailing space
+        local selected=$(echo "$projects_info" | cut -d'|' -f1 | awk '{$1=$1};1' | gum choose --no-limit --header="🎯 Select projects:" --height=10)
+        [ -z "$selected" ] && return 1
+        echo "$selected"
+    else
+        select_project
+    fi
+}
+
 # Multi-select application selection
 select_applications() {
     local project_name="$1"
@@ -236,8 +279,8 @@ select_applications() {
     local app_descriptions=()
     
     # Always available
-    available_apps+=("cursor")
-    app_descriptions+=("📝 Cursor/VS Code")
+    available_apps+=("code")
+    app_descriptions+=("📝 VS Code")
     
     available_apps+=("terminal")
     app_descriptions+=("💻 Terminal (cd to project)")
@@ -326,12 +369,10 @@ open_project() {
     
     case "$app_type" in
         "cursor"|"code")
-            if command -v cursor >/dev/null 2>&1; then
-                cursor "$project_path" &
-            elif command -v code >/dev/null 2>&1; then
+            if command -v code >/dev/null 2>&1; then
                 code "$project_path" &
             else
-                echo "Neither Cursor nor VS Code found!"
+                echo "VS Code (code) not found!"
                 return 1
             fi
             ;;
@@ -385,7 +426,7 @@ open_project() {
             ;;
         *)
             echo "Unknown application type: $app_type"
-            echo "Available types: cursor, code, r, rstudio, qgis, terminal, cd"
+            echo "Available types: code, r, rstudio, qgis, terminal, cd"
             return 1
             ;;
     esac
@@ -403,14 +444,29 @@ interactive_open() {
     local selected_apps=($(select_applications "$project_name" "$project_path"))
     [ ${#selected_apps[@]} -eq 0 ] && return 1
     
-    # Open with each selected application
-    for app in "${selected_apps[@]}"; do
-        if command -v gum >/dev/null 2>&1; then
-            gum style --foreground="blue" "Opening with $app..."
-        else
-            echo "Opening with $app..."
-        fi
-        open_project "$project_name" "$app"
+    # Open apps in a fixed order with delays to prevent screen-jumping
+    local app_order=("terminal" "cd" "code" "cursor" "r" "rstudio" "qgis")
+    local app_delays=(4 4 5 5 6 6 0)
+    local opened_count=0
+
+    for i in $(seq 1 ${#app_order[@]}); do
+        local ordered_app="${app_order[$i]}"
+        local delay="${app_delays[$i]}"
+        for app in "${selected_apps[@]}"; do
+            if [[ "$app" == "$ordered_app" ]]; then
+                if (( opened_count > 0 )) && (( delay > 0 )); then
+                    sleep "$delay"
+                fi
+                if command -v gum >/dev/null 2>&1; then
+                    gum style --foreground="blue" "Opening with $app..."
+                else
+                    echo "Opening with $app..."
+                fi
+                open_project "$project_name" "$app"
+                opened_count=$((opened_count + 1))
+                break
+            fi
+        done
     done
     
     if command -v gum >/dev/null 2>&1; then
@@ -496,23 +552,34 @@ dav_projects() {
             ;;
         "remove")
             local project_to_remove="$2"
-            if [ -z "$project_to_remove" ]; then
-                project_to_remove=$(select_project)
-                [ -z "$project_to_remove" ] && return 1
+            local projects_list=""
+
+            if [ -n "$project_to_remove" ]; then
+                projects_list="$project_to_remove"
+            else
+                projects_list=$(select_projects)
+                [ -z "$projects_list" ] && return 1
             fi
             
             if command -v gum >/dev/null 2>&1; then
-                if ! gum confirm "Are you sure you want to remove '$project_to_remove'?"; then
+                echo "Projects to remove:"
+                echo "$projects_list" | sed 's/^/  - /'
+                if ! gum confirm "Are you sure you want to remove these projects?"; then
                     return 0
                 fi
             else
-                read -r -p "Are you sure you want to remove '$project_to_remove'? [y/N] " response
+                echo "Projects to remove:"
+                echo "$projects_list" | sed 's/^/  - /'
+                read -r -p "Are you sure you want to remove these projects? [y/N] " response
                 if [[ ! "$response" =~ ^[Yy]$ ]]; then
                     return 0
                 fi
             fi
 
-            remove_project "$project_to_remove"
+            while IFS= read -r project; do
+                [ -z "$project" ] && continue
+                remove_project "$project"
+            done <<< "$projects_list"
             ;;
         "list")
             if command -v gum >/dev/null 2>&1; then
@@ -568,9 +635,24 @@ dav_projects() {
                 local selected_apps=($(select_applications "$project_name" "$project_path"))
                 [ ${#selected_apps[@]} -eq 0 ] && return 1
                 
-                # Open with each selected application
-                for app in "${selected_apps[@]}"; do
-                    open_project "$project_name" "$app"
+                # Open apps in a fixed order with delays to prevent screen-jumping
+                local app_order=("terminal" "cd" "code" "cursor" "r" "rstudio" "qgis")
+                local app_delays=(0 1 3 4 5 5 0)
+                local opened_count=0
+
+                for i in $(seq 1 ${#app_order[@]}); do
+                    local ordered_app="${app_order[$i]}"
+                    local delay="${app_delays[$i]}"
+                    for app in "${selected_apps[@]}"; do
+                        if [[ "$app" == "$ordered_app" ]]; then
+                            if (( opened_count > 0 )) && (( delay > 0 )); then
+                                sleep "$delay"
+                            fi
+                            open_project "$project_name" "$app"
+                            opened_count=$((opened_count + 1))
+                            break
+                        fi
+                    done
                 done
             else
                 open_project "$project_name" "$app_type"
@@ -596,7 +678,7 @@ dav_projects() {
                 echo "  pj help                      # Show this help"
                 echo ""
                 gum style --foreground="yellow" "Application types:"
-                echo "  📝 cursor, code  - Open in Cursor/VS Code"
+                echo "  📝 code           - Open in VS Code"
                 echo "  📊 r, rstudio    - Open .Rproj file in RStudio"
                 echo "  🗺️  qgis          - Open .qgs file in QGIS"
                 echo "  💻 terminal, cd  - Change to project directory"
@@ -613,7 +695,7 @@ dav_projects() {
                 echo "  dav_projects help              # Show this help"
                 echo ""
                 echo "Application types:"
-                echo "  cursor, code  - Open in Cursor/VS Code"
+                echo "  code          - Open in VS Code"
                 echo "  r, rstudio    - Open .Rproj file in RStudio"
                 echo "  qgis          - Open .qgs file in QGIS"
                 echo "  terminal, cd  - Change to project directory"

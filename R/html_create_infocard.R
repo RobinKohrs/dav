@@ -351,6 +351,22 @@ html_create_info_card <- function(
     stop("`main_text` must be a string.")
   }
 
+  # --- Percentage Bar Validation / Clamping ---
+  # Ensure we have a safe numeric percentage to drive both CSS + JS.
+  percentage_value <- NULL
+  if (isTRUE(show_percentage_bar)) {
+    if (
+      !is.numeric(main_value) || length(main_value) != 1 || is.na(main_value)
+    ) {
+      warning(
+        "`show_percentage_bar=TRUE` requires `main_value` to be a single numeric value (0-100). Disabling percentage bar."
+      )
+      show_percentage_bar <- FALSE
+    } else {
+      percentage_value <- max(0, min(100, as.numeric(main_value)))
+    }
+  }
+
   # --- Screen Reader Text and Main Value Span Setup ---
   # Format the number immediately if it's numeric
   if (is.numeric(main_value)) {
@@ -425,7 +441,7 @@ html_create_info_card <- function(
       'data-numeric-target="{parsed_val_info$numeric_char}" ',
       'data-final-value="{parsed_val_info$final_value_attr}" ',
       'data-animation-duration="{as.integer(animation_duration_ms)}" ',
-      'data-number-format="{if(!is.null(number_format)) number_format else ""}"',
+      'data-number-format="{if(!is.null(number_format)) number_format else ""}" ',
       'data-suffix="{htmltools::htmlEscape(parsed_val_info$suffix)}"'
     )
     number_span_final_attrs <- c(
@@ -522,7 +538,7 @@ html_create_info_card <- function(
       height: 100%;
       background-color: {percentage_bar_color};
       width: 100%;
-      transform: scaleX({if(show_percentage_bar && !animate_percentage_bar) as.numeric(main_value)/100 else '0'});
+      transform: scaleX({if(show_percentage_bar && !animate_percentage_bar) percentage_value/100 else '0'});
       transform-origin: left;
       {if(animate_percentage_bar) glue::glue('transition: transform {animation_duration_ms}ms cubic-bezier(0.4, 0, 0.2, 1);') else ''}
       will-change: transform;
@@ -576,24 +592,24 @@ html_create_info_card <- function(
   if (animate_value || (show_percentage_bar && animate_percentage_bar)) {
     script_id <- paste0("infoCardAnimatorScript_", card_hash)
 
-    # Combined animation and formatting script
+    js_bool_animate_value <- if (isTRUE(animate_value)) "true" else "false"
+    js_bool_animate_bar <- if (
+      isTRUE(show_percentage_bar) && isTRUE(animate_percentage_bar)
+    ) {
+      "true"
+    } else {
+      "false"
+    }
+
+    # Self-contained animation script per card (no shared global function).
+    # Each card gets its own IIFE that targets only its own unique class names,
+    # so multiple cards on the same page all animate independently.
     animation_js <- glue::glue(
       '
       <script id="{script_id}">
       (function() {{
-        if (typeof window.initializeInfoCardAnimators === "function") {{
-          // If already defined, re-initialize for any new cards.
-          if (document.readyState === "loading") {{
-            document.addEventListener("DOMContentLoaded", window.initializeInfoCardAnimators);
-          }} else {{
-            window.initializeInfoCardAnimators();
-          }}
-          return; // Avoid redefining the function
-        }}
-
-        window.initializeInfoCardAnimators = function() {{
-          const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-          const prefersReducedMotion = mediaQuery.matches;
+        function initCard() {{
+          const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
           function animateNumber(el) {{
             const targetStr = el.dataset.numericTarget;
@@ -614,7 +630,7 @@ html_create_info_card <- function(
               minimumFractionDigits: decimalPlaces,
               maximumFractionDigits: decimalPlaces
             }}) : null;
-            let startValue = 0; // Always start from 0 for simplicity
+            let startValue = 0;
             let startTime = null;
 
             function animationStep(currentTime) {{
@@ -626,7 +642,6 @@ html_create_info_card <- function(
               if (numberFormatter) {{
                 displayedValue = numberFormatter.format(currentValue);
               }} else {{
-                // Fallback for no locale, round to the correct number of decimal places
                 displayedValue = currentValue.toFixed(decimalPlaces);
               }}
 
@@ -646,7 +661,7 @@ html_create_info_card <- function(
             const bar = card.querySelector(".{percentage_bar_class}");
             if (!bar) return;
 
-            const value = parseFloat(card.querySelector(".{animated_number_class}")?.dataset.numericTarget) || 0;
+            const value = parseFloat(card.dataset.percentageValue) || 0;
             const duration = {animation_duration_ms};
 
             bar.style.transition = "none";
@@ -655,62 +670,58 @@ html_create_info_card <- function(
 
             requestAnimationFrame(() => {{
               bar.style.transition = `transform ${{duration}}ms cubic-bezier(0.4, 0, 0.2, 1)`;
-              bar.style.transform = `scaleX(${{min(100, max(0, value)) / 100}})`;
+              bar.style.transform = `scaleX(${{Math.min(100, Math.max(0, value)) / 100}})`;
             }});
           }}
 
-          const observerOptions = {{
-            root: null,
-            rootMargin: "-{animation_trigger_threshold}% 0px",
-            threshold: 0.1
-          }};
+          // Target only THIS card by its unique class
+          const card = document.querySelector(".{container_class}");
+          if (!card || card.dataset.animatedOnce === "true") return;
+
+          if (prefersReducedMotion) {{
+            const numberEl = card.querySelector(".{animated_number_class}");
+            if (numberEl && numberEl.dataset.finalValue) numberEl.textContent = numberEl.dataset.finalValue;
+
+            const bar = card.querySelector(".{percentage_bar_class}");
+            if (bar) {{
+              const value = parseFloat(card.dataset.percentageValue) || 0;
+              bar.style.transform = `scaleX(${{Math.min(100, Math.max(0, value)) / 100}})`;
+            }}
+            card.dataset.animatedOnce = "true";
+            return;
+          }}
 
           const observer = new IntersectionObserver((entries, obs) => {{
             entries.forEach(entry => {{
               if (entry.isIntersecting) {{
-                const card = entry.target;
-                if (card.dataset.animatedOnce === "true") return;
-                card.dataset.animatedOnce = "true";
+                if (entry.target.dataset.animatedOnce === "true") return;
+                entry.target.dataset.animatedOnce = "true";
 
-                // Animate number if requested
-                const numberEl = card.querySelector(".{animated_number_class}");
-                if ({tolower(animate_value)} && numberEl && numberEl.dataset.numericTarget) {{
+                const numberEl = entry.target.querySelector(".{animated_number_class}");
+                if ({js_bool_animate_value} && numberEl && numberEl.dataset.numericTarget) {{
                   animateNumber(numberEl);
                 }}
 
-                // Animate bar if requested
-                if ({tolower(show_percentage_bar && animate_percentage_bar)}) {{
-                  animateBar(card);
+                if ({js_bool_animate_bar}) {{
+                  animateBar(entry.target);
                 }}
 
-                obs.unobserve(card);
+                obs.unobserve(entry.target);
               }}
             }});
-          }}, observerOptions);
-
-          const cards = document.querySelectorAll(".{container_class}");
-          cards.forEach(card => {{
-            if (prefersReducedMotion) {{
-              // If reduced motion is preferred, just show the final state.
-              const numberEl = card.querySelector(".{animated_number_class}");
-              if (numberEl) numberEl.textContent = numberEl.dataset.finalValue;
-
-              const bar = card.querySelector(".{percentage_bar_class}");
-              if (bar) {{
-                const value = parseFloat(numberEl?.dataset.numericTarget) || 0;
-                bar.style.transform = `scaleX(${{min(100, max(0, value)) / 100}})`;
-              }}
-              card.dataset.animatedOnce = "true";
-            }} else {{
-              observer.observe(card);
-            }}
+          }}, {{
+            root: null,
+            rootMargin: "-{animation_trigger_threshold}% 0px",
+            threshold: 0.1
           }});
-        }};
+
+          observer.observe(card);
+        }}
 
         if (document.readyState === "loading") {{
-          document.addEventListener("DOMContentLoaded", window.initializeInfoCardAnimators);
+          document.addEventListener("DOMContentLoaded", initCard);
         }} else {{
-          window.initializeInfoCardAnimators();
+          initCard();
         }}
       }})();
       </script>
@@ -736,12 +747,19 @@ html_create_info_card <- function(
     ""
   }
 
+  container_data_attrs <- ""
+  if (isTRUE(show_percentage_bar) && !is.null(percentage_value)) {
+    container_data_attrs <- glue::glue(
+      'data-percentage-value="{percentage_value}"'
+    )
+  }
+
   html_output <- glue::glue(
     '
     <style>
       {css_styles}
     </style>
-    <div class="{container_class}" style="{main_div_style_string}">
+    <div class="{container_class}" style="{main_div_style_string}" {container_data_attrs}>
       {percentage_bar_html}
       <div class="{content_class}">
         {headline_html}

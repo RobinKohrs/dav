@@ -7,10 +7,11 @@ import os
 import re
 import time
 import sys
+import datetime
 
 # --- CONFIGURATION ---
 BASE_URL = "https://gis.unocha.org/server/rest/services/Hosted"
-DOWNLOAD_FOLDER = "downloads_qgis_ready"
+DEFAULT_BASE_PATH = "/Users/rk/Library/Mobile Documents/com~apple~CloudDocs/geodata/projects_data_raw/2025-12-westbank/interactive_map"
 
 # CRITICAL FIX FOR QGIS: Use 4326 (Lat/Lon WGS84) instead of 102100 (Meters)
 CRS = "4326" 
@@ -104,10 +105,22 @@ def simple_download(layer_url):
     return None
 
 def main():
-    if not os.path.exists(DOWNLOAD_FOLDER):
-        os.makedirs(DOWNLOAD_FOLDER)
-
     print(f"--- Smart Downloader (CRS: {CRS}) ---")
+
+    # Path setup
+    print(f"Default download location: {DEFAULT_BASE_PATH}")
+    user_path = input("Press Enter to use default, or paste a new path: ").strip()
+    if not user_path:
+        user_path = DEFAULT_BASE_PATH
+
+    # Create timestamped folder: <path>/<YYYY-MM-DD_HH-MM>
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+    download_folder = os.path.join(user_path, timestamp)
+
+    if not os.path.exists(download_folder):
+        os.makedirs(download_folder)
+    
+    print(f"Saving data to: {download_folder}")
     print(f"--- Auto-downloading layers under {LARGE_LAYER_THRESHOLD} features ---")
     
     # 1. Get List of Services
@@ -195,7 +208,7 @@ def main():
                     
                     if geojson_data and len(geojson_data.get('features', [])) > 0:
                         filename = f"{clean_s_name}___L{l_id}_{sanitize_filename(l_name)}.geojson"
-                        filepath = os.path.join(DOWNLOAD_FOLDER, filename)
+                        filepath = os.path.join(download_folder, filename)
                         
                         with open(filepath, "w", encoding='utf-8') as f:
                             json.dump(geojson_data, f)

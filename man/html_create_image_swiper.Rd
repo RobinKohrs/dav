@@ -18,12 +18,14 @@ html_create_image_swiper(
   output_file = NULL,
   overwrite = TRUE,
   dot_size = "0.625rem",
+  caption_fade_duration = 0.5,
   include_html_header = FALSE,
   title = NULL,
   subtitle = NULL,
   caption_position = c("inside", "outside"),
   outside_caption_position = c("bottom", "top"),
-  dots_position = c("bottom", "top")
+  dots_position = c("bottom", "top"),
+  full_screen_mobile = FALSE
 )
 }
 \arguments{
@@ -91,6 +93,10 @@ Only applies if \code{caption_position} is "outside".}
 
 \item{dots_position}{A string, either "bottom" (default) or "top".
 Controls where the navigation dots are placed relative to the slider.}
+
+\item{full_screen_mobile}{A logical value. If \code{TRUE}, the swiper will expand
+to full width (margin -20px, width calc(100\% + 40px)) on screens below 615px.
+Defaults to \code{FALSE}.}
 }
 \value{
 An \code{htmltools::tagList} object that can be rendered directly in

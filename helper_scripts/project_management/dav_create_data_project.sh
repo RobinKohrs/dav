@@ -413,8 +413,8 @@ if command -v gum >/dev/null 2>&1; then
     AVAILABLE_APPS=()
     APP_LABELS=()
     # Always offer editor and terminal
-    AVAILABLE_APPS+=("cursor")
-    APP_LABELS+=("📝 Cursor/VS Code")
+    AVAILABLE_APPS+=("code")
+    APP_LABELS+=("📝 VS Code")
     AVAILABLE_APPS+=("terminal")
     APP_LABELS+=("💻 Terminal (cd to project)")
     # Conditionally offer RStudio/QGIS
@@ -431,23 +431,78 @@ if command -v gum >/dev/null 2>&1; then
     # gum choose prints the selected values, one per line
     SELECTED=$(printf '%s\n' "${AVAILABLE_APPS[@]}" | gum choose --no-limit --header "Open applications:" --height 8)
     if [ -n "$SELECTED" ]; then
+        WANT_CURSOR=false
+        WANT_TERMINAL=false
+        WANT_RSTUDIO=false
+        WANT_QGIS=false
+
         while IFS= read -r app; do
             case "$app" in
-                "cursor")
-                    if command -v cursor >/dev/null 2>&1; then
-                        cursor . 2>/dev/null &
-                    elif command -v code >/dev/null 2>&1; then
-                        code . 2>/dev/null &
-                    else
-                        echo "Editor not found (cursor/code)."
-                    fi
-                    ;;
-                "terminal")
-                    # Prefer iTerm2 if available, fallback to Terminal (macOS)
-                    if command -v osascript >/dev/null 2>&1; then
-                        # Check for iTerm by trying to get its version silently
-                        if osascript -e 'tell application id "com.googlecode.iterm2" to version' >/dev/null 2>&1; then
-                            osascript >/dev/null 2>&1 <<OSA
+                "code")     WANT_CURSOR=true ;;
+                "terminal") WANT_TERMINAL=true ;;
+                "rstudio")  WANT_RSTUDIO=true ;;
+                "qgis")     WANT_QGIS=true ;;
+            esac
+        done <<EOF
+$SELECTED
+EOF
+
+        # Open GUI apps in a predictable sequence:
+        # 1) VS Code -> wait 3s -> 2) RStudio -> wait 5s -> 3) QGIS
+        if [ "$WANT_CURSOR" = true ]; then
+            if command -v code >/dev/null 2>&1; then
+                code "$PROJECT_ROOT_DIR" 2>/dev/null &
+            else
+                echo "VS Code (code) not found."
+            fi
+        fi
+
+        if [ "$WANT_CURSOR" = true ] && [ "$WANT_RSTUDIO" = true ]; then
+            sleep 3
+        fi
+
+        if [ "$WANT_RSTUDIO" = true ]; then
+            RPROJ_PATH="$PROJECT_ROOT_DIR/$PROJECT_SLUG.Rproj"
+            if [ -f "$RPROJ_PATH" ] && command -v open >/dev/null 2>&1; then
+                # Open RStudio explicitly and pass the .Rproj as an argument (macOS).
+                if [ -d "/Applications/RStudio.app" ]; then
+                    open -na "/Applications/RStudio.app" --args "$RPROJ_PATH" >/dev/null 2>&1 &
+                else
+                    # Fallback: try by app name
+                    open -na "RStudio" --args "$RPROJ_PATH" >/dev/null 2>&1 &
+                fi
+            else
+                echo "Cannot open RStudio project file."
+            fi
+        fi
+
+        if [ "$WANT_RSTUDIO" = true ] && [ "$WANT_QGIS" = true ]; then
+            sleep 5
+        fi
+
+        if [ "$WANT_QGIS" = true ]; then
+            QGS_PATH="$PROJECT_ROOT_DIR/$PROJECT_SLUG.qgs"
+            if [ -f "$QGS_PATH" ]; then
+                if command -v qgis >/dev/null 2>&1; then
+                    qgis "$QGS_PATH" &
+                elif command -v open >/dev/null 2>&1; then
+                    # Try with explicit app name first, then fallback to default
+                    (open -a QGIS "$QGS_PATH" 2>/dev/null || open -a QGIS-LTR "$QGS_PATH" 2>/dev/null || open "$QGS_PATH") &
+                else
+                    echo "Cannot open QGIS project file. Neither 'qgis' nor 'open' command is available."
+                fi
+            else
+                echo "QGIS project file '$QGS_PATH' not found."
+            fi
+        fi
+
+        # Optional: open a terminal tab/window that cds into the project (do this last).
+        if [ "$WANT_TERMINAL" = true ]; then
+            # Prefer iTerm2 if available, fallback to Terminal (macOS)
+            if command -v osascript >/dev/null 2>&1; then
+                # Check for iTerm by trying to get its version silently
+                if osascript -e 'tell application id "com.googlecode.iterm2" to version' >/dev/null 2>&1; then
+                    osascript >/dev/null 2>&1 <<OSA
 tell application id "com.googlecode.iterm2"
     if (exists current window) then
         tell current window
@@ -465,46 +520,20 @@ tell application id "com.googlecode.iterm2"
     activate
 end tell
 OSA
-                        else
-                            osascript >/dev/null 2>&1 <<OSA
+                else
+                    osascript >/dev/null 2>&1 <<OSA
 tell application "Terminal"
     do script "cd '$PROJECT_ROOT_DIR'"
     activate
 end tell
 OSA
-                        fi
-                    fi
-                    ;;
-                "rstudio")
-                    if [ -f "$PROJECT_SLUG.Rproj" ] && command -v open >/dev/null 2>&1; then
-                        open "$PROJECT_SLUG.Rproj" 2>/dev/null &
-                    else
-                        echo "Cannot open RStudio project file."
-                    fi
-                    ;;
-                "qgis")
-                    if [ -f "$PROJECT_SLUG.qgs" ]; then
-                        if command -v qgis >/dev/null 2>&1; then
-                            qgis "$PROJECT_SLUG.qgs" &
-                        elif command -v open >/dev/null 2>&1; then
-                            # Try with explicit app name first, then fallback to default
-                            (open -a QGIS "$PROJECT_SLUG.qgs" 2>/dev/null || open -a QGIS-LTR "$PROJECT_SLUG.qgs" 2>/dev/null || open "$PROJECT_SLUG.qgs") &
-                        else
-                            echo "Cannot open QGIS project file. Neither 'qgis' nor 'open' command is available."
-                        fi
-                    else
-                        echo "QGIS project file '$PROJECT_SLUG.qgs' not found."
-                    fi
-                    ;;
-            esac
-        done <<EOF
-$SELECTED
-EOF
+                fi
+            fi
+        fi
     fi
 else
     # Fallback: open nothing automatically, but show clear instructions
     echo "You can now open any of these from the project folder:"
-    echo "- Cursor: cursor ."
     echo "- VS Code: code ."
     [ "$ADD_R" = true ] && echo "- RStudio: open '$PROJECT_SLUG.Rproj'"
     [ "$ADD_QGIS" = true ] && echo "- QGIS: open '$PROJECT_SLUG.qgs'"

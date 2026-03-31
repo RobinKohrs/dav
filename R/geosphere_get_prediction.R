@@ -12,36 +12,62 @@ AUSTRIA_BBOX = list(
 # -------------------------------------------------------------------------
 # Helper: Get the latest file from a remote server (Unchanged)
 # -------------------------------------------------------------------------
-get_latest_file_info = function(host = c("nwp", "nowcast", "ensemble"), base_url = "ftp://eaftp.zamg.ac.at/") {
+get_latest_file_info = function(
+  host = c("nwp", "nowcast", "ensemble"),
+  # GeoSphere moved most "hub.zamg.ac.at" endpoints to "hub.geosphere.at" (redirects ended 2026-01-15).
+  # This FTP host historically lived under zamg.ac.at as well; try the geosphere host first and fall back.
+  base_url = c("ftp://eaftp.geosphere.at/", "ftp://eaftp.zamg.ac.at/")
+) {
   host = match.arg(host)
-  host_url = paste0(base_url, host, "/")
-  cli::cli_alert_info("Checking for latest file at: {.url {host_url}}")
+  base_url = as.character(base_url)
+  base_url = base_url[nzchar(trimws(base_url))]
+  if (length(base_url) == 0) {
+    cli::cli_abort("`base_url` must contain at least one non-empty URL.")
+  }
 
-  tryCatch({
-    current_files_raw = RCurl::getURL(
-      url = host_url,
-      verbose = FALSE,
-      ftp.use.epsv = TRUE,
-      dirlistonly = TRUE
-    )
+  # Ensure trailing slash
+  base_url = ifelse(endsWith(base_url, "/"), base_url, paste0(base_url, "/"))
 
-    files_clean = strsplit(current_files_raw, "[\r\n]+")[[1]]
-    files_clean = files_clean[files_clean != ""] # Remove empty entries if any
+  last_error = NULL
+  for (u in base_url) {
+    host_url = paste0(u, host, "/")
+    cli::cli_alert_info("Checking for latest file at: {.url {host_url}}")
 
-    if (length(files_clean) == 0) {
-      cli::cli_abort("No files found at {.url {host_url}}.")
+    res = tryCatch({
+      current_files_raw = RCurl::getURL(
+        url = host_url,
+        verbose = FALSE,
+        ftp.use.epsv = TRUE,
+        dirlistonly = TRUE
+      )
+
+      files_clean = strsplit(current_files_raw, "[\r\n]+")[[1]]
+      files_clean = files_clean[files_clean != ""] # Remove empty entries if any
+
+      if (length(files_clean) == 0) {
+        stop("No files found at ", host_url, ".", call. = FALSE)
+      }
+
+      latest_file = sort(files_clean)[length(files_clean)]
+      cli::cli_alert_success("Found latest file: {.file {latest_file}}")
+
+      return(list(
+        name = latest_file,
+        remote_path = file.path(host_url, latest_file)
+      ))
+    }, error = function(e) {
+      last_error <<- e
+      NULL
+    })
+
+    if (!is.null(res)) {
+      return(res)
     }
+  }
 
-    latest_file = sort(files_clean)[length(files_clean)]
-    cli::cli_alert_success("Found latest file: {.file {latest_file}}")
-
-    return(list(
-      name = latest_file,
-      remote_path = file.path(host_url, latest_file)
-    ))
-  }, error = function(e) {
-    cli::cli_abort("Failed to list files at {.url {host_url}}. Error: {e$message}")
-  })
+  # If we get here, all URLs failed
+  err_msg = if (!is.null(last_error)) last_error$message else "Unknown error"
+  cli::cli_abort("Failed to list files for host {.val {host}} from any `base_url`. Last error: {err_msg}")
 }
 
 # -------------------------------------------------------------------------

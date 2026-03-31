@@ -50,6 +50,9 @@
 #'   Only applies if `caption_position` is "outside".
 #' @param dots_position A string, either "bottom" (default) or "top".
 #'   Controls where the navigation dots are placed relative to the slider.
+#' @param full_screen_mobile A logical value. If `TRUE`, the swiper will expand
+#'   to full width (margin -20px, width calc(100% + 40px)) on screens below 615px.
+#'   Defaults to `FALSE`.
 #'
 #' @return An `htmltools::tagList` object that can be rendered directly in
 #'   R Markdown, Shiny, or other HTML-supporting R environments.
@@ -96,7 +99,8 @@ html_create_image_swiper <- function(
   subtitle = NULL,
   caption_position = c("inside", "outside"),
   outside_caption_position = c("bottom", "top"),
-  dots_position = c("bottom", "top")
+  dots_position = c("bottom", "top"),
+  full_screen_mobile = FALSE
 ) {
   # Validate input
   caption_position <- match.arg(caption_position)
@@ -260,6 +264,15 @@ html_create_image_swiper <- function(
     max_width_css <- sprintf("max-width: %spx;", max_width)
   }
 
+  # Conditionally generate full-screen mobile CSS
+  mobile_full_width_css <- ""
+  if (isTRUE(full_screen_mobile)) {
+    mobile_full_width_css <- sprintf(
+      "@media (max-width: 615px) { .%s.basic-slider-container { margin-left: -20px; margin-right: -20px; width: calc(100%% + 40px); max-width: none; } }",
+      uid
+    )
+  }
+
   # Determine CSS for caption based on position
   caption_css <- if (caption_position == "inside") {
     "position: absolute; top: 5px; left: 5px; z-index: 20; background: rgba(0, 0, 0, 0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 20px; font-weight: 400;"
@@ -333,7 +346,8 @@ html_create_image_swiper <- function(
       sprintf(
         "
       .%s .slider-overview { position: absolute; bottom: 0; right: 0; height: 46%%; z-index: 30; max-width: 100%%; }
-      .%s .nav-button { position: absolute; top: 40%%; transform: translateY(-50%%); background: rgba(100,100,100); color: white; border: none; width: 3.125rem; height: 3.125rem; border-radius: 50%%; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 0; }
+      .%s .nav-button { position: absolute; top: 40%%; transform: translateY(-50%%); background: transparent; color: white; border: none; width: 3.125rem; height: 3.125rem; border-radius: 50%%; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 0; transition: background 0.3s ease; }
+      .%s .nav-button:hover { background: rgba(100,100,100, 1); }
       .%s .nav-button svg { width: 1.5rem; height: 1.5rem; fill: currentColor; }
       @media (max-width: 600px) { .%s .nav-button { width: 2.5rem; height: 2.5rem; } .%s .nav-button svg { width: 1.25rem; height: 1.25rem; } }
       .%s .nav-button.next svg { transform: scaleX(-1); }
@@ -354,13 +368,15 @@ html_create_image_swiper <- function(
         uid,
         uid,
         uid,
+        uid,
         dots_margin,
         uid,
         dot_size,
         dot_size,
         animation_duration,
         uid
-      )
+      ),
+      mobile_full_width_css
     ))),
     tags$div(
       class = paste("basic-slider-container", uid),

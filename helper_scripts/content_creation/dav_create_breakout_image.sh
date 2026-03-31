@@ -9,8 +9,10 @@ read -p "Enter Image Height (default: auto): " img_height
 img_height=${img_height:-auto}
 read -p "Enter object-fit mode (cover/contain, default: contain): " obj_fit
 obj_fit=${obj_fit:-contain}
-read -p "Enter breakout shift amount (default: 42.5px): " breakout_shift
-breakout_shift=${breakout_shift:-42.5px}
+read -p "Enable mobile full-width (counteract 20px padding)? (y/n, default: n): " mobile_fw
+mobile_fw=${mobile_fw:-n}
+read -p "Enter desktop width/shift (e.g. '80%' for width, '42.5px' for breakout shift, default: 42.5px): " desktop_sizing
+desktop_sizing=${desktop_sizing:-42.5px}
 read -p "Enter output filename (leave empty to copy to clipboard): " output_file
 
 # 2. Construct the HTML content using a Here-Doc
@@ -23,10 +25,35 @@ else
 fi
 unique_class="dj-$rand_hash"
 
+# Determine Mobile CSS
+if [[ "$mobile_fw" =~ ^[Yy]$ ]]; then
+    mobile_css="width: calc(100% + 40px);
+  margin-left: -20px;"
+    desktop_reset="margin-left: 0;"
+else
+    mobile_css="width: 100%;"
+    desktop_reset=""
+fi
+
+# Determine Desktop CSS
+if [[ "$desktop_sizing" == *"%"* ]]; then
+    # Percentage width detected -> Center the image
+    desktop_rules="width: $desktop_sizing;
+    margin-left: auto;
+    margin-right: auto;
+    transform: none;"
+else
+    # No percentage -> Assume breakout shift value (px/rem/etc)
+    desktop_rules="$desktop_reset
+    /* Apply the \"breakout\" effect to the picture container */
+    width: calc(100% + (2 * $desktop_sizing));
+    transform: translateX(-$desktop_sizing);"
+fi
+
 html_content="<style>
 .$unique_class {
   display: block;
-  width: 100%;
+  $mobile_css
 }
 
 .$unique_class img {
@@ -41,9 +68,7 @@ html_content="<style>
 /* Styles for desktop screens (768px and wider) */
 @media (min-width: 768px) {
   .$unique_class {
-    /* Apply the \"breakout\" effect to the picture container */
-    width: calc(100% + (2 * $breakout_shift));
-    transform: translateX(-$breakout_shift);
+    $desktop_rules
   }
 }
 </style>

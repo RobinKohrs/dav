@@ -27,6 +27,9 @@
 #'   print(projections$back_proj)
 #'   # To see the clipping polygon
 #'   # plot(projections$front_clip)
+#'
+#'   # Greenland example
+#'   greenland_proj <- geo_create_clipped_laea(lon = -40, lat = 72)
 #' }
 #' }
 geo_create_clipped_laea <- function(lon, lat) {
