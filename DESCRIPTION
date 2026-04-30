@@ -28,9 +28,18 @@ Imports:
     aws.s3,
     dplyr,
     ggtext,
+    janitor,
     lubridate,
+    ncdf4,
+    RCurl,
     readODS,
     readr,
+    rlang,
+    rnaturalearth,
+    rstudioapi,
+    stringdist,
+    stringr,
+    systemfonts,
     tidyr
 Suggests:
     knitr,
