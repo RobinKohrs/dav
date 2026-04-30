@@ -248,7 +248,7 @@ html_create_image_swiper <- function(
     gradient_values <- paste(unlist(gradient_parts), collapse = ", ")
 
     # Standard full coverage since wrapper now only contains images
-    grad_style <- "position: absolute; width: 100%; height: 100%; top: 0; left: 0;"
+    grad_style <- "position: absolute; inset: 0;"
 
     gradient_css <- sprintf(
       ".%s .gradient { %s background-image: linear-gradient(to right, %s); z-index: 10; pointer-events: none; }",

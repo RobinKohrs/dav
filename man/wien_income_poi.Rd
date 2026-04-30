@@ -16,14 +16,14 @@ Computed from Statistik Austria Zählbezirk polygon boundaries.
 \description{
 A point dataset containing the pole of inaccessibility (the point furthest
 from any boundary) for each Zählbezirk (census district) in Vienna.
-Used by \code{\link[=wien_get_income]{wien_get_income()}} to target WMS queries precisely inside each district.
+Used by \code{\link[=statistik_get_zsp_einkommen]{statistik_get_zsp_einkommen()}} to target WMS queries precisely inside each district.
 }
 \examples{
 plot(wien_income_poi["geometry"])
 
 }
 \seealso{
-\code{\link[=wien_get_income]{wien_get_income()}}
+\code{\link[=statistik_get_zsp_einkommen]{statistik_get_zsp_einkommen()}}
 }
 \keyword{Austria}
 \keyword{Vienna}

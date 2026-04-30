@@ -1,0 +1,223 @@
+---
+title: "Kfz-Neuzulassungen – Österreich"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Kfz-Neuzulassungen – Österreich}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE   # network calls – set TRUE locally to run
+)
+```
+
+```{r setup}
+library(davR)
+library(dplyr)
+```
+
+## Overview
+
+Three functions cover different aspects of Austrian Kfz-Neuzulassungen data.
+All of them discover URLs dynamically — no manual link updates are needed when
+Statistik Austria publishes new files each month.
+
+| Function | Data | Coverage | Source |
+|---|---|---|---|
+| `statistik_get_kraftstoff_timeseries()` | PKW by fuel type × Bundesland | **2006-01 → today** | bundled Excel + live ODS |
+| `statistik_get_kfz_neuzulassungen()` | All vehicle types by fuel type × Bundesland **or** brand × vehicle type | current year (monthly) or 2024–2025 (annual) | Statistik Austria ODS |
+| `statistik_get_pkw_neuzulassungen()` | PKW by brand | **2000-01 → today** | STATcube OGD API (CSV) |
+
+---
+
+## 1 · `statistik_get_kraftstoff_timeseries()` — long time series by fuel type
+
+The main workhorse for trend analysis. Returns monthly PKW registrations per
+Bundesland and fuel/drive type from **January 2006** through the most recently
+published month of the current year.
+
+- **2006–2025**: served from the bundled `at_pkw_kraftstoff_hist` dataset
+  (parsed from a Statistik Austria special evaluation).
+- **Current year**: the current-year DE3 ODS file is discovered and downloaded
+  fresh from the Statistik Austria website on every call.
+
+### Columns
+
+| column | type | description |
+|---|---|---|
+| `bundesland` | chr | Austrian state; `"Österreich"` = national total |
+| `kraftstoffart` | chr | Fuel type (see below) |
+| `year` | int | Year |
+| `month` | int | Month (1–12) |
+| `date` | Date | First day of the month |
+| `anzahl` | int | New registrations (`NA` = suppressed, n < 5) |
+
+### Available fuel types
+
+```{r fuel_types}
+at_pkw_kraftstoff_hist |>
+  distinct(kraftstoffart) |>
+  arrange(kraftstoffart)
+```
+
+### Full Elektro series
+
+```{r ts_elektro}
+statistik_get_kraftstoff_timeseries(kraftstoffart = "Elektro")
+```
+
+### Wien: Elektro vs. Diesel since 2020
+
+```{r ts_wien}
+statistik_get_kraftstoff_timeseries(
+  date_from     = "2020-01",
+  bundesland    = c("Wien", "Österreich"),
+  kraftstoffart = c("Elektro", "Diesel")
+)
+```
+
+### Historical data only (no network call)
+
+```{r ts_hist_only}
+statistik_get_kraftstoff_timeseries(include_current_year = FALSE)
+```
+
+---
+
+## 2 · `statistik_get_kfz_neuzulassungen()` — richer current-year breakdown
+
+Returns more detail for the current year (or annual summaries for 2024/2025):
+per-vehicle-type breakdowns (PKW, Motorrad, LKW …) alongside Bundesland and
+fuel type, **or** brand × vehicle type.
+
+### `type = "kraftstoff"` — fuel × vehicle type × Bundesland
+
+```{r kfz_kraft_cur}
+# All months of the current year
+statistik_get_kfz_neuzulassungen("kraftstoff")
+```
+
+```{r kfz_kraft_jan}
+# Jänner only
+df <- statistik_get_kfz_neuzulassungen("kraftstoff", months = "Jänner")
+
+# PKW Elektro by Bundesland
+df |>
+  filter(fahrzeugtyp == "Personenkraftwagen Klasse M1",
+         kraftstoffart == "Elektro") |>
+  select(bundesland, anzahl) |>
+  arrange(desc(anzahl))
+```
+
+```{r kfz_kraft_2025}
+# Annual totals for 2025
+statistik_get_kfz_neuzulassungen("kraftstoff", year = 2025)
+```
+
+### `type = "marken"` — brand × vehicle type (current year)
+
+```{r kfz_marken}
+dm <- statistik_get_kfz_neuzulassungen("marken")
+
+# Top 10 PKW brands in Jänner
+dm |>
+  filter(monat == "Jänner",
+         grepl("Personenkraftwagen", fahrzeugtyp),
+         marke != "Kraftfahrzeuge insgesamt") |>
+  slice_max(anzahl, n = 10) |>
+  select(marke, anzahl)
+```
+
+### Available months and sheets
+
+The current-year ODS contains one sheet per published month plus a cumulative
+sheet (e.g. `"Jänner-März"`). Pass a character vector to `months` to select
+specific sheets:
+
+```{r kfz_months}
+statistik_get_kfz_neuzulassungen(
+  "kraftstoff",
+  months = c("Jänner", "Februar", "März")
+)
+```
+
+---
+
+## 3 · `statistik_get_pkw_neuzulassungen()` — PKW by brand since 2000
+
+Uses the **OGD REST API** (`data.statistik.gv.at`) to return monthly PKW brand
+registrations from **January 2000** onward. Updated monthly.
+
+### Columns
+
+| column | type | description |
+|---|---|---|
+| `monat` | chr | Austrian label, e.g. `"Jänner 2026"` |
+| `date` | Date | First day of the month |
+| `marke` | chr | Brand name incl. country code, e.g. `"VW (D) <049400>"` |
+| `anzahl` | int | New PKW registrations |
+
+Note: Tesla appears as three separate rows (manufacturing in D, RC, USA). Sum
+them for a combined Tesla figure.
+
+### All brands, current year
+
+```{r ogd_cur}
+statistik_get_pkw_neuzulassungen(date_from = paste0(format(Sys.Date(), "%Y"), "-01"))
+```
+
+### Selected brands since 2015
+
+```{r ogd_brands}
+statistik_get_pkw_neuzulassungen(
+  date_from = "2015-01",
+  brands    = c("VW", "SKODA", "BMW", "MERCEDES", "TOYOTA", "TESLA")
+)
+```
+
+### Top brands in the latest month
+
+```{r ogd_top}
+statistik_get_pkw_neuzulassungen() |>
+  slice_max(date, n = 1, by = marke, with_ties = FALSE) |>
+  slice_max(anzahl, n = 15) |>
+  select(date, marke, anzahl)
+```
+
+---
+
+## Combining the functions
+
+A common workflow is to pair the long fuel-type series with the brand data:
+
+```{r combine}
+# Share of Elektro registrations by Bundesland over time
+elektro <- statistik_get_kraftstoff_timeseries(
+  date_from     = "2019-01",
+  kraftstoffart = c("Elektro", "Benzin", "Diesel",
+                    "Benzin/Elektro (hybrid)", "Diesel/Elektro (hybrid)")
+)
+
+elektro_share <- elektro |>
+  summarise(anzahl = sum(anzahl, na.rm = TRUE),
+            .by    = c(bundesland, kraftstoffart, date)) |>
+  mutate(share = anzahl / sum(anzahl, na.rm = TRUE),
+         .by   = c(bundesland, date)) |>
+  filter(kraftstoffart == "Elektro")
+```
+
+---
+
+## Data sources
+
+| source | URL |
+|---|---|
+| Statistik Austria – Kfz-Neuzulassungen page | <https://www.statistik.at/statistiken/tourismus-und-verkehr/fahrzeuge/kfz-neuzulassungen> |
+| OGD API – PKW by brand | <https://data.statistik.gv.at/web/meta.jsp?dataset=OGD_fkfzul0759_OD_PkwNZL_1> |
+| Bundled historical Excel (special evaluation) | `system.file("extdata", "at_pkw_kraftstoff_hist_2006_2025.xlsx", package = "davR")` |
+
+License: CC BY 4.0 – Statistik Austria.

@@ -2,8 +2,8 @@
     "sortOrder": [
         {
             "columnIndex": 2,
-            "ascending": false
+            "ascending": true
         }
     ],
-    "path": "~/projects/personal/dav/R"
+    "path": "~/projects/personal/dav/doc"
 }

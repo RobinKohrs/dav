@@ -29,7 +29,9 @@ Imports:
     aws.s3,
     dplyr,
     lubridate,
-    readr
+    readODS,
+    readr,
+    tidyr
 Suggests:
     knitr,
     rmarkdown,
