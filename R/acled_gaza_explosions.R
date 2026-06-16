@@ -4,13 +4,12 @@
 #' to download data for events classified as "Explosions/Remote violence"
 #' in the Gaza Strip, Palestine.
 #'
-#' Authentication credentials (email and access key) can be provided as arguments
-#' or retrieved from environment variables `ACLED_EMAIL` and `ACLED_API_KEY`.
+#' Authentication uses myACLED email + password via [acled_download_events()].
 #'
-#' @param email_address Your registered ACLED API email address.
+#' @param email_address Your myACLED email address.
 #'                      If `NULL` or missing, uses `ACLED_EMAIL` env var.
-#' @param access_key Your ACLED API access key.
-#'                   If `NULL` or missing, uses `ACLED_API_KEY` env var.
+#' @param password Your myACLED password.
+#'                 If `NULL` or missing, uses `ACLED_PASSWORD` env var.
 #' @param start_date Character string or Date object. Start date (YYYY-MM-DD). Required.
 #' @param end_date Character string or Date object. End date (YYYY-MM-DD). Required.
 #' @param sub_event_types Character vector. Optional. Specific sub-event type(s)
@@ -31,8 +30,8 @@
 #' @examples
 #' \dontrun{
 #' # --- Set environment variables first (recommended) ---
-#' # Sys.setenv(ACLED_EMAIL = "YOUR_EMAIL")
-#' # Sys.setenv(ACLED_API_KEY = "YOUR_ACCESS_KEY")
+#' # Sys.setenv(ACLED_EMAIL = "you@newsroom.example")
+#' # Sys.setenv(ACLED_PASSWORD = "your-myacled-password")
 #'
 #' # Get all explosion events in Gaza for a specific week
 #' gaza_explosions_week = acled_gaza_explosions(
@@ -57,7 +56,7 @@
 #' }
 #' }
 acled_gaza_explosions = function(email_address = NULL,
-                                 access_key = NULL,
+                                 password = NULL,
                                  start_date,
                                  end_date,
                                  sub_event_types = NULL, # Kept this specific for explosions
@@ -69,7 +68,7 @@ acled_gaza_explosions = function(email_address = NULL,
   # Call the general function with fixed parameters for Gaza explosions
   acled_download_events(
     email_address = email_address,
-    access_key = access_key,
+    password = password,
     start_date = start_date,
     end_date = end_date,
     country = "Palestine",

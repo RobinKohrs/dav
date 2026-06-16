@@ -3,6 +3,7 @@
 # Simple data project creator with templates
 PROJECT_ROOT_DIR_TO_CLEANUP=""
 SCRIPT_SUCCESSFUL=false
+RESSORT=""
 
 cleanup() {
   if [ "$SCRIPT_SUCCESSFUL" = false ] && [ -n "$PROJECT_ROOT_DIR_TO_CLEANUP" ] && [ -d "$PROJECT_ROOT_DIR_TO_CLEANUP" ]; then
@@ -18,6 +19,8 @@ if [ -n "$ZSH_VERSION" ]; then
 else
     SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 fi
+# Save early — SCRIPT_DIR may be overwritten later by the project manager block
+DAV_PROJ_CREATOR_DIR="$SCRIPT_DIR"
 
 source "$SCRIPT_DIR/../common/dav_common.sh" || { echo "Config failed"; return 1; }
 
@@ -91,7 +94,12 @@ if [ -n "$TEMPLATE_MODE" ]; then
     echo "Using template: $TEMPLATE_MODE"
     PROJECT_NAME=$(gum input --header "Project name:")
     [ $? -ne 0 ] && { echo "Cancelled"; return 1; }
-    
+
+    if [ "$TEMPLATE_MODE" = "basic-dst" ]; then
+        RESSORT=$(gum choose "Inland" "Ausland" "Wirtschaft" "Web" "Sport" "Panorama" "Wissenschaft" "Technik" "Kultur" "Etat" "Karriere" "Immobilien" "Genuss" "Recht" "Diskurs" "Album" "Dossier" --header "Ressort:")
+        [ $? -ne 0 ] && { echo "Cancelled"; return 1; }
+    fi
+
     setup_template "$TEMPLATE_MODE"
     
 else
@@ -101,10 +109,15 @@ else
     if [ "$CHOICE" = "Use Template" ]; then
         TEMPLATE=$(gum choose "basic-dst" "basic-ndr" "basic-personal" "r-analysis" "geospatial" --header "Select template:")
         [ $? -ne 0 ] && { echo "Cancelled"; return 1; }
-        
+
         PROJECT_NAME=$(gum input --header "Project name:")
         [ $? -ne 0 ] && { echo "Cancelled"; return 1; }
-        
+
+        if [ "$TEMPLATE" = "basic-dst" ]; then
+            RESSORT=$(gum choose "Inland" "Ausland" "Wirtschaft" "Web" "Sport" "Panorama" "Wissenschaft" "Technik" "Kultur" "Etat" "Karriere" "Immobilien" "Genuss" "Recht" "Diskurs" "Album" "Dossier" --header "Ressort:")
+            [ $? -ne 0 ] && { echo "Cancelled"; return 1; }
+        fi
+
         setup_template "$TEMPLATE"
         
     else
@@ -146,6 +159,11 @@ else
             TARGET_DIR="$BASE_DIR/$YEAR/$MONTH/$YEAR-$MONTH-$PROJECT_SLUG"
         fi
         
+        if [ "$CATEGORY" = "DST" ]; then
+            RESSORT=$(gum choose "Inland" "Ausland" "Wirtschaft" "Web" "Sport" "Panorama" "Wissenschaft" "Technik" "Kultur" "Etat" "Karriere" "Immobilien" "Genuss" "Recht" "Diskurs" "Album" "Dossier" --header "Ressort:")
+            [ $? -ne 0 ] && { echo "Cancelled"; return 1; }
+        fi
+
         # Ask about components for custom setup
         ADD_R=false
         ADD_QGIS=false
@@ -213,7 +231,11 @@ fi
 [ ! -d ".git" ] && { git init -q; echo ".Rhistory" > .gitignore; echo "*~" >> .gitignore; }
 
 # Create directory structure
-mkdir -p data/{csv,excel,misc} data/geodata/{raster,vector} graphic_output docs scripts
+if [ "$ADD_QGIS" = true ]; then
+    mkdir -p data/geo output docs
+else
+    mkdir -p data output docs
+fi
 
 # Setup R components
 if [ "$ADD_R" = true ]; then
@@ -231,8 +253,7 @@ VersionControl: Git
 EOF
     
     # Create init.R file
-    cat > "R/init.R" << EOF
-# Load required packages
+    cat > "R/init.R" << 'EOF'
 library(here)
 library(tidyverse)
 library(sf)
@@ -242,15 +263,9 @@ library(cli)
 library(davR)
 library(terra)
 
-
-# Set up project paths
-p_data = here("data")
-p_csv = here("data", "csv")
-p_excel = here("data", "excel")
-p_geo_vec = here("data", "geodata", "vector")
-p_geo_ras = here("data", "geodata", "raster")
-p_graphic = here("graphic_output")
-
+p_data   = here("data")
+p_geo    = here("data", "geo")
+p_output = here("output")
 EOF
 fi
 
@@ -297,6 +312,9 @@ EOF
 fi
 
 # Create README
+GEO_LINE=""
+[ "$ADD_QGIS" = true ] && GEO_LINE="  - geo/: Geodata (shapefiles, GeoPackage, raster)"
+
 cat > README.md << EOF
 # $PROJECT_NAME
 
@@ -304,15 +322,10 @@ Created: $(date +"%Y-%m-%d")
 Location: $PROJECT_ROOT_DIR
 
 ## Structure
-- data/: Input and output data
-  - csv/
-  - excel/
-  - geodata/
-    - vector/
-    - raster/
-- graphic_output/: Charts and maps
-- docs/: Documentation and Quarto files
-- scripts/: General scripts
+- data/: Input data
+$GEO_LINE
+- output/: Charts, maps, and exports
+- docs/: Quarto documents
 EOF
 
 [ "$ADD_R" = true ] && echo "- R/: R scripts" >> README.md
@@ -358,16 +371,103 @@ library(zoo)
 
 m <- mapview
 
-# Define paths
-p_data = here("data")
-p_csv = here("data", "csv")
-p_excel = here("data", "excel")
-p_geo_vec = here("data", "geodata", "vector")
-p_geo_ras = here("data", "geodata", "raster")
-p_graphic = here("graphic_output")
+p_data   = here("data")
+p_geo    = here("data", "geo")
+p_output = here("output")
 \`\`\`
 
 EOF
+
+# Create DST article via dav_create_article_dst()
+if [ "$CATEGORY" = "DST" ] && [ -n "$RESSORT" ]; then
+    if command -v Rscript >/dev/null 2>&1; then
+        echo "Creating DST article (ressort: $RESSORT)..."
+        Rscript --vanilla -e "
+suppressMessages(library(davR))
+dav_create_article_dst(
+  ressort           = '$RESSORT',
+  article_directory = 'docs/article',
+  title             = '$PROJECT_NAME',
+  subtitle          = ''
+)
+" && echo "DST article ready in docs/article/" \
+          || echo "⚠️  DST article creation failed — run dav_create_article_dst() manually"
+    else
+        echo "⚠️  Rscript not found — run dav_create_article_dst() manually"
+    fi
+fi
+
+# Create vault investigation folder for DST projects
+VAULT_INVESTIGATION_DIR=""
+if [ "$CATEGORY" = "DST" ]; then
+    VAULT_INVESTIGATION_DIR="$HOME/vault/work/dst/investigations/$YEAR/$MONTH/$YEAR-$MONTH-$PROJECT_SLUG"
+    mkdir -p "$VAULT_INVESTIGATION_DIR"
+
+    # Create raw notes file — HUMAN-ONLY, no LLM should ever touch this
+    RAW_NOTES_FILE="$VAULT_INVESTIGATION_DIR/raw_notes_$PROJECT_SLUG.md"
+    cat > "$RAW_NOTES_FILE" << EOF
+---
+llm_edit: NEVER
+human_only: true
+---
+
+<!-- ============================================================
+  ⚠️  HUMAN-ONLY FILE — NO LLM SHOULD EVER EDIT THIS FILE
+  This file is exclusively for personal handwritten notes.
+  AI assistants must NEVER modify, append to, summarize,
+  rewrite, or read-and-incorporate this file.
+  Rule source: vault/work/AGENTS.md
+  ============================================================ -->
+
+# Raw Notes — $PROJECT_NAME
+
+_Started: $(date +"%Y-%m-%d")_
+
+---
+
+EOF
+
+    echo ""
+    echo "📁 Vault investigation folder: $VAULT_INVESTIGATION_DIR"
+    echo "📝 Raw notes file: $RAW_NOTES_FILE"
+
+    # Print LLM context prompt for copy-paste
+    echo ""
+    echo "══════════════════════════════════════════════════════════════════"
+    echo "  LLM CONTEXT PROMPT — copy-paste to find relevant vault info"
+    echo "══════════════════════════════════════════════════════════════════"
+    cat << LLMPROMPT
+Please read ~/vault/work/AGENTS.md and ~/vault/work/profil.md before we begin.
+
+I am starting a new investigation for der Standard (dst):
+  Name:  $PROJECT_NAME
+  Slug:  $PROJECT_SLUG
+  Vault: ~/vault/work/dst/investigations/$YEAR/$MONTH/$YEAR-$MONTH-$PROJECT_SLUG/
+
+Please search the vault for existing information relevant to this investigation:
+1. Check ~/vault/work/dst/topics/ — is there an existing topic cluster this fits into?
+2. Check ~/vault/work/dst/topics/*/entities/ and ~/vault/work/shared/entities/ — relevant entities?
+3. Check ~/vault/work/sources/emails/ and ~/vault/work/sources/documents/ — relevant past sources?
+4. Check ~/vault/work/dst/investigations/ — any related past investigations?
+5. Check ~/vault/work/index.md for a quick overview.
+
+Summarize what you find and suggest:
+- Which topic slug this investigation belongs to (or propose a new one)
+- Which existing entities are relevant
+- Related past investigations or sources worth linking
+- Proposed next steps for the vault (what to create/update)
+
+Do NOT edit raw_notes_$PROJECT_SLUG.md — that file is human-only.
+LLMPROMPT
+    echo "══════════════════════════════════════════════════════════════════"
+fi
+
+# Copy coding style rule into the new project
+STYLE_TEMPLATE="$DAV_PROJ_CREATOR_DIR/templates/r-style.mdc"
+if [ -f "$STYLE_TEMPLATE" ]; then
+    mkdir -p ".cursor/rules"
+    cp "$STYLE_TEMPLATE" ".cursor/rules/r-style.mdc"
+fi
 
 echo ""
 echo "Project created: $PROJECT_ROOT_DIR"
@@ -543,7 +643,11 @@ fi
 echo ""
 echo "✅ Project created successfully!"
 echo "📂 Location: $PROJECT_ROOT_DIR"
-echo "📝 README: $PROJECT_ROOT_DIR/README.md"
+echo ""
+echo "💡 Point your LLM at .cursor/rules/r-style.mdc for consistent, readable R code."
+echo "   In Cursor: @.cursor/rules/r-style.mdc   |   In VS Code: attach the file in chat"
+echo ""
+echo "🚀 To open this project from Raycast: pj raycast-sync"
 
 SCRIPT_SUCCESSFUL=true
 exit 0

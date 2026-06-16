@@ -6,7 +6,7 @@
 \usage{
 acled_gaza_explosions(
   email_address = NULL,
-  access_key = NULL,
+  password = NULL,
   start_date,
   end_date,
   sub_event_types = NULL,
@@ -17,11 +17,11 @@ acled_gaza_explosions(
 )
 }
 \arguments{
-\item{email_address}{Your registered ACLED API email address.
+\item{email_address}{Your myACLED email address.
 If \code{NULL} or missing, uses \code{ACLED_EMAIL} env var.}
 
-\item{access_key}{Your ACLED API access key.
-If \code{NULL} or missing, uses \code{ACLED_API_KEY} env var.}
+\item{password}{Your myACLED password.
+If \code{NULL} or missing, uses \code{ACLED_PASSWORD} env var.}
 
 \item{start_date}{Character string or Date object. Start date (YYYY-MM-DD). Required.}
 
@@ -52,14 +52,13 @@ to download data for events classified as "Explosions/Remote violence"
 in the Gaza Strip, Palestine.
 }
 \details{
-Authentication credentials (email and access key) can be provided as arguments
-or retrieved from environment variables \code{ACLED_EMAIL} and \code{ACLED_API_KEY}.
+Authentication uses myACLED email + password via \code{\link[=acled_download_events]{acled_download_events()}}.
 }
 \examples{
 \dontrun{
 # --- Set environment variables first (recommended) ---
-# Sys.setenv(ACLED_EMAIL = "YOUR_EMAIL")
-# Sys.setenv(ACLED_API_KEY = "YOUR_ACCESS_KEY")
+# Sys.setenv(ACLED_EMAIL = "you@newsroom.example")
+# Sys.setenv(ACLED_PASSWORD = "your-myacled-password")
 
 # Get all explosion events in Gaza for a specific week
 gaza_explosions_week = acled_gaza_explosions(

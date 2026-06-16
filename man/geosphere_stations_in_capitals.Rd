@@ -25,7 +25,7 @@ A data frame (or \code{sf} object if geometry was kept) with X rows and Y variab
 }
 }
 \source{
-Derived from \code{davR::geosphere_get_stations()}, filtered by specific station IDs
+Derived from \code{\link[=geosphere_get_stations]{geosphere_get_stations()}}, filtered by specific station IDs
 representing Austrian capitals. Data originally from GeoSphere Austria.
 The selection of IDs can be found in \code{data-raw/geosphere_stations.R}.
 }
@@ -35,7 +35,7 @@ geosphere_stations_in_capitals
 \description{
 A dataset containing information about selected weather stations
 located in or representative of the nine Austrian federal state capitals.
-This data is a filtered subset from the \code{davR::geosphere_get_stations()} function.
+This data is a filtered subset from the \code{\link[=geosphere_get_stations]{geosphere_get_stations()}} function.
 }
 \examples{
 \donttest{

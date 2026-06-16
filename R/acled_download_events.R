@@ -1,18 +1,19 @@
-#' Download ACLED Data Interactively or Programmatically (Manual URL Construction)
+#' Download ACLED events via the myACLED OAuth API
 #'
-#' This function calls the official ACLED API directly to download
-#' data for user-specified event types, sub-event types, and geographic areas.
-#' It uses manual construction of the URL query string.
-#' It can operate interactively for selecting event types and sub-event types.
-#' It handles API pagination to retrieve all relevant data.
+#' Calls the current ACLED API (`acleddata.com/api/acled/read`) with OAuth login.
+#' Handles pagination (5,000 rows per page) and optional interactive event-type
+#' selection. Vault guide: `topics/_wiki/methoden/acled-api-journalist.md`.
 #'
-#' Authentication credentials (email and access key) can be provided as arguments
-#' or retrieved from environment variables `ACLED_EMAIL` and `ACLED_API_KEY`.
+#' Authentication uses myACLED **email + password** (no separate API key).
+#' Provide via arguments or environment variables `ACLED_EMAIL` and
+#' `ACLED_PASSWORD`.
 #'
-#' @param email_address Your registered ACLED API email address.
+#' @param email_address Your myACLED email address.
 #'                      If `NULL` or missing, uses `ACLED_EMAIL` env var.
-#' @param access_key Your ACLED API access key.
-#'                   If `NULL` or missing, uses `ACLED_API_KEY` env var.
+#' @param password Your myACLED password.
+#'                 If `NULL` or missing, uses `ACLED_PASSWORD` env var.
+#' @param token Optional Bearer token (24 h). Skips login when set. Uses
+#'              `ACLED_ACCESS_TOKEN` env var if `NULL`.
 #' @param start_date Character string or Date object. Start date (YYYY-MM-DD). Required.
 #' @param end_date Character string or Date object. End date (YYYY-MM-DD). Required.
 #' @param country Character vector. Optional. ACLED country name(s).
@@ -44,22 +45,22 @@
 #'         or a list of parsed JSON content from each page (if `output_format = "raw_json"`).
 #'         Returns NULL if a critical error occurs or no data is found.
 #' @export
-#' @importFrom httr GET content http_type http_error status_code user_agent
+#' @importFrom httr GET POST content http_type http_error status_code user_agent add_headers
 #' @importFrom jsonlite fromJSON
 #' @importFrom utils URLencode read.csv select.list menu
 #' @importFrom cli cli_abort cli_alert_info cli_alert_success cli_alert_warning cli_alert_danger cli_process_start cli_process_done cli_process_failed cli_bullets cli_h1 cli_progress_bar cli_progress_update cli_progress_done cli_text
+#' @importFrom rlang %||%
 #' @examples
 #' \dontrun{
 #' # --- Set environment variables first (recommended) ---
-#' # Sys.setenv(ACLED_EMAIL = "YOUR_EMAIL")
-#' # Sys.setenv(ACLED_API_KEY = "YOUR_ACCESS_KEY")
+#' # Sys.setenv(ACLED_EMAIL = "you@newsroom.example")
+#' # Sys.setenv(ACLED_PASSWORD = "your-myacled-password")
 #'
-#' # Example 1: Explosions in Yemen for a specific period
-#' yemen_explosions = acled_download_events(
-#'   start_date = "2023-01-01",
-#'   end_date = "2023-01-31",
-#'   country = "Yemen",
-#'   event_types = "Explosions/Remote violence"
+#' # Lebanon events (Sep 2024 – May 2026)
+#' lebanon = acled_download_events(
+#'   start_date = "2024-09-01",
+#'   end_date = "2026-05-31",
+#'   country = "Lebanon"
 #' )
 #' if (!is.null(yemen_explosions) && nrow(yemen_explosions) > 0) {
 #'   print(head(yemen_explosions[, c("event_date", "country", "admin1", "event_type")]))
@@ -74,8 +75,60 @@
 #' # )
 #' # if (!is.null(interactive_data)) print(head(interactive_data))
 #' }
+acled_escape_cli_text = function(x) {
+  gsub("}", "}}", gsub("{", "{{", x, fixed = TRUE), fixed = TRUE)
+}
+
+acled_get_oauth_token = function(email_address, password) {
+  resp = httr::POST(
+    "https://acleddata.com/oauth/token",
+    body = list(
+      username = email_address,
+      password = password,
+      grant_type = "password",
+      client_id = "acled",
+      scope = "authenticated"
+    ),
+    encode = "form",
+    httr::user_agent("davR-acled-client/1.0")
+  )
+
+  if (httr::http_error(resp)) {
+    error_body = httr::content(resp, as = "text", encoding = "UTF-8")
+    hint = if (grepl("invalid_grant", error_body, fixed = TRUE)) {
+      c(
+        "i" = "invalid_grant usually means wrong email/password.",
+        "i" = "Re-activate at https://acleddata.com/user/re-activate if needed."
+      )
+    } else {
+      c("i" = "Use the same email/password as on acleddata.com.")
+    }
+    cli::cli_abort(c(
+      "ACLED OAuth login failed (HTTP {httr::status_code(resp)}).",
+      hint,
+      "x" = acled_escape_cli_text(error_body)
+    ))
+  }
+
+  payload = httr::content(resp, as = "parsed", type = "application/json")
+  token = payload$access_token
+
+  if (is.null(token) || !nzchar(token)) {
+    payload_txt = acled_escape_cli_text(
+      jsonlite::toJSON(payload, auto_unbox = TRUE)
+    )
+    cli::cli_abort(c(
+      "ACLED OAuth response did not contain access_token.",
+      "x" = payload_txt
+    ))
+  }
+
+  token
+}
+
 acled_download_events = function(email_address = NULL,
-                                 access_key = NULL,
+                                 password = NULL,
+                                 token = NULL,
                                  start_date,
                                  end_date,
                                  country = NULL,
@@ -109,11 +162,27 @@ acled_download_events = function(email_address = NULL,
     if (nchar(email_address) == 0) cli::cli_abort(c("ACLED API email address not found.", "x" = "Provide via {.arg email_address} or set {.envvar ACLED_EMAIL}."))
     used_env_email = TRUE
   }
-  used_env_key = FALSE
-  if (is.null(access_key) || nchar(access_key) == 0) {
-    access_key = Sys.getenv("ACLED_API_KEY")
-    if (nchar(access_key) == 0) cli::cli_abort(c("ACLED API access key not found.", "x" = "Provide via {.arg access_key} or set {.envvar ACLED_API_KEY}."))
-    used_env_key = TRUE
+  used_env_password = FALSE
+  used_env_token = FALSE
+
+  if (is.null(token) || nchar(token) == 0) {
+    token = Sys.getenv("ACLED_ACCESS_TOKEN")
+    if (nchar(token) > 0) used_env_token = TRUE
+  }
+
+  if (is.null(token) || nchar(token) == 0) {
+    if (is.null(password) || nchar(password) == 0) {
+      password = Sys.getenv("ACLED_PASSWORD")
+      if (nchar(password) > 0) used_env_password = TRUE
+    }
+    if (is.null(password) || nchar(password) == 0) {
+      cli::cli_abort(c(
+        "ACLED credentials not found.",
+        "i" = "Set {.envvar ACLED_EMAIL} + {.envvar ACLED_PASSWORD}, or pass {.arg token}."
+      ))
+    }
+    cli::cli_alert_info("Requesting ACLED OAuth token...")
+    token = acled_get_oauth_token(email_address, password)
   }
 
   # --- Validate required date arguments ---
@@ -173,51 +242,50 @@ acled_download_events = function(email_address = NULL,
     }
   }
 
-  # --- Parameter Definitions ---
-  base_url_endpoint = "https://api.acleddata.com/acled/read"
+  api_url = "https://acleddata.com/api/acled/read"
 
   # --- Date Formatting ---
   tryCatch({
     start_date_formatted = format(as.Date(start_date), "%Y-%m-%d")
     end_date_formatted = format(as.Date(end_date), "%Y-%m-%d")
   }, error = function(e) {
-    cli::cli_abort(c("Invalid {.arg start_date} or {.arg end_date}.", "i" = "Use 'YYYY-MM-DD' or Date objects.", "x" = e$message))
+    cli::cli_abort(c(
+      "Invalid {.arg start_date} or {.arg end_date}.",
+      "i" = "Use 'YYYY-MM-DD' or Date objects.",
+      "x" = acled_escape_cli_text(e$message)
+    ))
   })
 
-  # --- Build Query STRING ---
-  query_string_parts = c()
+  acled_pipe_join = function(x) paste(x, collapse = "|")
 
-  query_string_parts = c(query_string_parts, paste0("key=", utils::URLencode(access_key, reserved = TRUE)))
-  query_string_parts = c(query_string_parts, paste0("email=", utils::URLencode(email_address, reserved = TRUE)))
-  query_string_parts = c(query_string_parts, paste0("event_date=", utils::URLencode(paste(start_date_formatted, end_date_formatted, sep = "|"), reserved = TRUE)))
-  query_string_parts = c(query_string_parts, "event_date_where=BETWEEN")
-  query_string_parts = c(query_string_parts, paste0("limit=", page_limit)) # API max is 5000
+  base_query = list(
+    event_date = paste(start_date_formatted, end_date_formatted, sep = "|"),
+    event_date_where = "BETWEEN",
+    limit = page_limit,
+    with_total = "true",
+    `_format` = "json"
+  )
 
-  if (!is.null(country)) query_string_parts = c(query_string_parts, paste0("country=", paste(sapply(country, utils::URLencode, reserved = TRUE), collapse = "|")))
-  if (!is.null(region)) query_string_parts = c(query_string_parts, paste0("region=", paste(sapply(region, utils::URLencode, reserved = TRUE), collapse = "|")))
-  if (!is.null(admin1)) query_string_parts = c(query_string_parts, paste0("admin1=", paste(sapply(admin1, utils::URLencode, reserved = TRUE), collapse = "|")))
-  if (!is.null(admin2)) query_string_parts = c(query_string_parts, paste0("admin2=", paste(sapply(admin2, utils::URLencode, reserved = TRUE), collapse = "|")))
-  if (!is.null(admin3)) query_string_parts = c(query_string_parts, paste0("admin3=", paste(sapply(admin3, utils::URLencode, reserved = TRUE), collapse = "|")))
+  if (!is.null(country)) base_query$country = acled_pipe_join(country)
+  if (!is.null(region)) base_query$region = acled_pipe_join(as.character(region))
+  if (!is.null(admin1)) base_query$admin1 = acled_pipe_join(admin1)
+  if (!is.null(admin2)) base_query$admin2 = acled_pipe_join(admin2)
+  if (!is.null(admin3)) base_query$admin3 = acled_pipe_join(admin3)
 
   if (!is.null(selected_event_types_api) && length(selected_event_types_api) > 0) {
-    query_string_parts = c(query_string_parts, paste0("event_type=", paste(sapply(selected_event_types_api, utils::URLencode, reserved = TRUE), collapse = "|")))
+    base_query$event_type = acled_pipe_join(selected_event_types_api)
   }
   if (!is.null(selected_sub_event_types_api) && length(selected_sub_event_types_api) > 0) {
-    query_string_parts = c(query_string_parts, paste0("sub_event_type=", paste(sapply(selected_sub_event_types_api, utils::URLencode, reserved = TRUE), collapse = "|")))
+    base_query$sub_event_type = acled_pipe_join(selected_sub_event_types_api)
   }
 
   additional_params = list(...)
   if (length(additional_params) > 0) {
-    for (param_name in names(additional_params)) {
-      param_value = additional_params[[param_name]]
-      query_string_parts = c(query_string_parts, paste0(utils::URLencode(param_name, reserved = TRUE), "=", utils::URLencode(as.character(param_value), reserved = TRUE)))
-    }
+    base_query = c(base_query, additional_params)
   }
 
-  base_query_string = paste(query_string_parts, collapse = "&")
-
   # --- Inform User about the Query ---
-  cli::cli_h1("ACLED Direct API Request (Manual URL)")
+  cli::cli_h1("ACLED API request (OAuth)")
   summary_params = list(
     Dates = paste(start_date_formatted, "to", end_date_formatted),
     Country = if(!is.null(country)) paste(country, collapse=", ") else "Any",
@@ -240,7 +308,8 @@ acled_download_events = function(email_address = NULL,
 
 
   if (used_env_email) cli::cli_alert_info(cli::format_inline("Using email from {.envvar ACLED_EMAIL}."))
-  if (used_env_key) cli::cli_alert_info(cli::format_inline("Using access key from {.envvar ACLED_API_KEY}."))
+  if (used_env_password) cli::cli_alert_info(cli::format_inline("Using password from {.envvar ACLED_PASSWORD}."))
+  if (used_env_token) cli::cli_alert_info(cli::format_inline("Using token from {.envvar ACLED_ACCESS_TOKEN}."))
 
   # --- Pagination Loop ---
   all_data_list = list()
@@ -256,22 +325,30 @@ acled_download_events = function(email_address = NULL,
                                             msg_done = "Finished fetching all pages.",
                                             msg_failed = "Failed to fetch all data.")
     repeat {
-      current_page_query_string = paste0(base_query_string, "&page=", current_page)
-      full_request_url = paste0(base_url_endpoint, "?", current_page_query_string)
+      page_query = c(base_query, list(page = current_page))
 
       if (!is.null(pb_id)) {
         if (!is.na(total_pages_approx) && total_pages_approx > 0) {
-          cli::cli_progress_update(id = pb_id, set = current_page, force = TRUE)
+          # Cap at total_pages_approx - 1 so the bar doesn't reach 100% and
+          # auto-close before the finally block can call cli_progress_done().
+          cli::cli_progress_update(id = pb_id, set = min(current_page, total_pages_approx - 1L), force = TRUE)
         } else {
           cli::cli_progress_update(id = pb_id, force = TRUE)
         }
       }
 
-      display_url = if(nchar(full_request_url) > 150) paste0(substr(full_request_url, 1, 147), "...") else full_request_url
-      cli::cli_alert_info(cli::format_inline("Requesting: {.url {display_url}} (Page {current_page})"))
+      cli::cli_alert_info(cli::format_inline("Requesting page {current_page}…"))
 
       resp = tryCatch({
-        httr::GET(full_request_url, httr::user_agent("GenericACLEDClient/0.31-ManualURL"))
+        httr::GET(
+          api_url,
+          query = page_query,
+          httr::add_headers(
+            Authorization = paste("Bearer", token),
+            Accept = "application/json"
+          ),
+          httr::user_agent("davR-acled-client/1.0")
+        )
       }, error = function(e) {
         cli::cli_alert_danger(cli::format_inline("HTTP request failed (Page {current_page}): {e$message}"))
         return(list(error = TRUE, message = e$message)) # Return a list to signal error
@@ -301,6 +378,13 @@ acled_download_events = function(email_address = NULL,
         })
         if (is.null(page_content)) stop("JSON_PARSE_ERROR")
 
+        api_status = page_content$status
+        if (!is.null(api_status) && api_status != 200) {
+          api_error = page_content$error %||% page_content$messages
+          cli::cli_alert_danger(cli::format_inline("API error (status={api_status}): {api_error}"))
+          stop("API_STATUS_ERROR")
+        }
+
         if (!is.null(page_content$data) && (is.data.frame(page_content$data) || (is.list(page_content$data) && length(page_content$data) > 0))) {
           page_data_df = as.data.frame(page_content$data)
         }
@@ -310,8 +394,10 @@ acled_download_events = function(email_address = NULL,
           if (current_page == 1) cli::cli_alert_warning("No data found for this query.") else cli::cli_alert_info("No more data on subsequent pages.")
           break
         }
-        if (current_page == 1 && !is.null(page_content$count) && is.numeric(page_content$count)) {
-          total_expected_records = as.integer(page_content$count)
+
+        total_from_api = page_content$total_count %||% page_content$count
+        if (current_page == 1 && !is.null(total_from_api) && is.numeric(total_from_api)) {
+          total_expected_records = as.integer(total_from_api)
           cli::cli_alert_info(cli::format_inline("API reports {total_expected_records} total records for this query."))
           if (total_expected_records > page_limit) {
             total_pages_approx = ceiling(total_expected_records / page_limit)
@@ -354,7 +440,7 @@ acled_download_events = function(email_address = NULL,
     # No specific action here, just let it fall to finally
   }, finally = {
     if (!is.null(pb_id)) {
-      if (!is.na(total_pages_approx) && total_pages_approx > 0 && !is.null(cli::cli_progress_bar_스타일())) { # Check if progress bar style is available
+      if (!is.na(total_pages_approx) && total_pages_approx > 0) {
         final_set_value = min(current_page -1, total_pages_approx)
         if(exists("num_records_this_page") && num_records_this_page < page_limit) final_set_value = total_pages_approx
         cli::cli_progress_update(id = pb_id, set = final_set_value, total = total_pages_approx, force = TRUE)
@@ -364,7 +450,7 @@ acled_download_events = function(email_address = NULL,
     if (!is.null(cli_process_id)) {
       # Check if the error that led to finally was one of our specific stops
       last_error = geterrmessage()
-      if (grepl("HTTP_REQUEST_ERROR|API_HTTP_ERROR|JSON_PARSE_ERROR", last_error)) {
+      if (grepl("HTTP_REQUEST_ERROR|API_HTTP_ERROR|JSON_PARSE_ERROR|API_STATUS_ERROR", last_error)) {
         cli::cli_process_failed(cli_process_id)
       } else if (length(all_data_list) > 0) {
         cli::cli_process_done(cli_process_id)

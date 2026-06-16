@@ -34,6 +34,7 @@ Imports:
     RCurl,
     readODS,
     readr,
+    readxl,
     rlang,
     rnaturalearth,
     rstudioapi,
@@ -45,8 +46,7 @@ Suggests:
     knitr,
     rmarkdown,
     DT,
-    ggplot2,
-    readxl      
+    ggplot2
 Depends:
     R (>= 3.5)
 LazyData: true

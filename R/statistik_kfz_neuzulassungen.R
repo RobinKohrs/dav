@@ -4,7 +4,7 @@
   "Oberösterreich", "Salzburg", "Steiermark", "Tirol", "Vorarlberg", "Wien"
 )
 
-#' Get Kfz-Neuzulassungen Data from Statistik Austria
+#' Kfz-Neuzulassungen nach Kraftstoffart oder Marke (aktuelles Jahr + Jahressummen)
 #'
 #' Downloads and parses Kfz-Neuzulassungen data from the Statistik Austria
 #' website. The source ODS file URL changes every month as new data is
@@ -50,22 +50,22 @@
 #' @examples
 #' \dontrun{
 #' # Current year: monthly Elektro/Diesel/... breakdown per Bundesland
-#' statistik_get_kfz_neuzulassungen("kraftstoff")
+#' statistik_kfz_neuzulassungen("kraftstoff")
 #'
 #' # Only Jänner and Februar, filtered to PKW and Wien
-#' df <- statistik_get_kfz_neuzulassungen("kraftstoff", months = c("Jänner", "Februar"))
+#' df <- statistik_kfz_neuzulassungen("kraftstoff", months = c("Jänner", "Februar"))
 #' df[df$bundesland == "Wien" & df$fahrzeugtyp == "Personenkraftwagen Klasse M1", ]
 #'
 #' # Historical annual Kraftstoff breakdown for 2025
-#' statistik_get_kfz_neuzulassungen("kraftstoff", year = 2025)
+#' statistik_kfz_neuzulassungen("kraftstoff", year = 2025)
 #'
 #' # Current year: monthly brand × vehicle type
-#' statistik_get_kfz_neuzulassungen("marken")
+#' statistik_kfz_neuzulassungen("marken")
 #'
-#' # For PKW brand data since 2000, use the OGD function:
-#' statistik_get_pkw_neuzulassungen(date_from = "2020-01")
+#' # For PKW brand data since 2000, use:
+#' statistik_pkw_marken_zeitreihe(date_from = "2020-01")
 #' }
-statistik_get_kfz_neuzulassungen <- function(
+statistik_kfz_neuzulassungen <- function(
   type           = c("kraftstoff", "marken"),
   year           = NULL,
   months         = NULL,
@@ -83,7 +83,7 @@ statistik_get_kfz_neuzulassungen <- function(
   if (type == "marken" && year != current_year) {
     cli::cli_abort(c(
       "Historical brand data is not available in ODS format.",
-      "i" = "Use {.fn statistik_get_pkw_neuzulassungen} for PKW brand data since January 2000."
+      "i" = "Use {.fn statistik_pkw_marken_zeitreihe} for PKW brand data since January 2000."
     ))
   }
 

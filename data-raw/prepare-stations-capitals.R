@@ -6,7 +6,7 @@ library(davR)
 library(jsonlite)
 
 # get stations  ------------------------------------------------------
-stations = davR::geosphere_get_stations()
+stations = geosphere_get_stations()
 
 stations_ids_to_filter = c(
   5925,

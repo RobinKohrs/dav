@@ -2,7 +2,7 @@
 #'
 #' A dataset containing information about selected weather stations
 #' located in or representative of the nine Austrian federal state capitals.
-#' This data is a filtered subset from the `davR::geosphere_get_stations()` function.
+#' This data is a filtered subset from the [geosphere_get_stations()] function.
 #'
 #' @format A data frame (or `sf` object if geometry was kept) with X rows and Y variables:
 #' \describe{
@@ -22,7 +22,7 @@
 #'   \item{geometry}{If it's an sf object, the POINT geometry}
 #'   \item{...}{any other columns present}
 #' }
-#' @source Derived from `davR::geosphere_get_stations()`, filtered by specific station IDs
+#' @source Derived from [geosphere_get_stations()], filtered by specific station IDs
 #' representing Austrian capitals. Data originally from GeoSphere Austria.
 #' The selection of IDs can be found in `data-raw/geosphere_stations.R`.
 #' @keywords datasets

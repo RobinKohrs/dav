@@ -6,6 +6,15 @@
 # Configuration
 PROJECTS_CONFIG_FILE="$HOME/.config/dav/projects.json"
 PROJECTS_BASE_DIR="$HOME/projects"
+RAYCAST_SCRIPTS_DIR="$HOME/Documents/raycast_shell_command"
+
+# Store the script path at source-time so dav_projects() can reload itself
+if [ -n "$ZSH_VERSION" ]; then
+    _DAV_PM_SCRIPT_PATH="${(%):-%x}"
+else
+    _DAV_PM_SCRIPT_PATH="${BASH_SOURCE[0]}"
+fi
+_DAV_PM_MTIME=$(stat -f %m "$_DAV_PM_SCRIPT_PATH" 2>/dev/null || stat -c %Y "$_DAV_PM_SCRIPT_PATH" 2>/dev/null)
 
 # Ensure config directory exists
 mkdir -p "$(dirname "$PROJECTS_CONFIG_FILE")"
@@ -279,9 +288,9 @@ select_applications() {
     local app_descriptions=()
     
     # Always available
-    available_apps+=("code")
-    app_descriptions+=("📝 VS Code")
-    
+    command -v cursor >/dev/null 2>&1 && available_apps+=("cursor") && app_descriptions+=("🖱️  Cursor")
+    command -v code   >/dev/null 2>&1 && available_apps+=("code")   && app_descriptions+=("📝 VS Code")
+
     available_apps+=("terminal")
     app_descriptions+=("💻 Terminal (cd to project)")
     
@@ -329,8 +338,8 @@ select_applications() {
 
         local selected_apps=()
         while IFS= read -r desc; do
-            local i=1
-            while [[ $i -le ${#app_descriptions[@]} ]]; do
+            local i=0
+            while [[ $i -lt ${#app_descriptions[@]} ]]; do
                 if [[ "${app_descriptions[$i]}" == "$desc" ]]; then
                     selected_apps+=("${available_apps[$i]}")
                     break
@@ -368,7 +377,15 @@ open_project() {
     fi
     
     case "$app_type" in
-        "cursor"|"code")
+        "cursor")
+            if command -v cursor >/dev/null 2>&1; then
+                cursor "$project_path" &
+            else
+                echo "Cursor not found!"
+                return 1
+            fi
+            ;;
+        "code")
             if command -v code >/dev/null 2>&1; then
                 code "$project_path" &
             else
@@ -449,7 +466,7 @@ interactive_open() {
     local app_delays=(4 4 5 5 6 6 0)
     local opened_count=0
 
-    for i in $(seq 1 ${#app_order[@]}); do
+    for ((i = 0; i < ${#app_order[@]}; i++)); do
         local ordered_app="${app_order[$i]}"
         local delay="${app_delays[$i]}"
         for app in "${selected_apps[@]}"; do
@@ -477,8 +494,299 @@ interactive_open() {
     fi
 }
 
+# Sync projects to Raycast script commands (one .sh per project)
+raycast_sync() {
+    if [ ! -f "$PROJECTS_CONFIG_FILE" ]; then
+        echo "No projects configured yet."
+        return 1
+    fi
+
+    mkdir -p "$RAYCAST_SCRIPTS_DIR"
+
+    # Remove previously generated project scripts
+    find "$RAYCAST_SCRIPTS_DIR" -maxdepth 1 -name "dst-*.sh" -delete 2>/dev/null
+    find "$RAYCAST_SCRIPTS_DIR" -maxdepth 1 -name "ndr-*.sh" -delete 2>/dev/null
+    find "$RAYCAST_SCRIPTS_DIR" -maxdepth 1 -name "personal-*.sh" -delete 2>/dev/null
+    find "$RAYCAST_SCRIPTS_DIR" -maxdepth 1 -name "pj-open-*.sh" -delete 2>/dev/null
+    find "$RAYCAST_SCRIPTS_DIR" -maxdepth 1 -name "app-*.sh"     -delete 2>/dev/null
+
+    # Declare loop-scoped vars once, OUTSIDE the loop. In zsh, `local foo`
+    # on a variable that already has a value (next iteration) prints `foo=val`
+    # like `typeset` would — so we'd see stray `category=…` lines everywhere.
+    local count=0 category="" slug="" script_file="" title="" rproj_file="" qgs_file=""
+    while IFS=$'\t' read -r name proj_path; do
+        case "$proj_path" in
+            */projects/dst/*)      category="dst" ;;
+            */projects/ndr/*)      category="ndr" ;;
+            */projects/personal/*) category="personal" ;;
+            *)                     category="pj" ;;
+        esac
+
+        slug=$(echo "$name" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g')
+        script_file="$RAYCAST_SCRIPTS_DIR/${category}-${slug}.sh"
+        title="${category} ${name}"
+
+        rproj_file=$(find "$proj_path" -maxdepth 1 -name "*.Rproj" -print -quit 2>/dev/null)
+        qgs_file=$(find "$proj_path" -maxdepth 1 -name "*.qgs" -print -quit 2>/dev/null)
+
+        cat > "$script_file" << 'SCRIPT_EOF'
+#!/bin/bash
+
+# Required parameters:
+# @raycast.schemaVersion 1
+# @raycast.title RAYCAST_TITLE_PLACEHOLDER
+# @raycast.mode compact
+
+# Optional parameters:
+# @raycast.icon 📊
+# @raycast.packageName DAV Projects
+
+# Documentation:
+# @raycast.author Robin
+
+PROJ="PROJ_PLACEHOLDER"
+RPROJ="RPROJ_PLACEHOLDER"
+QGS="QGS_PLACEHOLDER"
+NAME="NAME_PLACEHOLDER"
+BASENAME=$(basename "$PROJ")
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+# Cursor / VS Code spawn one "extension-host (user) <basename> [n-n]" per
+# open workspace — reliable signal that doesn't need Accessibility permission.
+_editor_has_project() {
+  local app="$1"  # "Cursor" or "Code"
+  ps -eo command 2>/dev/null \
+    | grep -F "$app Helper (Plugin)" \
+    | grep -qE "extension-host[^[:space:]]*[[:space:]]\\([^)]+\\)[[:space:]]${BASENAME}[[:space:]]+\\["
+}
+
+# RStudio runs an rsession per project; its cwd points into the project dir.
+_rstudio_has_project() {
+  [ -f "$RPROJ" ] || return 1
+  local pid
+  for pid in $(pgrep -f rsession 2>/dev/null); do
+    local cwd
+    cwd=$(lsof -p "$pid" 2>/dev/null | awk '$4 == "cwd" {print $NF; exit}')
+    [[ "$cwd" == "$PROJ"* ]] && return 0
+  done
+  return 1
+}
+
+# QGIS: check lsof for the .qgs file being open by a QGIS process.
+_qgis_has_project() {
+  [ -f "$QGS" ] || return 1
+  lsof -c QGIS 2>/dev/null | grep -qF "$QGS"
+}
+
+CURSOR_OPEN=false; VSCODE_OPEN=false; RSTUDIO_OPEN=false; QGIS_OPEN=false
+_editor_has_project "Cursor" && CURSOR_OPEN=true
+_editor_has_project "Code"   && VSCODE_OPEN=true
+_rstudio_has_project         && RSTUDIO_OPEN=true
+_qgis_has_project            && QGIS_OPEN=true
+
+# ── 1. Already open somewhere → switch to it (Cursor preferred) ──────────────
+# Re-invoking `cursor <path>` / `code <path>` is the canonical way to focus the
+# existing window without needing Accessibility permission.
+if $CURSOR_OPEN; then
+  cursor "$PROJ"
+  echo "Cursor ↑ $NAME"
+  exit 0
+elif $VSCODE_OPEN; then
+  code "$PROJ"
+  echo "VS Code ↑ $NAME"
+  exit 0
+elif $RSTUDIO_OPEN; then
+  open "$RPROJ"
+  echo "RStudio ↑ $NAME"
+  exit 0
+elif $QGIS_OPEN; then
+  open "$QGS"
+  echo "QGIS ↑ $NAME"
+  exit 0
+fi
+
+# ── 2. Not open anywhere → multi-select dialog (open in 1+ apps) ─────────────
+# Build the app list dynamically so RStudio/QGIS only show when relevant files exist.
+APP_LIST='"Cursor"'
+command -v code >/dev/null 2>&1 && APP_LIST="$APP_LIST, \"VS Code\""
+[ -f "$RPROJ" ]                 && APP_LIST="$APP_LIST, \"RStudio\""
+[ -f "$QGS"   ]                 && APP_LIST="$APP_LIST, \"QGIS\""
+
+# JXA forces the dialog to the foreground via AppKit — AppleScript's
+# `tell me to activate` is unreliable when launched from Raycast's background shell.
+CHOICES=$(osascript -l JavaScript <<JXA
+ObjC.import('AppKit');
+\$.NSApplication.sharedApplication.activateIgnoringOtherApps(true);
+var app = Application.currentApplication();
+app.includeStandardAdditions = true;
+var picked;
+try {
+  picked = app.chooseFromList([${APP_LIST}], {
+    withPrompt: '${NAME} — open in:',
+    defaultItems: ['Cursor'],
+    multipleSelectionsAllowed: true
+  });
+} catch (e) { picked = false; }
+if (picked === false || picked === null) ''; else picked.join('\\n');
+JXA
+)
+
+[ -z "$CHOICES" ] && { echo "Cancelled"; exit 0; }
+
+opened=""
+while IFS= read -r choice; do
+  case "$choice" in
+    # Cursor/code CLIs often block until the window is ready — background so every
+    # selected app in this loop actually runs. (Keep these arms multi-line: `cmd &;`
+    # on one line is a bash syntax error inside case.)
+    "Cursor")
+      cursor "$PROJ" &
+      opened="$opened Cursor"
+      ;;
+    "VS Code")
+      code "$PROJ" &
+      opened="$opened VS-Code"
+      ;;
+    "RStudio") open   "$RPROJ" 2>/dev/null; opened="$opened RStudio" ;;
+    "QGIS")    open -a QGIS "$QGS" 2>/dev/null \
+            || open -a QGIS-LTR "$QGS" 2>/dev/null \
+            || open "$QGS"
+               opened="$opened QGIS" ;;
+  esac
+done <<< "$CHOICES"
+
+echo "Opened →$opened $NAME"
+SCRIPT_EOF
+
+        sed -i '' \
+            -e "s|RAYCAST_TITLE_PLACEHOLDER|${title}|" \
+            -e "s|RPROJ_PLACEHOLDER|${rproj_file}|" \
+            -e "s|QGS_PLACEHOLDER|${qgs_file}|" \
+            -e "s|PROJ_PLACEHOLDER|${proj_path}|" \
+            -e "s|NAME_PLACEHOLDER|${name}|" \
+            "$script_file"
+        chmod +x "$script_file"
+
+        # ── Per-app speed shortcuts: `c <name>`, `r <name>`, `q <name>` ───────
+        # No detection, no dialog — just open instantly in the named app.
+        # Reinvoking cursor/code on an already-open project just focuses the
+        # existing window, so this is safe for both first-open and switch.
+        _write_app_shortcut() {
+            local letter="$1" icon="$2" cmd="$3" target="$4"
+            local f="$RAYCAST_SCRIPTS_DIR/app-${letter}-${slug}.sh"
+            cat > "$f" << SHORTCUT_EOF
+#!/bin/bash
+
+# @raycast.schemaVersion 1
+# @raycast.title ${letter} ${name}
+# @raycast.mode compact
+# @raycast.icon ${icon}
+# @raycast.packageName DAV Projects
+
+${cmd} "${target}" 2>/dev/null && echo "${letter} → ${name}"
+SHORTCUT_EOF
+            chmod +x "$f"
+        }
+
+        _write_app_shortcut "c" "💻" "cursor" "$proj_path"
+        [ -f "$rproj_file" ] && _write_app_shortcut "r" "📊" "open"   "$rproj_file"
+        [ -f "$qgs_file"   ] && _write_app_shortcut "q" "🗺️"  "open -a QGIS" "$qgs_file"
+
+        count=$((count + 1))
+    done < <(jq -r '.projects[] | [.name, .path] | @tsv' "$PROJECTS_CONFIG_FILE")
+
+    # Fuzzy pickers for hotkeys — always refresh from repo
+    local _rh
+    _rh="$(cd "$(dirname "$_DAV_PM_SCRIPT_PATH")" && pwd)/../raycast"
+    for _f in dav_raycast_pick_cursor.sh dav_raycast_pick_rstudio.sh dav_raycast_pick_vscode.sh dav_raycast_pick_qgis.sh; do
+        [ -f "$_rh/$_f" ] && cp "$_rh/$_f" "$RAYCAST_SCRIPTS_DIR/$_f" && chmod +x "$RAYCAST_SCRIPTS_DIR/$_f"
+    done
+
+    if command -v gum >/dev/null 2>&1; then
+        gum style --foreground="green" "✅ Synced $count projects → $RAYCAST_SCRIPTS_DIR"
+    else
+        echo "✅ Synced $count projects → $RAYCAST_SCRIPTS_DIR"
+    fi
+    cat <<EOM
+Raycast commands per project:
+  • <category> <name>  smart open: switch if running, else multi-select dialog
+  • c <name>           instant Cursor
+  • r <name>           instant RStudio  (only when .Rproj exists)
+  • q <name>           instant QGIS     (only when .qgs exists)
+Optional hotkeys: DAV Pick Cursor / DAV Pick RStudio / DAV Pick VS Code / DAV Pick QGIS (Raycast → Extensions).
+EOM
+}
+
+# List all projects sorted by last modification time (oldest first).
+# Uses only directory mtime — no file scanning, instant.
+# Label format is always "AGE  name" (e.g. "2m  geospherer").
+# The name is recovered by stripping the age prefix, so no index arrays needed.
+clean_projects() {
+    if [ ! -f "$PROJECTS_CONFIG_FILE" ]; then
+        echo "No projects configured yet."
+        return 1
+    fi
+
+    local now; now=$(date +%s)
+    local tmp; tmp=$(mktemp)
+
+    while IFS=$'\t' read -r name proj_path; do
+        local mtime; mtime=$(stat -f %m "$proj_path" 2>/dev/null \
+            || stat -c %Y "$proj_path" 2>/dev/null || echo "$now")
+        local days=$(( (now - mtime) / 86400 ))
+        local label
+        if   [ "$days" -ge 365 ]; then label=$(printf "%dy  %s" $((days/365)) "$name")
+        elif [ "$days" -ge 30  ]; then label=$(printf "%dm  %s" $((days/30))  "$name")
+        else                           label=$(printf "%dd  %s" "$days"       "$name")
+        fi
+        printf '%s\t%s\n' "$days" "$label" >> "$tmp"
+    done < <(jq -r '.projects[] | [.name, .path] | @tsv' "$PROJECTS_CONFIG_FILE" 2>/dev/null)
+
+    if [ ! -s "$tmp" ]; then
+        echo "No projects found."
+        rm -f "$tmp"
+        return 1
+    fi
+
+    # Sort by age descending (oldest first), keep only the label column
+    local sorted_labels; sorted_labels=$(sort -rn "$tmp" | cut -f2)
+    rm -f "$tmp"
+
+    local selected
+    if command -v gum >/dev/null 2>&1; then
+        selected=$(echo "$sorted_labels" | \
+            gum choose --no-limit --header "Select projects to remove (sorted oldest first):")
+        [ -z "$selected" ] && return 0
+    else
+        echo "Projects (oldest first):"
+        echo "$sorted_labels" | sed 's/^/  /'
+        echo ""
+        read -r -p "Enter project names to remove (space-separated): " manual_input
+        [ -z "$manual_input" ] && return 0
+        for name in $manual_input; do remove_project "$name"; done
+        return 0
+    fi
+
+    # Recover name from label by stripping the leading age token ("2m  " / "76d  ")
+    while IFS= read -r sel; do
+        [ -z "$sel" ] && continue
+        local name; name=$(echo "$sel" | sed 's/^[^ ]*  //')
+        [ -n "$name" ] && remove_project "$name"
+    done <<< "$selected"
+}
+
 # Main project manager function
 dav_projects() {
+    # --- Auto-reload if the script file has changed ---
+    local _mtime_now
+    _mtime_now=$(stat -f %m "$_DAV_PM_SCRIPT_PATH" 2>/dev/null || stat -c %Y "$_DAV_PM_SCRIPT_PATH" 2>/dev/null)
+    if [[ "$_mtime_now" != "$_DAV_PM_MTIME" ]]; then
+        export _DAV_PM_MTIME="$_mtime_now"
+        source "$_DAV_PM_SCRIPT_PATH"
+        dav_projects "$@"
+        return
+    fi
+
     # --- Auto-install/update check ---
     # This runs once per shell session to ensure the script is properly installed.
     : "${_DAV_PJ_INSTALL_CHECK_COMPLETE:=}"
@@ -500,6 +808,12 @@ dav_projects() {
     case "$action" in
         "install")
             _install_or_update_manager
+            ;;
+        "raycast-sync")
+            raycast_sync
+            ;;
+        "clean")
+            clean_projects
             ;;
         "add")
             local project_path
@@ -588,9 +902,9 @@ dav_projects() {
                 if [ -n "$projects_info" ]; then
                     gum style --foreground="cyan" --border="normal" --border-foreground="cyan" --padding="1 2" \
                               "📋 Your Projects"
-                    echo "$projects_info" | while IFS='|' read -r name path; do
+                    echo "$projects_info" | while IFS='|' read -r name proj_path; do
                         gum style --foreground="blue" "• $name"
-                        gum style --foreground="gray" "  📁 $path"
+                        gum style --foreground="gray" "  📁 $proj_path"
                         echo ""
                     done
                 else
@@ -640,7 +954,7 @@ dav_projects() {
                 local app_delays=(0 1 3 4 5 5 0)
                 local opened_count=0
 
-                for i in $(seq 1 ${#app_order[@]}); do
+                for ((i = 0; i < ${#app_order[@]}; i++)); do
                     local ordered_app="${app_order[$i]}"
                     local delay="${app_delays[$i]}"
                     for app in "${selected_apps[@]}"; do
@@ -670,11 +984,14 @@ dav_projects() {
                 echo ""
                 gum style --foreground="yellow" "Usage:"
                 echo "  pj                           # Interactive project selection and opening"
-                echo "  pj install                     # Install/update the project manager in your shell"
+                echo "  pj install                   # Install/update the project manager in your shell"
                 echo "  pj open [project] [app]      # Open specific project with specific app"
                 echo "  pj add [directory]           # Add a new project (interactively)"
                 echo "  pj remove [project]          # Remove a project"
                 echo "  pj list                      # List all projects"
+                echo "  pj clean                     # Remove entries whose directories no longer exist"
+                echo "  pj raycast-sync              # Sync all projects as Raycast script commands"
+                echo "                                # (also installs \"DAV Pick Cursor\" / \"DAV Pick RStudio\" pickers)"
                 echo "  pj help                      # Show this help"
                 echo ""
                 gum style --foreground="yellow" "Application types:"
@@ -686,13 +1003,15 @@ dav_projects() {
                 echo "DAV Project Manager"
                 echo ""
                 echo "Usage:"
-                echo "  dav_projects                    # Interactive project selection and opening"
-                echo "  dav_projects install            # Install/update the project manager in your shell"
-                echo "  dav_projects open [project] [app] # Open specific project with specific app"
-                echo "  dav_projects add [directory]      # Add a new project (interactively)"
-                echo "  dav_projects remove [project]     # Remove a project"
-                echo "  dav_projects list              # List all projects"
-                echo "  dav_projects help              # Show this help"
+                echo "  dav_projects                       # Interactive project selection and opening"
+                echo "  dav_projects install               # Install/update the project manager in your shell"
+                echo "  dav_projects open [project] [app]  # Open specific project with specific app"
+                echo "  dav_projects add [directory]       # Add a new project (interactively)"
+                echo "  dav_projects remove [project]      # Remove a project"
+                echo "  dav_projects list                  # List all projects"
+                echo "  dav_projects clean                 # Remove entries whose directories no longer exist"
+                echo "  dav_projects raycast-sync          # Sync Raycast scripts + fuzzy pickers"
+                echo "  dav_projects help                  # Show this help"
                 echo ""
                 echo "Application types:"
                 echo "  code          - Open in VS Code"
@@ -711,3 +1030,97 @@ dav_projects() {
 
 # Create alias for easier access
 alias pj='dav_projects'
+
+# Open a project filtered by category (inferred from path).
+# Used by the `dst` and `ndr` shell functions below.
+_pj_category_open() {
+    local category="$1"   # e.g. "dst" or "ndr"
+    local query="$2"
+
+    if [ ! -f "$PROJECTS_CONFIG_FILE" ]; then
+        echo "No projects configured."
+        return 1
+    fi
+
+    # Filter: path must contain /<category>/
+    local projects_info
+    projects_info=$(jq -r --arg cat "/$category/" \
+        '.projects[] | select(.path | contains($cat)) | [.name, .path] | @tsv' \
+        "$PROJECTS_CONFIG_FILE" 2>/dev/null)
+
+    if [ -z "$projects_info" ]; then
+        echo "No $category projects found in the project list."
+        return 1
+    fi
+
+    local selected_name selected_path
+
+    if [ -n "$query" ]; then
+        # Case-insensitive fuzzy match on name
+        local q; q=$(echo "$query" | tr '[:upper:]' '[:lower:]')
+        local matches
+        matches=$(echo "$projects_info" | awk -F'\t' -v q="$q" 'tolower($1) ~ q')
+
+        if [ -z "$matches" ]; then
+            echo "No $category project matching '$query'."
+            echo "Available: $(echo "$projects_info" | cut -f1 | tr '\n' '  ')"
+            return 1
+        fi
+
+        local count; count=$(echo "$matches" | wc -l | tr -d ' ')
+
+        if [ "$count" -eq 1 ]; then
+            selected_name=$(echo "$matches" | cut -f1)
+            selected_path=$(echo "$matches" | cut -f2)
+        else
+            # Multiple matches — let user pick
+            if command -v fzf >/dev/null 2>&1; then
+                local chosen
+                chosen=$(echo "$matches" | fzf --delimiter='\t' --with-nth=1 \
+                    --query="$query" --select-1 --height=40% --border \
+                    --header="Multiple $category matches:")
+                [ -z "$chosen" ] && return 1
+                selected_name=$(echo "$chosen" | cut -f1)
+                selected_path=$(echo "$chosen" | cut -f2)
+            elif command -v gum >/dev/null 2>&1; then
+                selected_name=$(echo "$matches" | cut -f1 | gum choose --header "Multiple $category matches:")
+                [ -z "$selected_name" ] && return 1
+                selected_path=$(echo "$matches" | awk -F'\t' -v n="$selected_name" '$1 == n {print $2}')
+            else
+                selected_name=$(echo "$matches" | head -1 | cut -f1)
+                selected_path=$(echo "$matches" | head -1 | cut -f2)
+            fi
+        fi
+    else
+        # No query — show full category list interactively
+        if command -v fzf >/dev/null 2>&1; then
+            local chosen
+            chosen=$(echo "$projects_info" | fzf --delimiter='\t' --with-nth=1 \
+                --height=40% --border --header="${category} projects:")
+            [ -z "$chosen" ] && return 1
+            selected_name=$(echo "$chosen" | cut -f1)
+            selected_path=$(echo "$chosen" | cut -f2)
+        elif command -v gum >/dev/null 2>&1; then
+            selected_name=$(echo "$projects_info" | cut -f1 | gum choose --header "${category} projects:")
+            [ -z "$selected_name" ] && return 1
+            selected_path=$(echo "$projects_info" | awk -F'\t' -v n="$selected_name" '$1 == n {print $2}')
+        else
+            echo "${category} projects:"
+            echo "$projects_info" | cut -f1 | nl
+            return 1
+        fi
+    fi
+
+    [ -z "$selected_path" ] && return 1
+
+    if command -v cursor >/dev/null 2>&1; then
+        cursor "$selected_path"
+    elif command -v code >/dev/null 2>&1; then
+        code "$selected_path"
+    else
+        open "$selected_path"
+    fi
+}
+
+function dst() { _pj_category_open "dst" "$1"; }
+function ndr() { _pj_category_open "ndr" "$1"; }

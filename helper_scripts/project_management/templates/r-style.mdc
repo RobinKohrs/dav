@@ -1,0 +1,98 @@
+---
+description: R coding style guide — always follow when writing R code in this project
+alwaysApply: true
+---
+
+# R Coding Style
+
+Write code that a human can read, scan, and edit in seconds. Prefer flat and
+sequential over clever and nested. An LLM that writes simple code is more
+useful than one that writes impressive code.
+
+## Pipes and transformation
+
+Use the magrittr pipe `%>%`. Break pipelines at logical checkpoints and assign
+intermediate results to named variables. Aim for 3–5 steps per pipe block.
+
+```r
+# Good – two named, readable steps
+data_clean = data_raw %>%
+  filter(!is.na(value), year >= 2015) %>%
+  mutate(month = lubridate::month(date, label = TRUE))
+
+data_summary = data_clean %>%
+  group_by(year, month) %>%
+  summarise(total = sum(value), .groups = "drop")
+```
+
+```r
+# Avoid – one giant chain that is hard to debug or modify
+result = data_raw %>%
+  filter(!is.na(value)) %>%
+  mutate(month = lubridate::month(date, label = TRUE)) %>%
+  group_by(year, month) %>%
+  summarise(total = sum(value), .groups = "drop") %>%
+  left_join(lookup, by = c("year", "month")) %>%
+  arrange(desc(total)) %>%
+  slice_head(n = 20)
+```
+
+Break long chains at logical boundaries and assign intermediate results.
+
+## Variable naming
+
+- `snake_case` for everything
+- Descriptive: `kfz_by_year` not `df2`, `accidents_clean` not `tmp`
+- Path variables use the `p_` prefix: `p_data`, `p_output`, `p_geo`
+
+## Assignment and operators
+
+- Use `=` for assignment
+- Use `%>%` (magrittr pipe, loaded with tidyverse)
+
+## File paths
+
+Always use `here()`. Never hardcode absolute paths.
+
+```r
+data_raw = read_csv(here("data", "kfz.csv"))
+ggsave(here("output", "kfz_trend.png"), plot, width = 10, height = 6)
+```
+
+## Project structure
+
+- `data/` — raw input files (never modify them in-place)
+- `data/geo/` — geodata (shapefiles, GeoPackage, raster)
+- `output/` — all generated outputs: charts, tables, exports
+- `docs/` — Quarto documents and reports
+- `R/` — R scripts
+
+## ggplot2
+
+One `+` per line, always:
+
+```r
+ggplot(data_summary, aes(x = year, y = total)) +
+  geom_col(fill = "#CC0015") +
+  scale_y_continuous(labels = scales::label_number(big.mark = ".")) +
+  labs(title = "Title", x = NULL, y = "Total") +
+  theme_minimal()
+```
+
+## Packages
+
+Load everything at the top. Prefer `library(pkg)` over `pkg::fn()` for packages
+that are already loaded. Exception: `lubridate::` functions are fine inline.
+
+## Functions
+
+Keep them short (≤ 20 lines is a good target). One function, one job.
+Use `dplyr::case_when()` instead of nested `if/else`.
+Use early `return()` to avoid deep nesting.
+
+## What to avoid
+
+- Nested function calls: `mutate(x = f(g(h(y))))`
+- Magic numbers without context
+- `attach()` or `with()`
+- `for` loops when a `dplyr`/`purrr` approach is cleaner and equally readable
