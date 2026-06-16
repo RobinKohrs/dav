@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-SCRIPT="$HOME/projects/personal/dav/helper_scripts/python/dav_mbox_to_text.py"
+SCRIPT="$HOME/projects/personal/davR/helper_scripts/python/dav_mbox_to_text.py"
 DEST="$HOME/vault/work/sources/emails"
 UV="/opt/homebrew/bin/uv"
 

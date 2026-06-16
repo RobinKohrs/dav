@@ -7,7 +7,7 @@
 # Originals are moved to inbox/.done/.
 
 UV="/opt/homebrew/bin/uv"
-SCRIPT="$HOME/projects/personal/dav/helper_scripts/python/dav_mbox_to_text.py"
+SCRIPT="$HOME/projects/personal/davR/helper_scripts/python/dav_mbox_to_text.py"
 INBOX="$HOME/vault/work/inbox"
 DEST="$HOME/vault/work/sources/emails/inbox"
 DONE="$INBOX/.done"
