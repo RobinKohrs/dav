@@ -1,0 +1,124 @@
+# Download SPARTACUS Gridded Climate Data
+
+Downloads SPARTACUS v2 gridded climate data from Geosphere Austria for a
+specified resolution, year, variable type, and other relevant
+parameters. **Note:** The internal schemas (resource IDs, filenames)
+must be correctly defined for this function to work. Verify these
+against the Geosphere Data Hub.
+
+## Usage
+
+``` r
+geosphere_download_spartacus(
+  dest_dir,
+  resolution,
+  year,
+  variable_type,
+  month = NULL,
+  season_code = NULL,
+  base_data_url = "https://public.hub.geosphere.at/datahub/resources/",
+  user_agent = NULL,
+  overwrite = FALSE,
+  verbose = TRUE,
+  timeout_seconds = 300
+)
+```
+
+## Arguments
+
+- dest_dir:
+
+  Directory to save the file.
+
+- resolution:
+
+  Character string specifying the temporal resolution. Allowed values:
+  "daily", "monthly", "seasonal", "yearly".
+
+- year:
+
+  The year of the data (e.g., 2020).
+
+- variable_type:
+
+  The climate variable type (e.g., "TX", "TM", "RR", "SA"). Allowed
+  values depend on the chosen resolution and schema.
+
+- month:
+
+  Integer, the month (1-12). Only used if `resolution = "monthly"` AND
+  if the monthly data is stored in separate files per month
+  (schema-dependent). Current example schema for monthly assumes one
+  file per year.
+
+- season_code:
+
+  Character string for the season. Only used if
+  `resolution = "seasonal"`. Example: "DJF", "MAM", "JJA", "SON".
+  (Schema-dependent).
+
+- base_data_url:
+
+  Base URL for Geosphere data.
+
+- user_agent:
+
+  Custom User-Agent.
+
+- overwrite:
+
+  Logical, whether to overwrite existing files.
+
+- verbose:
+
+  Logical, for verbose output.
+
+- timeout_seconds:
+
+  Request timeout.
+
+## Value
+
+Path to the downloaded file or `NA_character_` on failure.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# --- IMPORTANT: Ensure GEOSPHERE_DATA_SCHEMAS is correctly defined and loaded ---
+# --- The following examples depend on your schema definitions (especially filename templates) ---
+
+temp_dir <- tempfile("spartacus_dl_")
+dir.create(temp_dir)
+
+# Example: Download Daily Max Temperature for 2020
+daily_tx_2020 <- download_geosphere_spartacus(
+  dest_dir = temp_dir,
+  resolution = "daily",
+  year = 2020,
+  variable_type = "TX"
+)
+if (!is.na(daily_tx_2020)) print(paste("Downloaded:", daily_tx_2020))
+
+# Example: Download Monthly Mean Temperature for 2019
+monthly_tm_2019 <- download_geosphere_spartacus(
+  dest_dir = temp_dir,
+  resolution = "monthly",
+  year = 2019,
+  variable_type = "TM"
+)
+if (!is.na(monthly_tm_2019)) print(paste("Downloaded:", monthly_tm_2019))
+
+# Example: Download Seasonal Precipitation for 2018, Summer (JJA)
+seasonal_rr_2018_jja <- download_geosphere_spartacus(
+  dest_dir = temp_dir,
+  resolution = "seasonal",
+  year = 2018,
+  variable_type = "RR",
+  season_code = "JJA"
+)
+if (!is.na(seasonal_rr_2018_jja)) print(paste("Downloaded:", seasonal_rr_2018_jja))
+
+unlink(temp_dir, recursive = TRUE)
+} # }
+```

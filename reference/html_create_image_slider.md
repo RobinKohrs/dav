@@ -1,0 +1,193 @@
+# Create an HTML Image Comparison Slider
+
+Generates HTML, CSS, and JavaScript for a responsive image comparison
+slider. Users can slide a divider to reveal more or less of two
+juxtaposed images. The slider interacts with mouse hover and touch-drag
+movements. All generated CSS classes and the main element ID are
+prefixed with "dj-" for better namespacing in CMS environments.
+
+## Usage
+
+``` r
+html_create_image_slider(
+  image_left_url,
+  image_right_url,
+  alt_left_image = "Left image",
+  alt_right_image = "Right image",
+  label_left = NULL,
+  label_right = NULL,
+  overlay_image_url = NULL,
+  alt_overlay_image = "Overlay image",
+  overlay_position = "bottom-right",
+  overlay_height = "40%",
+  initial_slider_position_percent = 50,
+  slide_on_hover = TRUE,
+  enable_drag = TRUE,
+  container_width = "100%",
+  container_height = "auto",
+  handle_line_color = "rgba(255, 255, 255, 0.9)",
+  handle_grip_color = "#ffffff",
+  handle_arrow_color = "#333333",
+  handle_line_width = 2,
+  handle_grip_size = 40,
+  label_font_family =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif",
+  label_font_size = "0.9em",
+  label_text_color = "white",
+  label_background_color = "rgba(0, 0, 0, 0.6)",
+  label_padding = "5px 10px",
+  label_vertical_position = "bottom",
+  border_radius = "8px",
+  show_labels_on_hover = FALSE,
+  slider_aria_label = "Image comparison slider"
+)
+```
+
+## Arguments
+
+- image_left_url:
+
+  Character string. URL for the "left" or "before" image. (Required)
+
+- image_right_url:
+
+  Character string. URL for the "right" or "after" image. (Required)
+
+- alt_left_image:
+
+  Character string. Alt text for the left image for accessibility.
+  Defaults to "Left image".
+
+- alt_right_image:
+
+  Character string. Alt text for the right image for accessibility.
+  Defaults to "Right image".
+
+- label_left:
+
+  Optional. Character string. A label displayed on the left image (e.g.,
+  "Before").
+
+- label_right:
+
+  Optional. Character string. A label displayed on the right image
+  (e.g., "After").
+
+- overlay_image_url:
+
+  Optional. Character string. URL for an overlay image displayed in the
+  bottom-right corner.
+
+- alt_overlay_image:
+
+  Character string. Alt text for the overlay image. Defaults to "Overlay
+  image".
+
+- overlay_position:
+
+  Character string. Position of the overlay image ("top-left",
+  "top-right", "bottom-left", "bottom-right"). Defaults to
+  "bottom-right".
+
+- overlay_height:
+
+  Character string. A valid CSS value for the overlay image's height
+  (e.g., "150px", "40%", "auto"). Width will be scaled automatically.
+  Defaults to "40%".
+
+- initial_slider_position_percent:
+
+  Numeric (0-100). Initial position of the slider divider. Defaults to
+  50 (centered).
+
+- slide_on_hover:
+
+  Logical. If TRUE, the slider divider follows the mouse cursor when
+  hovering over the component. Defaults to TRUE.
+
+- enable_drag:
+
+  Logical. If TRUE, the slider can be explicitly dragged with a mouse
+  click or touch. Defaults to TRUE.
+
+- container_width:
+
+  Character string. CSS width for the slider container (e.g., "500px",
+  "100%"). Defaults to "100%". Note: The actual width will be
+  constrained to max-width: 615px.
+
+- container_height:
+
+  Character string. CSS height for the slider container. If "auto",
+  height will be determined by the 16:9 aspect ratio. It's recommended
+  to use images with the same aspect ratio. Defaults to "auto".
+
+- handle_line_color:
+
+  Character string. CSS color for the slider's dividing line. Defaults
+  to "rgba(255, 255, 255, 0.9)".
+
+- handle_grip_color:
+
+  Character string. CSS color for the slider's circular drag grip.
+  Defaults to "#ffffff".
+
+- handle_arrow_color:
+
+  Character string. CSS color for the arrows inside the drag grip.
+  Defaults to "#333333".
+
+- handle_line_width:
+
+  Numeric. Width of the dividing line in pixels. Defaults to 2.
+
+- handle_grip_size:
+
+  Numeric. Diameter of the circular grip in pixels. Defaults to 40.
+
+- label_font_family:
+
+  Character string. CSS `font-family` for labels. Defaults to
+  "system-ui, sans-serif".
+
+- label_font_size:
+
+  Character string. CSS `font-size` for labels. Defaults to "0.9em".
+
+- label_text_color:
+
+  Character string. CSS color for label text. Defaults to "white".
+
+- label_background_color:
+
+  Character string. CSS `background-color` for labels. Defaults to
+  "rgba(0, 0, 0, 0.6)".
+
+- label_padding:
+
+  Character string. CSS padding for labels (e.g., "5px 10px"). Defaults
+  to "5px 10px".
+
+- label_vertical_position:
+
+  Character string. Vertical position of labels ("top" or "bottom").
+  Defaults to "bottom".
+
+- border_radius:
+
+  Character string. CSS `border-radius` for the main container. Defaults
+  to "8px".
+
+- show_labels_on_hover:
+
+  Logical. If TRUE, labels are only visible when hovering over the
+  slider. Defaults to FALSE (always visible if provided).
+
+- slider_aria_label:
+
+  Character string. ARIA label for the slider functionality, for screen
+  readers. Defaults to "Image comparison slider".
+
+- \#:
+
+  — Accessibility Parameters —

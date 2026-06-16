@@ -1,0 +1,113 @@
+# Download ACLED Data for Explosion Events in the Gaza Strip
+
+This is a specific wrapper function that calls `acled_download_events`
+to download data for events classified as "Explosions/Remote violence"
+in the Gaza Strip, Palestine.
+
+## Usage
+
+``` r
+acled_gaza_explosions(
+  email_address = NULL,
+  password = NULL,
+  start_date,
+  end_date,
+  sub_event_types = NULL,
+  page_limit = 5000,
+  max_pages = 100,
+  output_format = "df",
+  ...
+)
+```
+
+## Arguments
+
+- email_address:
+
+  Your myACLED email address. If `NULL` or missing, uses `ACLED_EMAIL`
+  env var.
+
+- password:
+
+  Your myACLED password. If `NULL` or missing, uses `ACLED_PASSWORD` env
+  var.
+
+- start_date:
+
+  Character string or Date object. Start date (YYYY-MM-DD). Required.
+
+- end_date:
+
+  Character string or Date object. End date (YYYY-MM-DD). Required.
+
+- sub_event_types:
+
+  Character vector. Optional. Specific sub-event type(s) under
+  "Explosions/Remote violence" to filter by. If `NULL` (default), all
+  "Explosions/Remote violence" events are included. Example:
+  `c("Air/drone strike", "Shelling/artillery/missile attack")`.
+
+- page_limit:
+
+  Numeric. Records per API page request.
+
+- max_pages:
+
+  Numeric. Maximum pages to fetch to prevent overly long requests.
+
+- output_format:
+
+  Character. "df" for a data.frame or "raw_json" for raw list.
+
+- ...:
+
+  Additional arguments to be passed to `acled_download_events` (and
+  subsequently to the ACLED API).
+
+## Value
+
+A data.frame containing the queried ACLED event data (if
+`output_format = "df"`), or a list of parsed JSON content from each page
+(if `output_format = "raw_json"`). Returns NULL if a critical error
+occurs or no data is found.
+
+## Details
+
+Authentication uses myACLED email + password via
+`acled_download_events()`.
+
+## See also
+
+`acled_download_events()`
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# --- Set environment variables first (recommended) ---
+# Sys.setenv(ACLED_EMAIL = "you@newsroom.example")
+# Sys.setenv(ACLED_PASSWORD = "your-myacled-password")
+
+# Get all explosion events in Gaza for a specific week
+gaza_explosions_week = acled_gaza_explosions(
+  start_date = "2023-10-01",
+  end_date = "2023-10-07"
+)
+
+if (!is.null(gaza_explosions_week) && nrow(gaza_explosions_week) > 0) {
+  print(head(gaza_explosions_week[, c("event_date", "admin1", "location", "event_type", "sub_event_type")]))
+  print(table(gaza_explosions_week$sub_event_type))
+}
+
+# Get only Air/drone strikes and Shelling in Gaza for a specific day
+gaza_specific_strikes_day = acled_gaza_explosions(
+  start_date = "2023-10-08",
+  end_date = "2023-10-08",
+  sub_event_types = c("Air/drone strike", "Shelling/artillery/missile attack")
+)
+
+if (!is.null(gaza_specific_strikes_day) && nrow(gaza_specific_strikes_day) > 0) {
+  print(table(gaza_specific_strikes_day$sub_event_type))
+}
+} # }
+```
