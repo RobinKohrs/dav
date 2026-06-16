@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   geosphere_api: geosphere_api.html
   kfz_neuzulassungen: kfz_neuzulassungen.html
-last_built: 2026-06-16T13:58Z
+last_built: 2026-06-16T14:11Z
 urls:
   reference: https://robinkohrs.github.io/dav/reference
   article: https://robinkohrs.github.io/dav/articles

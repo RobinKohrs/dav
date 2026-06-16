@@ -42,7 +42,7 @@ A character string of the formatted date.
 
 ``` r
 dw_timestamp()
-#> [1] "16. Juni um 14:01 Uhr"
+#> [1] "16. Juni um 14:13 Uhr"
 dw_timestamp(format = "de_date")
 #> [1] "16. Juni 2026"
 ```
