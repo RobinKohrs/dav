@@ -37,7 +37,7 @@ at_get_austria_poly = function(resolution = "10") {
 
   # Access the lazy-loaded data list object (available because it's in data/)
   # Using ::austria_shapes makes it explicit we expect this from our package
-  shape_data = davR::austria_shapes
+  shape_data = austria_shapes
   # Alternative if function is guaranteed to be called only after pkg load:
   # shape_data = austria_shapes
 
